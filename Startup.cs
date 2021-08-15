@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using OneBot.CommandRoute.Models.VO;
 using OneBot.CommandRoute.Services;
-using OneBot.FrameworkDemo.Modules;
+using Intallk.Modules;
 using OneBot_CommandRoute.CommandRoute.Mixin;
 
 
@@ -30,7 +30,7 @@ namespace OneBot.FrameworkDemo
 
             // 添加指令 / 事件
             // 推荐使用单例模式（而实际上框架代码也是当单例模式使用的）
-            services.AddSingleton<IOneBotController, TestModule>();
+            services.AddSingleton<IOneBotController, MainModule>();
             // 一行一行地将指令模块加进去
         }
 

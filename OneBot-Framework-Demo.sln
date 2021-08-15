@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30907.101
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31521.260
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneBot-Framework-Demo", "OneBot-Framework-Demo.csproj", "{3F360C57-4065-489C-9A89-94B549E978A8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Intallk", "Intallk.csproj", "{3F360C57-4065-489C-9A89-94B549E978A8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
