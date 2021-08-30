@@ -6,7 +6,8 @@ using OneBot.CommandRoute.Models.VO;
 using OneBot.CommandRoute.Services;
 using Intallk.Modules;
 using OneBot_CommandRoute.CommandRoute.Mixin;
-
+using Intallk.Config;
+using System.IO;
 
 namespace OneBot.FrameworkDemo
 {
@@ -31,7 +32,13 @@ namespace OneBot.FrameworkDemo
             // 添加指令 / 事件
             // 推荐使用单例模式（而实际上框架代码也是当单例模式使用的）
             services.AddSingleton<IOneBotController, MainModule>();
+            services.AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
             // 一行一行地将指令模块加进去
+
+            foreach(string childPath in new string[]{"","\\Images","\\Cache","\\Resources"}){
+                if (!Directory.Exists(IntallkConfig.DataPath + childPath)) 
+                    Directory.CreateDirectory(IntallkConfig.DataPath + childPath);
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

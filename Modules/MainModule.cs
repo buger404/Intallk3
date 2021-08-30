@@ -1,11 +1,26 @@
 using System;
+using System.Drawing;
+using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Net.Mime;
 using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using OneBot.CommandRoute.Attributes;
 using OneBot.CommandRoute.Models.Enumeration;
 using OneBot.CommandRoute.Services;
 using Sora.Entities;
+using Sora.Entities.MessageElement;
+using Sora.Entities.MessageElement.CQModel;
 using Sora.EventArgs.SoraEvent;
+using static System.Net.WebRequestMethods;
+using System.Drawing.Imaging;
+using RestSharp;
+using Intallk.Config;
+using System.Data;
+using Sora.Entities.Info;
 
 namespace Intallk.Modules
 {
@@ -18,21 +33,137 @@ namespace Intallk.Modules
             _logger = logger;
         }
 
-        [Command(".bark")]
+        [Command("bark")]
         public void Bark(GroupMessageEventArgs e)
         {
             string[] eg = { "汪", "喵~", "干嘛啦", "老娘活着", "我不在" };
             e.Reply(eg[random.Next(0, eg.Length)]);
         }
 
-        [Command(".help")]
+        [Command("draw -help")]
+        public void DrawHelp(GroupMessageEventArgs e)
+        {
+            string temples = "";
+            foreach (string file in Directory.GetFiles(IntallkConfig.DataPath + "\\DrawingScript"))
+            {
+                temples += file.Split('\\')[^1].Split('.')[0] + "，";
+            }
+            string send = "欢迎使用黑嘴表情包生成工具！\n" +
+                          "命令格式：.draw <模板名称> <艾特对方/对方的QQ号>\n" +
+                          "可用的模板：\n" + temples;
+            e.Reply(send);
+        }
+
+        [Command("draw <temple> <qq>")]
+        public void Draw(string temple,User qq,GroupMessageEventArgs e)
+        {
+            if(!System.IO.File.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + temple + ".txt"))
+            {
+                e.Reply(e.Sender.CQCodeAt() + "指定的绘制模板未找到。");
+                return;
+            }
+            GroupMemberInfo user = e.SourceGroup.GetGroupMemberInfo(qq.Id).Result.memberInfo;
+            string[] sex = { "男", "女", "不明" };
+            string outfile = IntallkConfig.DataPath + "\\Images\\" + qq.Id + "_" + temple + ".png";
+            ScriptDrawer.Draw(IntallkConfig.DataPath + "\\DrawingScript\\" + temple + ".txt",
+                              outfile,
+                              "[msg]", e.Message.RawText,
+                              "[qq]", qq.Id.ToString(),
+                              "[nick]", user.Nick,
+                              "[card]", user.Card == "" ? user.Nick : user.Card,
+                              "[sex]", sex[(int)user.Sex],
+                              "[age]", user.Age.ToString(),
+                              "[group]", e.SourceGroup.Id.ToString());
+            e.Reply(CQCodes.CQImage(outfile));
+        }
+
+        [Command("solve <function>")]
+        public void Solve(string function,GroupMessageEventArgs e)
+        {
+
+        }
+
+        [Command("help")]
         public void Help(GroupMessageEventArgs e)
         {
             e.Reply("没写");
         }
 
-        [Command(".test <count>")]
-        public void TestIll([CommandParameter("count")] int count, GroupMessageEventArgs e)
+        [Command("sx <content>")]
+        public void SXSearch(string content, GroupMessageEventArgs e)
+        {
+            byte[] buffer = Encoding.Default.GetBytes("{\"text\":\"" + content + "\"}");
+
+            HttpWebRequest request = WebRequest.CreateHttp("https://lab.magiconch.com/api/nbnhhsh/guess");
+            request.Method = WebRequestMethods.Http.Post;
+            request.ContentType = MediaTypeNames.Application.Json;
+            request.GetRequestStream().Write(buffer, 0, buffer.Length);
+            WebResponse response;
+            string result = "";
+
+            try
+            {
+                response = request.GetResponse();
+                result = new StreamReader(response.GetResponseStream()).ReadToEnd();
+            }
+            catch(Exception err)
+            {
+                e.Reply(e.Sender.CQCodeAt() + "查询失败(" + err.Message + ")。");
+            }
+
+            if(result == "[]")
+            {
+                e.Reply(e.Sender.CQCodeAt() + "找不到该中文缩写的全称或它不是中文缩写。");
+            }
+            else
+            {
+                e.Reply(e.Sender.CQCodeAt() + result.Split('[')[2].Split(']')[0]);
+            }
+        }
+
+        [Command("gifcombine")]
+        public void GIFCombine(GroupMessageEventArgs e)
+        {
+            foreach(CQCode msg in e.Message.MessageBody)
+            {
+                if(msg.MessageType == Sora.Enumeration.CQType.Image)
+                {
+                    Sora.Entities.MessageElement.CQModel.Image img = 
+                        (Sora.Entities.MessageElement.CQModel.Image)msg.DataObject;
+                    string file = IntallkConfig.DataPath + "\\Images\\" + img.ImgFile + ".png";
+                    if(!System.IO.File.Exists(file))
+                        System.IO.File.WriteAllBytes(file, new RestClient(img.Url).DownloadData(new RestRequest("#", Method.GET)));
+                    Bitmap bitmap = (Bitmap)Bitmap.FromFile(file);
+                    FrameDimension fd = new FrameDimension(bitmap.FrameDimensionsList[0]);
+                    Bitmap convert = new Bitmap(bitmap.Width * bitmap.GetFrameCount(fd), bitmap.Height);
+                    Graphics g = Graphics.FromImage(convert);
+                    for (int i = 0; i < bitmap.GetFrameCount(fd); i++)
+                    {
+                        bitmap.SelectActiveFrame(fd, i);
+                        g.DrawImage(bitmap, new Point(i * bitmap.Width, 0));
+                    }
+                    string outfile = IntallkConfig.DataPath + "\\Cache\\" + img.ImgFile + "_combined.png";
+                    convert.Save(outfile);
+                    Console.WriteLine("Succeed: " + outfile);
+                    bitmap.Dispose();
+                    g.Dispose();
+                    convert.Dispose();
+
+                    e.Reply(CQCodes.CQImage(outfile));
+                }
+            }
+        }
+
+        [Command("repeat")]
+        public void Repeat(GroupMessageEventArgs e)
+        {
+            string content = e.Message.RawText, send = "";
+            for (int i = 0; i < content.Length; i++) send += content[i] + " ";
+            e.Reply(send);
+        }
+
+        [Command("test <count>")]
+        public void TestIll(int count, GroupMessageEventArgs e)
         {
             string send = "";
             for (int i = 1; i <= count; i++) send += "神经病";
