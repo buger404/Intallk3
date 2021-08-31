@@ -31,6 +31,19 @@ namespace Intallk.Modules
         public MainModule(ICommandService commandService, ILogger<MainModule> logger)
         {
             _logger = logger;
+            commandService.Event.OnException += (scope, e, exception) =>
+            {
+                Console.WriteLine(exception.Message + "\n" + exception.StackTrace);
+                switch (e)
+                {
+                    case GroupMessageEventArgs group:
+                        group.Reply("☹发生错误");
+                        break;
+                    case PrivateMessageEventArgs qq:
+                        qq.Reply("☹发生错误");
+                        break;
+                }
+            };
         }
 
         [Command("bark")]
@@ -54,20 +67,26 @@ namespace Intallk.Modules
             e.Reply(send);
         }
 
-        [Command("draw <temple> <qq>")]
-        public void Draw(string temple,User qq,GroupMessageEventArgs e)
+        [Command("draw <template> <qq>")]
+        public void Draw(string template, User qq,GroupMessageEventArgs e)
         {
-            if(!System.IO.File.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + temple + ".txt"))
+            if(!System.IO.File.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".txt"))
             {
                 e.Reply(e.Sender.CQCodeAt() + "指定的绘制模板未找到。");
                 return;
             }
             GroupMemberInfo user = e.SourceGroup.GetGroupMemberInfo(qq.Id).Result.memberInfo;
+            string[] tempMsg = e.Message.RawText.Split('\n');
+            string msg = "";
+            for(int i = 1;i < tempMsg.Length; i++)
+            {
+                msg += tempMsg[i] + "\n";
+            }
             string[] sex = { "男", "女", "不明" };
-            string outfile = IntallkConfig.DataPath + "\\Images\\" + qq.Id + "_" + temple + ".png";
-            ScriptDrawer.Draw(IntallkConfig.DataPath + "\\DrawingScript\\" + temple + ".txt",
+            string outfile = IntallkConfig.DataPath + "\\Images\\" + qq.Id + "_" + template + ".png";
+            ScriptDrawer.Draw(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".txt",
                               outfile,
-                              "[msg]", e.Message.RawText,
+                              "[msg]", msg,
                               "[qq]", qq.Id.ToString(),
                               "[nick]", user.Nick,
                               "[card]", user.Card == "" ? user.Nick : user.Card,
@@ -154,6 +173,12 @@ namespace Intallk.Modules
             }
         }
 
+        [Command("bug <content>")]
+        public void Bug(string content,GroupMessageEventArgs e)
+        {
+            e.Reply(BugLanguage.BugLanguage.Convert(content));
+        }
+
         [Command("repeat")]
         public void Repeat(GroupMessageEventArgs e)
         {
@@ -168,22 +193,6 @@ namespace Intallk.Modules
             string send = "";
             for (int i = 1; i <= count; i++) send += "神经病";
             e.Reply($"黑嘴是{send}。");
-        }
-        /// <summary>
-        /// 全局异常处理函数测试
-        /// </summary>
-        [Command("exception", EventType = EventType.GroupMessage | EventType.PrivateMessage)]
-        public void ExceptionTest(BaseSoraEventArgs e)
-        {
-            switch (e)
-            {
-                case GroupMessageEventArgs s1:
-                    s1.Reply("☹发生错误");
-                    break;
-                case PrivateMessageEventArgs s2:
-                    s2.Reply("☹发生错误");
-                    break;
-            }
         }
 
     }

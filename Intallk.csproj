@@ -16,4 +16,10 @@
     <Folder Include="Models\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="ChnCharInfo">
+      <HintPath>Simplified Chinese Pin-Yin Conversion Library\ChnCharInfo.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
