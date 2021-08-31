@@ -196,9 +196,13 @@ namespace Intallk.Modules
                                 brush.Color = GoColor(p[4]);
                                 GraphicsPath gp = new GraphicsPath(FillMode.Winding);
                                 stf.Alignment = (StringAlignment)Convert.ToInt32(p[5]);
-                                gp.AddString(RepValue(p[3]), font, fstyle, fsize,
-                                            new Point(Convert.ToInt32(FinalValue(p[1])), Convert.ToInt32(FinalValue(p[2]))),
-                                            stf);
+                                Point pos = new Point(Convert.ToInt32(FinalValue(p[1])), Convert.ToInt32(FinalValue(p[2])));
+                                foreach (string s in RepValue(p[3]).Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    gp.AddString(s, font, fstyle, fsize, pos, stf);
+                                    pos.Y += fsize + 10;
+                                }
+
                                 g.FillPath(brush, gp);
                                 gp.Dispose();
                             }
