@@ -25,7 +25,7 @@ namespace Intallk.Modules
         }
         private static List<drawParamArray> paramList = new List<drawParamArray>();
         private static DataTable dt = new DataTable();
-        private static FontFamily font = new FontFamily("Microsoft Yahei");
+        private static FontFamily font = new FontFamily("HarmonyOS Sans SC Medium");
         private static StringFormat stf = new StringFormat();
         private static SolidBrush brush = new SolidBrush(Color.Transparent);
         private static Pen pen = new Pen(Color.Transparent);
@@ -85,6 +85,19 @@ namespace Intallk.Modules
                     pa.width = (param[j + 1].Length * 20).ToString();//g.MeasureString(param[j + 1], font).Width.ToString();
                     pa.height = "20";  //g.MeasureString(param[j + 1], font).Height.ToString();
                     paramList.Add(pa);
+                    if (pa.name == "[msg]")
+                    {
+                        int msgc = 1;
+                        foreach(string content in param[j + 1].Split(' '))
+                        {
+                            pa = new drawParamArray();
+                            pa.name = "[msg" + msgc + "]"; pa.key = content;
+                            pa.width = (content.Length * 20).ToString();//g.MeasureString(param[j + 1], font).Width.ToString();
+                            pa.height = "20";
+                            msgc++;
+                            paramList.Add(pa);
+                        }
+                    }
                 }
 
                 cmd = File.ReadAllText(infile).Split(new string[] { "\r\n" }, StringSplitOptions.None);

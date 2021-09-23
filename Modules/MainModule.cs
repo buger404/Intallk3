@@ -44,7 +44,9 @@ namespace Intallk.Modules
                         break;
                 }
             };
+            //commandService.Event.OnGroupMessage
         }
+
 
         [Command("bark")]
         public void Bark(GroupMessageEventArgs e)
@@ -56,26 +58,35 @@ namespace Intallk.Modules
         [Command("draw -help")]
         public void DrawHelp(GroupMessageEventArgs e)
         {
-            string temples = "";
+            string templates = "";
             foreach (string file in Directory.GetFiles(IntallkConfig.DataPath + "\\DrawingScript"))
             {
-                temples += file.Split('\\')[^1].Split('.')[0] + "，";
+                templates += file.Split('\\')[^1].Split('.')[0] + "，";
             }
             string send = "欢迎使用黑嘴表情包生成工具！\n" +
                           "命令格式：.draw <模板名称> <艾特对方/对方的QQ号>\n" +
-                          "可用的模板：\n" + temples;
+                          "可用的模板：\n" + templates;
             e.Reply(send);
         }
 
+        [Command("draw <template>")]
+        public void DrawSha(GroupMessageEventArgs e, string template)
+        {
+            Draw(e, template, null);
+        }
+
         [Command("draw <template> <qq>")]
-        public void Draw(string template, User qq,GroupMessageEventArgs e)
+        public void Draw(GroupMessageEventArgs e,string template, User qq)
         {
             if(!System.IO.File.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".txt"))
             {
                 e.Reply(e.Sender.CQCodeAt() + "指定的绘制模板未找到。");
                 return;
             }
-            GroupMemberInfo user = e.SourceGroup.GetGroupMemberInfo(qq.Id).Result.memberInfo;
+            GroupMemberInfo user;
+            if(qq != null) user = e.SourceGroup.GetGroupMemberInfo(qq.Id).Result.memberInfo;
+            else user = e.SourceGroup.GetGroupMemberInfo(e.Sender.Id).Result.memberInfo;
+
             string[] tempMsg = e.Message.RawText.Split('\n');
             string msg = "";
             for(int i = 1;i < tempMsg.Length; i++)
@@ -88,6 +99,7 @@ namespace Intallk.Modules
                               outfile,
                               "[msg]", msg,
                               "[qq]", qq.Id.ToString(),
+                              "[time]", DateTime.Now.ToString(),
                               "[nick]", user.Nick,
                               "[card]", user.Card == "" ? user.Nick : user.Card,
                               "[sex]", sex[(int)user.Sex],
@@ -136,7 +148,7 @@ namespace Intallk.Modules
             }
             else
             {
-                e.Reply(e.Sender.CQCodeAt() + result.Split('[')[2].Split(']')[0]);
+                e.Reply(e.Sender.CQCodeAt() + result.Split(new char[]{'[',']'})[2]);
             }
         }
 
