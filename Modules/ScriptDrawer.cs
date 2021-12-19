@@ -67,7 +67,9 @@ namespace Intallk.Modules
             w.DownloadFile(url, path);
             w.Dispose();
         }
-        public static void Draw(string infile, string oufile, params string[] param)
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:验证平台兼容性", Justification = "<挂起>")]
+        public static void Draw(string code, string oufile, params string[] param)
         {
             int fail = 0; int fi = 0; string[] cmd = new string[] { "" };
             Graphics g = Graphics.FromHwnd(IntPtr.Zero); Bitmap b = new Bitmap(1, 1);
@@ -100,7 +102,7 @@ namespace Intallk.Modules
                     }
                 }
 
-                cmd = File.ReadAllText(infile).Split(new string[] { "\r\n" }, StringSplitOptions.None);
+                cmd = code.Split(new string[] { "\r\n" }, StringSplitOptions.None);
                 for (int i = 0; i < cmd.Length; i++)
                 {
                     fi = i;

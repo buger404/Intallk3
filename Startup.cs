@@ -35,7 +35,7 @@ namespace OneBot.FrameworkDemo
             services.AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
             // 一行一行地将指令模块加进去
 
-            foreach(string childPath in new string[]{"","\\Images","\\Cache","\\Resources"}){
+            foreach(string childPath in new string[]{"","\\Images","\\Cache","\\Resources", "\\Logs"}){
                 if (!Directory.Exists(IntallkConfig.DataPath + childPath)) 
                     Directory.CreateDirectory(IntallkConfig.DataPath + childPath);
             }
