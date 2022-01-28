@@ -29,6 +29,14 @@ namespace Intallk.Modules
 {
     public class MainModule : IOneBotController
     {
+        public delegate bool GroupMessageHookCallback(GroupMessageEventArgs e);
+        public class GroupMessageHook
+        {
+            public long Group { get; set; }
+            public long QQ { get; set; }
+            public GroupMessageHookCallback Callback { get; set; }
+        }
+        public static List<GroupMessageHook> hooks = new List<GroupMessageHook>();
         private Random random = new Random(Guid.NewGuid().GetHashCode());
         private readonly ILogger<MainModule> _logger;
         public MainModule(ICommandService commandService, ILogger<MainModule> logger)
@@ -45,20 +53,46 @@ namespace Intallk.Modules
                 switch (context.SoraEventArgs)
                 {
                     case GroupMessageEventArgs group:
-                        group.Reply("我...我才不是为了气死你才出错的呢！");
+                        group.Reply(SoraSegment.Reply(group.Message.MessageId) + "我...我才不是为了气死你才出错的呢！");
                         group.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\error.jpg"));
                         break;
                     case PrivateMessageEventArgs qq:
-                        qq.Reply("我...我才不是为了气死你才出错的呢！");
+                        qq.Reply(SoraSegment.Reply(qq.Message.MessageId) + "我...我才不是为了气死你才出错的呢！");
                         qq.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\error.jpg"));
                         break;
                 }
                 // 记小本本
-                System.IO.File.AppendAllText(IntallkConfig.DataPath + "\\Logs\\error_" + DateTime.Now.ToString("yy_MM_dd") + ".txt", DateTime.Now.ToString() + "\n" + exception.Message + "\n" + exception.StackTrace + "\n");
+                File.AppendAllText(IntallkConfig.DataPath + "\\Logs\\error_" + DateTime.Now.ToString("yy_MM_dd") + ".txt", DateTime.Now.ToString() + "\n" + exception.Message + "\n" + exception.StackTrace + "\n");
             };
-            //commandService.Event.OnGroupMessage
+            commandService.Event.OnGroupMessage += (context) =>
+            {
+                GroupMessageEventArgs e = (GroupMessageEventArgs)context.SoraEventArgs;
+                bool needClear = false;
+                foreach (GroupMessageHook hook in hooks)
+                {
+                    if(hook.QQ == e.Sender.Id && hook.Group == e.SourceGroup.Id)
+                    {
+                        if (hook.Callback(e))
+                        {
+                            hook.QQ = 0;
+                            needClear = true;
+                        }
+                    }
+                }
+                if (needClear) hooks.RemoveAll(m => m.QQ == 0);
+                return 0;
+            };
         }
 
+        public static void RegisterHook(long QQ,long Group,GroupMessageHookCallback Callback)
+        {
+            hooks.Add(new GroupMessageHook
+            {
+                QQ = QQ,
+                Group = Group,
+                Callback = Callback
+            });
+        }
 
         [Command("黑嘴")]
         public void Bark(GroupMessageEventArgs e)

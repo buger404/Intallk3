@@ -31,7 +31,7 @@ namespace Intallk.Modules
             {
                 if (!drawTemplates.ContainsKey(template))
                 {
-                    e.Reply(e.Sender.At() + "这...这是什么呀，黑嘴不会画啦。");
+                    e.Reply(SoraSegment.Reply(e.Message.MessageId) + "这...这是什么呀，黑嘴不会画啦。");
                     e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\cannot.jpg"));
                     return;
                 }
@@ -74,7 +74,7 @@ namespace Intallk.Modules
         {
             if (!drawTemplates.ContainsKey(template))
             {
-                e.Reply(e.Sender.At() + "什么嘛，黑嘴...可不是因为不会画这个才不帮你画的呢！");
+                e.Reply(SoraSegment.Reply(e.Message.MessageId) + "什么嘛，黑嘴...可不是因为不会画这个才不帮你画的呢！");
                 e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\cannot.jpg"));
                 return;
             }
@@ -100,7 +100,7 @@ namespace Intallk.Modules
                               "[sex]", sex[(int)user.Sex],
                               "[age]", user.Age.ToString(),
                               "[group]", e.SourceGroup.Id.ToString());
-            e.Reply(SoraSegment.Image(outfile));
+            e.Reply(SoraSegment.Reply(e.Message.MessageId) + SoraSegment.Image(outfile));
         }
 
         private struct drawParamArray

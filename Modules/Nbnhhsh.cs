@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json.Serialization;
+using Sora.Entities.Segment;
 
 namespace Intallk.Modules
 {
@@ -36,12 +37,12 @@ namespace Intallk.Modules
             var response = await client.ExecuteAsync<List<SXRespond>>(request);
             if (!response.IsSuccessful)
             {
-                await e.Reply(e.Sender.At() + $"呜呜呜，服务器不让我偷看他({response.ErrorMessage})。");
+                await e.Reply(SoraSegment.Reply(e.Message.MessageId) + $"呜呜呜，服务器不让我偷看他({response.ErrorMessage})。");
                 return;
             }
             if (response.Data == null)
             {
-                await e.Reply(e.Sender.At() + "咦，这是什么的中文缩写呀，查不到呢。");
+                await e.Reply(SoraSegment.Reply(e.Message.MessageId) + "咦，这是什么的中文缩写呀，查不到呢。");
             }
             else
             {
@@ -52,18 +53,18 @@ namespace Intallk.Modules
                     if (response.Data.Count > 1) trans.Append("结果{i + 1}：");
                     if (response.Data[i].Trans != null)
                     {
-                        foreach (string s in response.Data[i]!.Trans!) trans.Append("\"{s}\"，");
+                        foreach (string s in response.Data[i]!.Trans!) trans.Append($"\"{s}\"，");
                         hasResult = true;
                     }
                     if (i < response.Data.Count - 1) trans.AppendLine();
                 }
                 if (hasResult)
                 {
-                    await e.Reply(e.Sender.At() + trans.ToString());
+                    await e.Reply(SoraSegment.Reply(e.Message.MessageId) + trans.ToString());
                 }
                 else
                 {
-                    await e.Reply(e.Sender.At() + "咦，这是什么的中文缩写呀，查不到呢。");
+                    await e.Reply(SoraSegment.Reply(e.Message.MessageId) + "咦，这是什么的中文缩写呀，查不到呢。");
                 }
 
             }

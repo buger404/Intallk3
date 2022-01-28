@@ -37,6 +37,7 @@ namespace OneBot.FrameworkDemo
             services.AddSingleton<IOneBotController, Testing>();
             services.AddSingleton<IOneBotController, BugLanguage>();
             services.AddSingleton<IOneBotController, Nbnhhsh>();
+            services.AddSingleton<IOneBotController, ScriptDrawer>();
             services.AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
             // 一行一行地将指令模块加进去
 
