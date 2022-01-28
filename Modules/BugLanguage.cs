@@ -1,12 +1,22 @@
 ﻿using Microsoft.International.Converters.PinYinConverter;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using OneBot.CommandRoute.Attributes;
+using OneBot.CommandRoute.Services;
+using Sora.EventArgs.SoraEvent;
 
-namespace BugLanguage
+namespace Intallk.Modules
 {
-    class BugLanguage
+    // BugLanguage
+    // 这个功能纯属娱乐，是我小学时期想的一套替换拼音的暗号（？）
+    // 这个功能的实现完全摆烂，不会优化，不会优化，不会优化（逃）
+    // 读下面的代码之前，请做好心理准备（指不要被气死）
+    class BugLanguage : IOneBotController
     {
+        [Command("bug <content>")]
+        public void Bug(string content, GroupMessageEventArgs e)
+        {
+            e.Reply(Convert(content));
+        }
+
         public static string GetPY(string src)
         {
             string ret = "";
@@ -20,17 +30,9 @@ namespace BugLanguage
         public static string Exchange(string src,string t1,string t2)
         {
             string p = src;
+            // 暴力替换
             p = p.Replace(t1, "⚐"); p = p.Replace(t2, t1); p = p.Replace("⚐", t2);
             return p;
-        }
-        public static string Mirror(string src)
-        {
-            string ret = "";
-            for(int i = src.Length -1;i >= 0; i--)
-            {
-                ret += src[i];
-            }
-            return ret;
         }
         public static string Convert(string src)
         {

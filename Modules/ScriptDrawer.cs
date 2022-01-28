@@ -1,21 +1,108 @@
 ﻿using Intallk.Config;
+using OneBot.CommandRoute.Attributes;
+using OneBot.CommandRoute.Services;
+using RestSharp;
+using Sora.Entities;
+using Sora.Entities.Info;
+using Sora.Entities.Segment;
+using Sora.EventArgs.SoraEvent;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
-using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Intallk.Modules
 {
-    class ScriptDrawer
+    // 制图功能[弃用]
+    // 正在等待重构，详见Painting.cs。
+    class ScriptDrawer : IOneBotController
     {
+        public static Dictionary<string, string> drawTemplates = new Dictionary<string, string>();
+
+        [Command("draw help [template]")]
+        public void DrawHelp(GroupMessageEventArgs e, string template = null)
+        {
+            string templates = "";
+            if (template != null)
+            {
+                if (!drawTemplates.ContainsKey(template))
+                {
+                    e.Reply(e.Sender.At() + "这...这是什么呀，黑嘴不会画啦。");
+                    e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\cannot.jpg"));
+                    return;
+                }
+                string[] helpMsg = drawTemplates[template].Split(new string[] { "\r\n" }, StringSplitOptions.None)[0].Split(':');
+                if (helpMsg.Length == 1)
+                {
+                    string send = "这个模板不用别的附加参数啦~\n" +
+                              ".draw " + template + " <艾特对方/对方的QQ号>";
+                    e.Reply(send);
+                }
+                else
+                {
+                    string send = "这个模板是这样用的哦~\n" +
+                              ".draw " + template + " <艾特对方/对方的QQ号>（哼，就不告诉你这里要换行）" + helpMsg[1];
+                    e.Reply(send);
+                }
+            }
+            else
+            {
+                foreach (string t in drawTemplates.Keys)
+                {
+                    templates += t + "，";
+                }
+                string send = "哼，你...你就这么想请黑嘴帮你画画吗？那，那我就...勉为其难地帮一下你吧...\n" +
+                              "命令格式：.draw <模板名称> <艾特对方/对方的QQ号>（我才不告诉你这里要换行呢）[模板附加参数]\n" +
+                              "模板附加参数查询：.draw help <模板名称>\n" +
+                              "黑嘴会画这些模板哦，黑嘴厉害吧~：\n" + templates;
+                e.Reply(send);
+            }
+        }
+
+        [Command("draw <template>")]
+        public void DrawSha(GroupMessageEventArgs e, string template)
+        {
+            Draw(e, template, null);
+        }
+
+        [Command("draw <template> <qq>")]
+        public void Draw(GroupMessageEventArgs e, string template, User qq)
+        {
+            if (!drawTemplates.ContainsKey(template))
+            {
+                e.Reply(e.Sender.At() + "什么嘛，黑嘴...可不是因为不会画这个才不帮你画的呢！");
+                e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\cannot.jpg"));
+                return;
+            }
+            GroupMemberInfo user;
+            if (qq != null) user = e.SourceGroup.GetGroupMemberInfo(qq.Id).Result.memberInfo;
+            else user = e.SourceGroup.GetGroupMemberInfo(e.Sender.Id).Result.memberInfo;
+
+            string[] tempMsg = e.Message.RawText.Split('\n');
+            string msg = "";
+            for (int i = 1; i < tempMsg.Length; i++)
+            {
+                msg += tempMsg[i] + "\n";
+            }
+            string[] sex = { "男", "女", "不明" };
+            string outfile = IntallkConfig.DataPath + "\\Images\\" + qq.Id + "_" + template + ".png";
+            ScriptDrawer.Draw(drawTemplates[template],
+                              outfile,
+                              "[msg]", msg,
+                              "[qq]", qq.Id.ToString(),
+                              "[time]", DateTime.Now.ToString(),
+                              "[nick]", user.Nick,
+                              "[card]", user.Card == "" ? user.Nick : user.Card,
+                              "[sex]", sex[(int)user.Sex],
+                              "[age]", user.Age.ToString(),
+                              "[group]", e.SourceGroup.Id.ToString());
+            e.Reply(SoraSegment.Image(outfile));
+        }
+
         private struct drawParamArray
         {
             public string key;
@@ -63,9 +150,7 @@ namespace Intallk.Modules
         }
         private static void DownLoad(string url, string path)
         {
-            WebClient w = new WebClient();
-            w.DownloadFile(url, path);
-            w.Dispose();
+            File.WriteAllBytes(path, new RestClient(url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:验证平台兼容性", Justification = "<挂起>")]

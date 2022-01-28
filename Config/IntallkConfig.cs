@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OneBot.CommandRoute.Attributes;
+using OneBot.CommandRoute.Configuration;
 using OneBot.CommandRoute.Models.Enumeration;
 using OneBot.CommandRoute.Services;
 using Sora.Entities;
@@ -17,6 +18,6 @@ namespace Intallk.Config
 
         public bool IsCaseSensitive => false;
 
-        public const string DataPath = "C:\\.intallk";
+        public static string DataPath => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Intallk";
     }
 }

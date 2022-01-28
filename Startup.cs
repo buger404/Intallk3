@@ -5,9 +5,10 @@ using Microsoft.Extensions.Configuration;
 using OneBot.CommandRoute.Models.VO;
 using OneBot.CommandRoute.Services;
 using Intallk.Modules;
-using OneBot_CommandRoute.CommandRoute.Mixin;
 using Intallk.Config;
 using System.IO;
+using OneBot.CommandRoute.Configuration;
+using OneBot.CommandRoute.Mixin;
 
 namespace OneBot.FrameworkDemo
 {
@@ -32,6 +33,10 @@ namespace OneBot.FrameworkDemo
             // 添加指令 / 事件
             // 推荐使用单例模式（而实际上框架代码也是当单例模式使用的）
             services.AddSingleton<IOneBotController, MainModule>();
+            services.AddSingleton<IOneBotController, GIFProcess>();
+            services.AddSingleton<IOneBotController, Testing>();
+            services.AddSingleton<IOneBotController, BugLanguage>();
+            services.AddSingleton<IOneBotController, Nbnhhsh>();
             services.AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
             // 一行一行地将指令模块加进去
 
@@ -44,12 +49,7 @@ namespace OneBot.FrameworkDemo
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            // 初始化
-            var serviceProvider = app.ApplicationServices;
 
-            // 初始化机器人核心
-            var soraService = serviceProvider.GetService<IBotService>();
-            soraService.Start();
         }
     }
 }
