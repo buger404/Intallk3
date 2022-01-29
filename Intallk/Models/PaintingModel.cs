@@ -1,42 +1,36 @@
-﻿using OneBot.CommandRoute.Services;
-using System;
-using System.Collections.Generic;
+﻿namespace Intallk.Models;
 
-public class PaintingModel
+[Serializable]
+public class PaintFile
 {
-    [Serializable]
-    public class PaintFile
+    public long Author { get; set; }
+    public string? Name { get; set; }
+    public string? ParameterDescription { get; set; }
+    public List<PaintCommands>? Commands { get; set; }
+}
+[Serializable]
+public class PaintCommands
+{
+    public PaintCommandType CommandType { get; set; }
+    public object[] Args { get; set; }
+    public PaintCommands(PaintCommandType type, params object[] args)
     {
-        public long Author { get; set; }
-        public string? Name { get; set; }
-        public string? ParameterDescription { get; set; }
-        public List<PaintCommands>? Commands { get; set; }
+        CommandType = type;
+        Args = args;
     }
-    [Serializable]
-    public class PaintCommands
-    {
-        public PaintCommandType CommandType { get; set; }
-        public object[] Args { get; set; }
-        public PaintCommands(PaintCommandType type, params object[] args)
-        {
-            CommandType = type;
-            Args = args;
-        }
-    }
-    [Serializable]
-    public enum PaintCommandType
-    {
-        SetCanvas, FillImage, FillRectangle, FillEllipse, DrawImage, DrawRectangle, DrawEllipse, Write
-    }
-    [Serializable]
-    public enum PaintAdjustWriteMode
-    {
-        None, XFirst, YFirst, Auto
-    }
-    [Serializable]
-    public enum PaintAlign
-    {
-        Left, Center, Right
-    }
-
+}
+[Serializable]
+public enum PaintCommandType
+{
+    SetCanvas, FillImage, FillRectangle, FillEllipse, DrawImage, DrawRectangle, DrawEllipse, Write
+}
+[Serializable]
+public enum PaintAdjustWriteMode
+{
+    None, XFirst, YFirst, Auto
+}
+[Serializable]
+public enum PaintAlign
+{
+    Left, Center, Right
 }

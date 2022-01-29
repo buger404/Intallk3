@@ -5,7 +5,12 @@ VisualStudioVersion = 17.0.31521.260
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Intallk", "Intallk\Intallk.csproj", "{3F360C57-4065-489C-9A89-94B549E978A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Intallk.Tests", "Intallk.Tests\Intallk.Tests.csproj", "{CEC6E4B1-C861-47D0-ADF4-029511B1096F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Intallk.Tests", "Intallk.Tests\Intallk.Tests.csproj", "{CEC6E4B1-C861-47D0-ADF4-029511B1096F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2EEACA41-9090-403E-87D3-B6CE32096602}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
