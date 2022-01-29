@@ -1,0 +1,21 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "3f360c57-4065-489c-9a89-94b549e978a8": {
+      "ProjectGuid": "3f360c57-4065-489c-9a89-94b549e978a8",
+      "DisplayName": "Intallk",
+      "ColorIndex": 0
+    },
+    "95a753c7-74c4-4515-9c54-f00e50889d6b": {
+      "ProjectGuid": "95a753c7-74c4-4515-9c54-f00e50889d6b",
+      "DisplayName": "Solution Items",
+      "ColorIndex": 1
+    },
+    "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3": {
+      "ProjectGuid": "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3",
+      "DisplayName": "杂项文件",
+      "ColorIndex": -1
+    }
+  },
+  "NextColorIndex": 2
+}
