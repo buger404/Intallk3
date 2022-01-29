@@ -15,7 +15,12 @@
       "ProjectGuid": "a2fe74e1-b743-11d0-ae1a-00a0c90fffc3",
       "DisplayName": "杂项文件",
       "ColorIndex": -1
+    },
+    "cec6e4b1-c861-47d0-adf4-029511b1096f": {
+      "ProjectGuid": "cec6e4b1-c861-47d0-adf4-029511b1096f",
+      "DisplayName": "Intallk.Tests",
+      "ColorIndex": 2
     }
   },
-  "NextColorIndex": 2
+  "NextColorIndex": 3
 }
