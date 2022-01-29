@@ -1,26 +1,27 @@
-﻿using OneBot.CommandRoute.Services;
-using System;
+﻿
+using Intallk.Models;
+
 using System.Drawing;
-using System.Collections.Generic;
-using static PaintingModel;
 using System.Globalization;
 
 public class PaintingCompiler
 {
     string[]? lines;
     int li = 0;
-    public PaintFile CompilePaintScript(string src,out List<string> piclist)
+    public PaintFile CompilePaintScript(string src, out List<string> piclist)
     {
         // 脚本语法
         // 用'。'隔开每个绘制指令，第一个指令必须为创建画布。
         // 用'，'隔开参数。
-        PaintFile paintfile = new PaintFile();
-        paintfile.Commands = new List<PaintCommands>();
+        var paintfile = new PaintFile
+        {
+            Commands = new List<PaintCommands>()
+        };
         // 保护字符串
         src = src.Replace("\\：", "<protected>").Replace("\\:", "<protected>");
         string[] str = src.Split(new char[] { '：', ':' }, StringSplitOptions.RemoveEmptyEntries);
-        List<string> strconst = new List<string>();
-        List<string> param = new List<string>();
+        var strconst = new List<string>();
+        var param = new List<string>();
         piclist = new List<string>();
         src = "";
         for (int i = 0; i < str.Length; i++)
@@ -30,7 +31,7 @@ public class PaintingCompiler
                 string[] t = str[i].Split("'");
                 if (t.Length == 1)
                 {
-                    lines = new string[]{ str[i] }; li = 0;
+                    lines = new string[] { str[i] }; li = 0;
                     ThrowException("[Standard.StringGrammer]检测到有字符串不被引号“'”包括。");
                 }
                 strconst.Add(t[1].Replace("<protected>", "："));
@@ -44,7 +45,7 @@ public class PaintingCompiler
         }
         lines = src.Split('。', StringSplitOptions.RemoveEmptyEntries);
         string resolve;
-        PaintCommands cmd = new PaintCommands(PaintCommandType.SetCanvas,"");
+        var cmd = new PaintCommands(PaintCommandType.SetCanvas, "");
 
         li = 0;
         resolve = GetCenter("以", lines[0], "创建画布");
@@ -77,7 +78,7 @@ public class PaintingCompiler
         {
             solved = false;
             string[] sen = lines[li].Split('，', StringSplitOptions.None);
-            for(int i = 0;i < sen.Length; i++)
+            for (int i = 0; i < sen.Length; i++)
             {
                 if (sen[i].Contains("书写"))
                 {
@@ -92,9 +93,9 @@ public class PaintingCompiler
                     if (resolve.Contains('{') && resolve.Contains('}'))
                     {
                         t = resolve.Replace('{', '}').Split('}');
-                        for(int j = 0;j < t.Length; j++)
+                        for (int j = 0; j < t.Length; j++)
                         {
-                            if(j % 2 == 1) param.Add(t[j]);
+                            if (j % 2 == 1) param.Add(t[j]);
                         }
                     }
                     cmd = new PaintCommands(PaintCommandType.Write, x, y, 0, 0, resolve, 18, FontStyle.Regular, Color.FromArgb(255, 0, 0, 0), PaintAdjustWriteMode.None, PaintAlign.Left);
@@ -152,7 +153,7 @@ public class PaintingCompiler
                 }
                 if (sen[i].Contains("描边椭圆"))
                 {
-                    if(solved) ThrowException("[Standard.DoubleCommand]不应在一个句子中同时指定多个绘制指令。");
+                    if (solved) ThrowException("[Standard.DoubleCommand]不应在一个句子中同时指定多个绘制指令。");
                     resolve = GetCenter("在", sen[i], "处");
                     if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
                     float x = 0, y = 0;
@@ -162,7 +163,7 @@ public class PaintingCompiler
                 }
                 if (sen[i].StartsWith("大小为"))
                 {
-                    if(!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     resolve = GetBack("为", sen[i]);
                     float x = 0, y = 0;
                     ParseSize(resolve, out x, out y);
@@ -171,11 +172,11 @@ public class PaintingCompiler
                 if (sen[i].StartsWith("字号为"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    if(cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
+                    if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
                     resolve = GetBack("为", sen[i]);
                     float size = 0;
-                    if(!float.TryParse(resolve, out size)) ThrowException("[NumberParser.InvalidValue]指定字号的值是无效的。");
-                    if(size < 1 || size > 256) ThrowException("[Writer.InvalidFontSize]指定字号的值超出了规定范围（1~256）。");
+                    if (!float.TryParse(resolve, out size)) ThrowException("[NumberParser.InvalidValue]指定字号的值是无效的。");
+                    if (size < 1 || size > 256) ThrowException("[Writer.InvalidFontSize]指定字号的值超出了规定范围（1~256）。");
                     cmd.Args[5] = size;
                 }
                 if (sen[i].StartsWith("正常字体"))
@@ -214,13 +215,13 @@ public class PaintingCompiler
                     resolve = GetBack("为", sen[i]);
                     Color color;
                     ParseColor(resolve, out color);
-                    if(cmd.CommandType != PaintCommandType.Write) cmd.Args[4] = color; else cmd.Args[7] = color;
+                    if (cmd.CommandType != PaintCommandType.Write) cmd.Args[4] = color; else cmd.Args[7] = color;
                 }
                 if (sen[i].EndsWith("色"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    resolve = GetFront(sen[i],"色");
-                    Color color = Color.Black;
+                    resolve = GetFront(sen[i], "色");
+                    var color = Color.Black;
                     try
                     {
                         color = Color.FromName(resolve);
@@ -279,16 +280,13 @@ public class PaintingCompiler
             paintfile.ParameterDescription = "不需要任何参数。";
         return paintfile;
     }
-    public void ThrowException(string message)
-    {
-        throw new Exception($"第{li + 1}句中存在错误，黑嘴无法为您编译绘图脚本。\n" + lines![li] + "\n" + message);
-    }
+    public void ThrowException(string message) => throw new Exception($"第{li + 1}句中存在错误，黑嘴无法为您编译绘图脚本。\n" + lines![li] + "\n" + message);
     public void ParseColor(string src, out Color color)
     {
         string[] t = src.Split(',');
         int[] tn = new int[t.Length];
         color = Color.Black;
-        if(t.Length == 1)
+        if (t.Length == 1)
         {
             try
             {
@@ -311,7 +309,8 @@ public class PaintingCompiler
             if (tn.Length == 4)
             {
                 color = Color.FromArgb(tn[0], tn[1], tn[2], tn[3]);
-            }else if(tn.Length == 3)
+            }
+            else if (tn.Length == 3)
             {
                 color = Color.FromArgb(1, tn[0], tn[1], tn[2]);
             }

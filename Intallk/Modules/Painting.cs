@@ -1,23 +1,25 @@
 ﻿using Intallk.Config;
+using Intallk.Models;
 using Intallk.Modules;
+
 using Newtonsoft.Json;
+
 using OneBot.CommandRoute.Attributes;
 using OneBot.CommandRoute.Services;
+
 using RestSharp;
+
 using Sora.Entities.Segment;
 using Sora.Entities.Segment.DataModel;
 using Sora.Enumeration;
 using Sora.EventArgs.SoraEvent;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using static PaintingModel;
 
-internal class Painting : IOneBotController
+using System.Text;
+
+class Painting : IOneBotController
 {
     [Command("draw_experiment build [name] [code]")]
-    public void DrawBuild(GroupMessageEventArgs e,string name,string code)
+    public void DrawBuild(GroupMessageEventArgs e, string name, string code)
     {
         if (name.Contains('*') || name.Contains('\\') || name.Contains('/') || name.Contains('|') || name.Contains('?')
             || name.Contains(':') || name.Contains('\"') || name.Contains('<') || name.Contains('>'))
@@ -36,23 +38,23 @@ internal class Painting : IOneBotController
             e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\angry.jpg"));
             return;
         }
-        PaintFile paintfile = new PaintFile();
+        var paintfile = new PaintFile();
         try
         {
             List<string> picList;
             paintfile = new PaintingCompiler().CompilePaintScript(code, out picList);
             paintfile.Author = e.Sender.Id;
             paintfile.Name = name;
-            JsonSerializer serializer = new JsonSerializer();
-            StringBuilder sb = new StringBuilder();
+            var serializer = new JsonSerializer();
+            var sb = new StringBuilder();
             serializer.Serialize(new StringWriter(sb), paintfile);
             e.Reply(SoraSegment.Reply(e.Message.MessageId) + sb.ToString());
-            e.Reply(SoraSegment.Reply(e.Message.MessageId) + "恭喜您，绘图脚本编译通过了，以下是编译信息：\n" + 
-                                                             "参数说明：" + paintfile.ParameterDescription + "\n" + 
+            e.Reply(SoraSegment.Reply(e.Message.MessageId) + "恭喜您，绘图脚本编译通过了，以下是编译信息：\n" +
+                                                             "参数说明：" + paintfile.ParameterDescription + "\n" +
                                                              "绘制步骤：" + paintfile.Commands!.Count.ToString() + "步");
             string picl = "";
             foreach (string s in picList) picl += s + "，";
-            if(picList.Count > 0)
+            if (picList.Count > 0)
             {
                 picList.Add(name);
                 Directory.CreateDirectory(IntallkConfig.DataPath + "\\DrawingScript\\" + name);
@@ -72,7 +74,7 @@ internal class Painting : IOneBotController
         {
             if (msg.MessageType == SegmentType.Image)
             {
-                ImageSegment img = (ImageSegment)msg.Data;
+                var img = (ImageSegment)msg.Data;
                 string file = IntallkConfig.DataPath + "\\DrawingScript\\" + ((List<string>)hook.Data)[^1] + "\\" + ((List<string>)hook.Data)[0];
                 if (!File.Exists(file))
                     File.WriteAllBytes(file, new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result);
