@@ -24,7 +24,7 @@ namespace Intallk.Modules
         public static Dictionary<string, string> drawTemplates = new Dictionary<string, string>();
 
         [Command("draw help [template]")]
-        public void DrawHelp(GroupMessageEventArgs e, string template = null)
+        public void DrawHelp(GroupMessageEventArgs e, string? template = null)
         {
             string templates = "";
             if (template != null)
@@ -70,7 +70,7 @@ namespace Intallk.Modules
         }
 
         [Command("draw <template> <qq>")]
-        public void Draw(GroupMessageEventArgs e, string template, User qq)
+        public void Draw(GroupMessageEventArgs e, string template, User? qq)
         {
             if (!drawTemplates.ContainsKey(template))
             {
@@ -89,7 +89,7 @@ namespace Intallk.Modules
                 msg += tempMsg[i] + "\n";
             }
             string[] sex = { "男", "女", "不明" };
-            string outfile = IntallkConfig.DataPath + "\\Images\\" + qq.Id + "_" + template + ".png";
+            string outfile = IntallkConfig.DataPath + "\\Images\\" + qq!.Id + "_" + template + ".png";
             ScriptDrawer.Draw(drawTemplates[template],
                               outfile,
                               "[msg]", msg,
@@ -150,7 +150,7 @@ namespace Intallk.Modules
         }
         private static void DownLoad(string url, string path)
         {
-            File.WriteAllBytes(path, new RestClient(url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result);
+            File.WriteAllBytes(path, new RestClient(url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result!);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:验证平台兼容性", Justification = "<挂起>")]
@@ -443,13 +443,13 @@ namespace Intallk.Modules
         /// <returns>字段的值</returns>
         /// <exception cref="System.InvalidOperationException">无法找到该字段.</exception>
         /// 
-        internal static TResult GetPrivateField<TResult>(this object obj, string fieldName)
+        internal static TResult? GetPrivateField<TResult>(this object obj, string fieldName)
         {
             if (obj == null) return default(TResult);
             Type ltType = obj.GetType();
-            FieldInfo lfiFieldInfo = ltType.GetField(fieldName, System.Reflection.BindingFlags.GetField | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            FieldInfo lfiFieldInfo = ltType.GetField(fieldName, System.Reflection.BindingFlags.GetField | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
             if (lfiFieldInfo != null)
-                return (TResult)lfiFieldInfo.GetValue(obj);
+                return (TResult)lfiFieldInfo.GetValue(obj)!;
             else
                 throw new InvalidOperationException(string.Format("Instance field '{0}' could not be located in object of type '{1}'.", fieldName, obj.GetType().FullName));
         }

@@ -1,25 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="OneBot-CommandRoute" Version="3.1.0" />
+    <PackageReference Include="PinYinConverterCore" Version="1.0.2" />
     <PackageReference Include="RestSharp" Version="107.1.2" />
     <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Attributes\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="ChnCharInfo">
-      <HintPath>Dependences\Simplified Chinese Pin-Yin Conversion Library\ChnCharInfo.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

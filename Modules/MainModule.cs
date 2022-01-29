@@ -34,7 +34,7 @@ namespace Intallk.Modules
         {
             public long Group { get; set; }
             public long QQ { get; set; }
-            public GroupMessageHookCallback Callback { get; set; }
+            public GroupMessageHookCallback? Callback { get; set; }
         }
         public static List<GroupMessageHook> hooks = new List<GroupMessageHook>();
         private Random random = new Random(Guid.NewGuid().GetHashCode());
@@ -72,7 +72,7 @@ namespace Intallk.Modules
                 {
                     if(hook.QQ == e.Sender.Id && hook.Group == e.SourceGroup.Id)
                     {
-                        if (hook.Callback(e))
+                        if (hook.Callback?.Invoke(e) is true)
                         {
                             hook.QQ = 0;
                             needClear = true;

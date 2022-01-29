@@ -15,13 +15,12 @@ namespace Intallk.Modules
     internal class GIFProcess : IOneBotController
     {
         [Command("gifextract")]
-        public void GIFExtract(GroupMessageEventArgs e)
+        public async void GIFExtract(GroupMessageEventArgs e)
         {
-            e.Reply(SoraSegment.Reply(e.Message.MessageId) + "黑嘴准备好啦，快把gif交出来~如果你不发图片，黑嘴就不理你了哦！");
+            await e.Reply(SoraSegment.Reply(e.Message.MessageId) + "黑嘴准备好啦，快把gif交出来~如果你不发图片，黑嘴就不理你了哦！");
             MainModule.RegisterHook(e.Sender.Id, e.SourceGroup.Id, GIFExtractCallBack);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:验证平台兼容性", Justification = "<挂起>")]
         public bool GIFExtractCallBack(GroupMessageEventArgs e)
         {
             bool hasImage = false;
@@ -34,7 +33,7 @@ namespace Intallk.Modules
                     ImageSegment img = (ImageSegment)msg.Data;
                     string file = IntallkConfig.DataPath + "\\Images\\" + img.ImgFile + ".png";
                     if (!System.IO.File.Exists(file))
-                        System.IO.File.WriteAllBytes(file, new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result);
+                        System.IO.File.WriteAllBytes(file, new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result!);
                     Bitmap bitmap = (Bitmap)Bitmap.FromFile(file);
                     FrameDimension fd = new FrameDimension(bitmap.FrameDimensionsList[0]);
                     Bitmap convert = new Bitmap(bitmap.Width, bitmap.Height * bitmap.GetFrameCount(fd));
