@@ -589,17 +589,17 @@ public class PaintingProcessing
                     if (adjust != PaintAdjustWriteMode.None)
                     {
                         Font ffont = new(font, fsize, fstyle);
-                        SizeF size = g.MeasureString(s, ffont);
-                        float xsize = fsize * (w / size.Width * 7.5f / 1.8f);
-                        float ysize = fsize * (h / size.Height * 7.5f / 1.8f);
+                        SizeF size = g.MeasureString(s, ffont); 
+                        float xsize = fsize * (w / ((size.Width / 7.5f * 1.8f) / (bitmap.HorizontalResolution / 330f)));
+                        float ysize = fsize * (h / ((size.Height / 7.5f * 1.8f) / (bitmap.VerticalResolution / 330f)));
                         if (adjust == PaintAdjustWriteMode.XFirst) fsize = xsize;
                         if (adjust == PaintAdjustWriteMode.YFirst) fsize = ysize;
                         if (adjust == PaintAdjustWriteMode.Auto) fsize = (xsize < ysize) ? xsize : ysize;
                         ffont.Dispose();
                         ffont = new(font, fsize, fstyle);
                         size = g.MeasureString(s, ffont);
-                        if (align[1] == PaintAlign.Center) y += h / 2 - size.Height / 7.5f * 1.8f / 2;
-                        if (align[1] == PaintAlign.Right) y += h - size.Height / 7.5f * 1.8f;
+                        if (align[1] == PaintAlign.Center) y += h / 2 - ((size.Height / 7.5f * 1.8f) / (bitmap.HorizontalResolution / 330f)) / 2;
+                        if (align[1] == PaintAlign.Right) y += h - ((size.Height / 7.5f * 1.8f) / (bitmap.VerticalResolution / 330f));
                         if (align[1] != PaintAlign.Left) h = size.Height / 7.5f * 1.8f;
                         ffont.Dispose();
                     }
