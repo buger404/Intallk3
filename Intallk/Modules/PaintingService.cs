@@ -465,7 +465,7 @@ public class PaintingProcessing
 {
     public PaintFile Source;
     public PaintingProcessing(PaintFile src) => Source = src;
-    public void Paint(string path, GroupMessageEventArgs e, User qq, object[] args)
+    public async void Paint(string path, GroupMessageEventArgs e, User qq, object[] args)
     {
         Bitmap bitmap;
         List<PaintCommands> cmd = Source.Commands!;
@@ -567,8 +567,8 @@ public class PaintingProcessing
                         }
                         if (qq != null)
                         {
-                            UserInfo info = qq.GetUserInfo().Result.userInfo;
-                            GroupMemberInfo ginfo = e.SourceGroup.GetGroupMemberInfo(qq.Id).Result.memberInfo;
+                            UserInfo info = (await qq.GetUserInfo()).userInfo;
+                            GroupMemberInfo ginfo = (await e.SourceGroup.GetGroupMemberInfo(qq.Id)).memberInfo;
                             s = s.Replace("{QQ名称}", MainModule.GetQQName(e, qq.Id));
                             s = s.Replace("{QQ号}", qq.Id.ToString());
                             s = s.Replace("{QQ年龄}", ginfo.Age.ToString());
@@ -642,6 +642,7 @@ public class PaintingProcessing
     public Color ParseColor(string str)
     {
         string[] p = str.Split(',');
+        if (p.Length == 1) return Color.FromName(str);
         return Color.FromArgb((int)(float.Parse(p[0]) * 255), int.Parse(p[1]), int.Parse(p[2]), int.Parse(p[3]));
     }
     static void DownLoad(string url, string path) => File.WriteAllBytes(path, new RestClient(url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result);

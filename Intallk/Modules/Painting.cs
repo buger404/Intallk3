@@ -24,7 +24,7 @@ class Painting : IOneBotController
     public void Draw(GroupMessageEventArgs e, string template, User qq, [ParsedArguments] object[] args)
     {
         int pi = -1;
-        if (!int.TryParse(template, out pi)) paints.FindIndex(m => m.Source.Name == template); else pi--;
+        if (!int.TryParse(template, out pi)) pi = paints.FindIndex(m => m.Source.Name == template); else pi--;
         if (pi < 0 || pi >= paints.Count)
         {
             e.Reply(SoraSegment.Reply(e.Message.MessageId) + "什么嘛，黑嘴...可不是因为不会画这个才不帮你画的呢！");
@@ -46,7 +46,7 @@ class Painting : IOneBotController
     public void DrawHelp(GroupMessageEventArgs e, string template)
     {
         int pi = -1;
-        if (!int.TryParse(template, out pi)) paints.FindIndex(m => m.Source.Name == template); else pi--;
+        if (!int.TryParse(template, out pi)) pi = paints.FindIndex(m => m.Source.Name == template); else pi--;
         if (pi < 0 || pi >= paints.Count)
         {
             e.Reply(SoraSegment.Reply(e.Message.MessageId) + "这是什么绘图模板呀，黑嘴找不到呢。");

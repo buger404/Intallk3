@@ -103,25 +103,18 @@ public class MainModule : IOneBotController
         {
             var e = (PrivateMessageEventArgs)context.SoraEventArgs;
             bool needClear = false;
-            try
+            foreach (var hook2 in hooks2)
             {
-                foreach (var hook in hooks2)
+                if (hook2.QQ == e.Sender.Id)
                 {
-                    if (hook.QQ == e.Sender.Id)
+                    if (hook2.Callback!(e, hook2))
                     {
-                        if (hook.Callback!(e, hook))
-                        {
-                            hook.QQ = 0;
-                            needClear = true;
-                        }
+                        hook2.QQ = 0;
+                        needClear = true;
                     }
                 }
-                if (needClear) hooks2.RemoveAll(m => m.QQ == 0);
             }
-            catch
-            {
-
-            }
+            if (needClear) hooks2.RemoveAll(m => m.QQ == 0);
             return 0;
         };
     }
