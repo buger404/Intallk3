@@ -2,6 +2,8 @@
 
 本项目基于**OneBot - Command Route Project**。
 
+**Intallk.Resources**中的文件应放置在**%AppData%\Intallk\Resources**中。
+
 # 黑嘴能做些什么
 
 - [x] 不要喊我！！！

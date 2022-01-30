@@ -1,7 +1,13 @@
 ﻿
+using Intallk.Config;
 using Intallk.Models;
-
+using Intallk.Modules;
+using RestSharp;
+using Sora.Entities;
+using Sora.Entities.Info;
+using Sora.EventArgs.SoraEvent;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 
 public class PaintingCompiler
@@ -62,14 +68,14 @@ public class PaintingCompiler
                 ThrowException("[ImageUploading.InvalidFileName]设定的图片文件名存在非法字符。");
             }
             piclist.Add(resolve);
-            cmd = new PaintCommands(PaintCommandType.SetCanvas, 0, resolve);
+            cmd = new PaintCommands(PaintCommandType.SetCanvas, 0f, resolve);
         }
         resolve = GetFront(resolve, "的尺寸");
         if (resolve != "")
         {
             float x = 0, y = 0;
             ParseSize(resolve, out x, out y);
-            cmd = new PaintCommands(PaintCommandType.SetCanvas, 1, x, y);
+            cmd = new PaintCommands(PaintCommandType.SetCanvas, 1f, (int)x, (int)y);
         }
         paintfile.Commands.Add(cmd);
         bool solved = false;
@@ -96,9 +102,10 @@ public class PaintingCompiler
                         for (int j = 0; j < t.Length; j++)
                         {
                             if (j % 2 == 1) param.Add(t[j]);
+                            if(param.Count > 15) ThrowException("[Standard.ParameterOverflow]请求的参数个数过多（0~15个）。");
                         }
                     }
-                    cmd = new PaintCommands(PaintCommandType.Write, x, y, 0, 0, resolve, 18, FontStyle.Regular, Color.FromArgb(255, 0, 0, 0), PaintAdjustWriteMode.None, PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.Write, x, y, 0f, 0f, resolve, 18f, FontStyle.Regular, Color.FromArgb(255, 0, 0, 0), PaintAdjustWriteMode.None, false, "", 1f, PaintAlign.Left, PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].Contains("绘制图片"))
@@ -116,9 +123,9 @@ public class PaintingCompiler
                     {
                         ThrowException("[ImageUploading.InvalidFileName]设定的图片文件名存在非法字符。");
                     }
-                    if (!piclist.Contains(resolve)) piclist.Add(resolve);
-
-                    cmd = new PaintCommands(PaintCommandType.DrawImage, x, y, 0, 0, resolve, PaintAlign.Left);
+                    if (!piclist.Contains(resolve) && resolve != "QQ头像") piclist.Add(resolve);
+                    if (resolve == "QQ头像") paintfile.NeedQQParameter = true;
+                    cmd = new PaintCommands(PaintCommandType.DrawImage, x, y, 0f, 0f, resolve, PaintAlign.Left, PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].Contains("填充矩形"))
@@ -128,7 +135,7 @@ public class PaintingCompiler
                     if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
                     float x = 0, y = 0;
                     ParsePos(resolve, out x, out y);
-                    cmd = new PaintCommands(PaintCommandType.FillRectangle, x, y, 16, 16, Color.FromArgb(255, 0, 0, 0), PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.FillRectangle, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), PaintAlign.Left, PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].Contains("填充椭圆"))
@@ -138,7 +145,7 @@ public class PaintingCompiler
                     if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
                     float x = 0, y = 0;
                     ParsePos(resolve, out x, out y);
-                    cmd = new PaintCommands(PaintCommandType.FillEllipse, x, y, 16, 16, Color.FromArgb(255, 0, 0, 0), PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.FillEllipse, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), PaintAlign.Left, PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].Contains("描边矩形"))
@@ -148,7 +155,7 @@ public class PaintingCompiler
                     if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
                     float x = 0, y = 0;
                     ParsePos(resolve, out x, out y);
-                    cmd = new PaintCommands(PaintCommandType.DrawRectangle, x, y, 16, 16, Color.FromArgb(255, 0, 0, 0), PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.DrawRectangle, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), 1f, PaintAlign.Left, PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].Contains("描边椭圆"))
@@ -158,7 +165,7 @@ public class PaintingCompiler
                     if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
                     float x = 0, y = 0;
                     ParsePos(resolve, out x, out y);
-                    cmd = new PaintCommands(PaintCommandType.DrawEllipse, x, y, 16, 16, Color.FromArgb(255, 0, 0, 0), PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.DrawEllipse, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), 1f, PaintAlign.Left, PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].StartsWith("大小为"))
@@ -236,48 +243,115 @@ public class PaintingCompiler
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    cmd.Args[7] = PaintAdjustWriteMode.Auto;
+                    if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义文本绘制尺寸的情况下自动调整大小。");
+                    cmd.Args[8] = PaintAdjustWriteMode.Auto;
                 }
                 if (sen[i].StartsWith("适应宽度"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    cmd.Args[7] = PaintAdjustWriteMode.XFirst;
+                    if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义文本绘制尺寸的情况下自动调整大小。");
+                    cmd.Args[8] = PaintAdjustWriteMode.XFirst;
                 }
                 if (sen[i].StartsWith("适应高度"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    cmd.Args[7] = PaintAdjustWriteMode.YFirst;
+                    if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义文本绘制尺寸的情况下自动调整大小。");
+                    cmd.Args[8] = PaintAdjustWriteMode.YFirst;
+                }
+                if (sen[i].StartsWith("描边"))
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
+                    cmd.Args[9] = true;
+                }
+                if (sen[i].StartsWith("字体为"))
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
+                    resolve = GetBack("为", sen[i]).Replace("_"," ");
+                    try
+                    {
+                        FontFamily font = new(resolve);
+                    }
+                    catch
+                    {
+                        ThrowException("[Writer.UnsupportedFont]指定的字体不受支持。");
+                    }
+                    cmd.Args[10] = resolve;
+                }
+                if (sen[i].StartsWith("粗为"))
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    if (cmd.CommandType != PaintCommandType.DrawEllipse && cmd.CommandType != PaintCommandType.DrawRectangle && cmd.CommandType != PaintCommandType.Write) 
+                        ThrowException("[Standard.InvalidParameter]该参数只对描边命令有效。");
+                    if (cmd.CommandType == PaintCommandType.Write && !(bool)cmd.Args[9])
+                        ThrowException("[Writer.InvalidParameter]要指定描边线条粗细之前，要先将文本书写定义为描边。");
+                    resolve = GetBack("为", sen[i]);
+                    float b = 0;
+                    if (!float.TryParse(resolve, out b)) ThrowException("[WidthParser.InvalidValue]提供的线条粗细值是无效的。");
+                    if (b < 1 || b > 100) ThrowException("[WidthParser.InvalidValue]提供的线条粗细值超出了规定范围（1~100）。");
+                    if (cmd.CommandType != PaintCommandType.Write) cmd.Args[5] = b; else cmd.Args[11] = b;
                 }
                 if (sen[i] == "向左对齐")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[cmd.Args.Length - 1] = PaintAlign.Left;
+                    cmd.Args[^1] = PaintAlign.Left; cmd.Args[^2] = PaintAlign.Left;
                 }
                 if (sen[i] == "向右对齐")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[cmd.Args.Length - 1] = PaintAlign.Right;
+                    cmd.Args[^1] = PaintAlign.Right; cmd.Args[^2] = PaintAlign.Right;
                 }
                 if (sen[i] == "居中")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[cmd.Args.Length - 1] = PaintAlign.Center;
+                    cmd.Args[^1] = PaintAlign.Center; cmd.Args[^2] = PaintAlign.Center;
+                }
+                if (sen[i] == "横向向左对齐")
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    cmd.Args[^2] = PaintAlign.Left;
+                }
+                if (sen[i] == "横向向右对齐")
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    cmd.Args[^2] = PaintAlign.Right;
+                }
+                if (sen[i] == "横向居中")
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    cmd.Args[^2] = PaintAlign.Center;
+                }
+                if (sen[i] == "纵向向左对齐")
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    cmd.Args[^1] = PaintAlign.Left;
+                }
+                if (sen[i] == "纵向向右对齐")
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    cmd.Args[^1] = PaintAlign.Right;
+                }
+                if (sen[i] == "纵向居中")
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    cmd.Args[^1] = PaintAlign.Center;
                 }
             }
             if (!solved) ThrowException("[Standard.UnknownGrammer]无法识别语义。");
             paintfile.Commands.Add(cmd);
         }
+        if (src.Contains("{QQ")) paintfile.NeedQQParameter = true;
         paintfile.ParameterDescription = "";
+        paintfile.Parameters = param;
         foreach (string s in param)
         {
-            paintfile.ParameterDescription += s + "，";
+            paintfile.ParameterDescription += $"<{s}> ";
         }
-        if (paintfile.ParameterDescription.Length > 0)
-            paintfile.ParameterDescription!.Remove(paintfile.ParameterDescription.Length - 1, 1);
-        else
-            paintfile.ParameterDescription = "不需要任何参数。";
+        if (paintfile.ParameterDescription.Length == 0) paintfile.ParameterDescription = "不需要任何参数。";
+        if (paintfile.NeedQQParameter) paintfile.ParameterDescription = "<QQ号/艾特对方> " + paintfile.ParameterDescription;
         return paintfile;
     }
     public void ThrowException(string message) => throw new Exception($"第{li + 1}句中存在错误，黑嘴无法为您编译绘图脚本。\n" + lines![li] + "\n" + message);
@@ -385,4 +459,190 @@ public class PaintingCompiler
         if (temp.Length == 1) return "";
         return temp[1];
     }
+}
+
+public class PaintingProcessing
+{
+    public PaintFile Source;
+    public PaintingProcessing(PaintFile src) => Source = src;
+    public void Paint(string path, GroupMessageEventArgs e, User qq, object[] args)
+    {
+        Bitmap bitmap;
+        List<PaintCommands> cmd = Source.Commands!;
+        string dataPath = IntallkConfig.DataPath + "\\DrawingScript\\" + Source.Name + "\\";
+        if ((double)cmd[0].Args[0] == 0) bitmap = new(dataPath + (string)cmd[0].Args[1]); else bitmap = new((int)cmd[0].Args[1], (int)cmd[0].Args[2]);
+        Graphics g = Graphics.FromImage(bitmap);
+        SolidBrush brush = new(Color.Transparent);
+        Pen pen = new(Color.Transparent);
+        FontFamily font = new("HarmonyOS Sans SC Medium");
+        StringFormat stf = new();
+        Bitmap image = null!;
+        PaintAlign[] align = new PaintAlign[2];
+        float x, y, w, h;
+
+        for (int i = 1;i < cmd.Count; i++)
+        {
+            x = (float)(double)cmd[i].Args[0]; y = (float)(double)cmd[i].Args[1];
+            w = (float)(double)cmd[i].Args[2]; h = (float)(double)cmd[i].Args[3];
+            align[0] = (PaintAlign)(long)cmd[i].Args[^2];
+            align[1] = (PaintAlign)(long)cmd[i].Args[^1];
+            if (x < 1) x *= bitmap.Width;
+            if (y < 1) y *= bitmap.Height;
+            if (w < 1) w *= bitmap.Width;
+            if (h < 1) h *= bitmap.Height;
+            if (cmd[i].CommandType == PaintCommandType.DrawImage)
+            {
+                if((string)cmd[i].Args[4] == "QQ头像")
+                {
+                    if(qq == null)
+                    {
+                        image = new(IntallkConfig.DataPath + "\\Resources\\defaultQQFace.png");
+                    }
+                    else
+                    {
+                        string qqface = IntallkConfig.DataPath + "\\Resources\\face_" + qq!.Id.ToString() + ".jpg";
+                        DownLoad($"http://q.qlogo.cn/headimg_dl?dst_uin={qq!.Id}&spec=160", qqface);
+                        image = new(qqface);
+                    }
+                }
+                else
+                {
+                    image = new((string)cmd[i].Args[4]);
+                }
+                if (w == 0) w = image.Width;
+                if (h == 0) h = image.Height;
+            }
+            if (cmd[i].CommandType != PaintCommandType.Write)
+            {
+                if (align[0] == PaintAlign.Center) x -= w / 2;
+                if (align[1] == PaintAlign.Center) y -= h / 2;
+            }
+            if (align[0] == PaintAlign.Right) x -= w;
+            if (align[1] == PaintAlign.Right) y -= h;
+            switch (cmd[i].CommandType)
+            {
+                case PaintCommandType.FillRectangle:
+                    brush.Color = ParseColor((string)cmd[i].Args[4]);
+                    g.FillRectangle(brush, new((int)x, (int)y, (int)w, (int)h));
+                    break;
+                case PaintCommandType.FillEllipse:
+                    brush.Color = ParseColor((string)cmd[i].Args[4]);
+                    g.FillEllipse(brush, new((int)x, (int)y, (int)w, (int)h));
+                    break;
+                case PaintCommandType.DrawRectangle:
+                    pen.Color = ParseColor((string)cmd[i].Args[4]);
+                    pen.Width = (float)(double)cmd[i].Args[5];
+                    g.DrawRectangle(pen, new((int)x, (int)y, (int)w, (int)h));
+                    break;
+                case PaintCommandType.DrawEllipse:
+                    pen.Color = ParseColor((string)cmd[i].Args[4]);
+                    pen.Width = (float)(double)cmd[i].Args[5];
+                    g.DrawEllipse(pen, new((int)x, (int)y, (int)w, (int)h));
+                    break;
+                case PaintCommandType.DrawImage:
+                    g.DrawImage(image!, new Rectangle((int)x, (int)y, (int)w, (int)h));
+                    break;
+                case PaintCommandType.Write:
+                    float fsize = (float)(double)cmd[i].Args[5]; 
+                    FontStyle fstyle = (FontStyle)(long)cmd[i].Args[6];
+                    var gp = new GraphicsPath(FillMode.Winding);
+                    switch (align[0])
+                    {
+                        case PaintAlign.Left: stf.Alignment = StringAlignment.Near; break;
+                        case PaintAlign.Center: stf.Alignment = StringAlignment.Center; break;
+                        case PaintAlign.Right: stf.Alignment = StringAlignment.Far; break;
+                    }
+                    string s = (string)cmd[i].Args[4];
+                    string fontname = (string)cmd[i].Args[10];
+                    if(fontname != "" && fontname != font.Name)
+                    {
+                        font.Dispose();
+                        font = new(fontname);
+                    }
+                    if(args != null)
+                    {
+                        for (int j = 0; j < Source.Parameters!.Count; j++)
+                        {
+                            s = s.Replace("{" + Source.Parameters[j] + "}", (string)args[j + 2 + (qq != null ? 1 : 0)]);
+                        }
+                        if (qq != null)
+                        {
+                            UserInfo info = qq.GetUserInfo().Result.userInfo;
+                            GroupMemberInfo ginfo = e.SourceGroup.GetGroupMemberInfo(qq.Id).Result.memberInfo;
+                            s = s.Replace("{QQ名称}", MainModule.GetQQName(e, qq.Id));
+                            s = s.Replace("{QQ号}", qq.Id.ToString());
+                            s = s.Replace("{QQ年龄}", ginfo.Age.ToString());
+                            s = s.Replace("{QQ等级}", ginfo.Level.ToString());
+                            s = s.Replace("{QQ地区}", ginfo.Area.ToString());
+                            s = s.Replace("{QQ名片}", ginfo.Card.ToString());
+                            s = s.Replace("{QQ昵称}", ginfo.Nick.ToString());
+                            s = s.Replace("{QQ禁言截止时间}", ginfo.ShutUpTime.ToString());
+                            s = s.Replace("{QQ头衔}", ginfo.Title.ToString());
+                            s = s.Replace("{QQ性别}", ginfo.Sex.ToString());
+                            s = s.Replace("{QQ入群时间}", ginfo.JoinTime.ToString());
+                            s = s.Replace("{QQ上次发言时间}", ginfo.LastSentTime.ToString());
+                            s = s.Replace("{QQ群角色}", ginfo.Role.ToString());
+                            s = s.Replace("{QQ登录天数}", info.LoginDays.ToString());
+                        }
+                    }
+                    PaintAdjustWriteMode adjust = (PaintAdjustWriteMode)(long)cmd[i].Args[8];
+                    if (adjust != PaintAdjustWriteMode.None)
+                    {
+                        Font ffont = new(font, fsize, fstyle);
+                        SizeF size = g.MeasureString(s, ffont);
+                        float xsize = fsize * (w / size.Width * 7.5f / 1.8f);
+                        float ysize = fsize * (h / size.Height * 7.5f / 1.8f);
+                        if (adjust == PaintAdjustWriteMode.XFirst) fsize = xsize;
+                        if (adjust == PaintAdjustWriteMode.YFirst) fsize = ysize;
+                        if (adjust == PaintAdjustWriteMode.Auto) fsize = (xsize < ysize) ? xsize : ysize;
+                        ffont.Dispose();
+                        ffont = new(font, fsize, fstyle);
+                        size = g.MeasureString(s, ffont);
+                        if (align[1] == PaintAlign.Center) y += h / 2 - size.Height / 7.5f * 1.8f / 2;
+                        if (align[1] == PaintAlign.Right) y += h - size.Height / 7.5f * 1.8f;
+                        if (align[1] != PaintAlign.Left) h = size.Height / 7.5f * 1.8f;
+                        ffont.Dispose();
+                    }
+                    if (w == 0 && h == 0)
+                    {
+                        gp.AddString(s, font, (int)fstyle, fsize, new Point((int)x, (int)y), stf);
+                    }
+                    else
+                    {
+                        gp.AddString(s, font, (int)fstyle, fsize, new Rectangle((int)x, (int)y, (int)w, (int)h), stf);
+                    }
+                    if ((bool)cmd[i].Args[9])
+                    {
+                        pen.Color = ParseColor((string)cmd[i].Args[7]);
+                        pen.Width = (float)cmd[i].Args[11];
+                        g.DrawPath(pen, gp);
+                    }
+                    else
+                    {
+                        brush.Color = ParseColor((string)cmd[i].Args[7]);
+                        g.FillPath(brush, gp);
+                    }
+                    gp.Dispose();
+                    break;
+            }
+            if(image != null)
+            {
+                image.Dispose();
+                image = null!;
+            }
+        }
+        bitmap.Save(path);
+        font.Dispose();
+        stf.Dispose();
+        brush.Dispose();
+        pen.Dispose();
+        g.Dispose();
+        bitmap.Dispose();
+    }
+    public Color ParseColor(string str)
+    {
+        string[] p = str.Split(',');
+        return Color.FromArgb((int)(float.Parse(p[0]) * 255), int.Parse(p[1]), int.Parse(p[2]), int.Parse(p[3]));
+    }
+    static void DownLoad(string url, string path) => File.WriteAllBytes(path, new RestClient(url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result);
 }
