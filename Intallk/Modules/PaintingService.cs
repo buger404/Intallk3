@@ -25,7 +25,7 @@ public class PaintingCompiler
         };
         // 保护字符串
         src = src.Replace("\\：", "<protected>").Replace("\\:", "<protected>");
-        string[] str = src.Split(new char[] { '：', ':' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] str = src.Split('\'', StringSplitOptions.RemoveEmptyEntries);
         var strconst = new List<string>();
         var param = new List<string>();
         piclist = new List<string>();
@@ -34,19 +34,12 @@ public class PaintingCompiler
         {
             if (i % 2 == 1)
             {
-                string[] t = str[i].Split("'");
-                if (t.Length == 1)
-                {
-                    lines = new string[] { str[i] }; li = 0;
-                    ThrowException("[Standard.StringGrammer]检测到有字符串不被引号“'”包括。");
-                }
-                strconst.Add(t[1].Replace("<protected>", "："));
-                src += t[2];
+                strconst.Add(str[i].Replace("<protected>", "："));
+                src += (strconst.Count - 1).ToString();
             }
             else
             {
                 src += str[i];
-                if (i < str.Length - 1) src += "：" + strconst.Count;
             }
         }
         lines = src.Split('。', StringSplitOptions.RemoveEmptyEntries);
@@ -70,6 +63,7 @@ public class PaintingCompiler
             piclist.Add(resolve);
             cmd = new PaintCommands(PaintCommandType.SetCanvas, 0f, resolve);
         }
+        resolve = GetCenter("以", lines[0], "创建画布");
         resolve = GetFront(resolve, "的尺寸");
         if (resolve != "")
         {
@@ -101,8 +95,11 @@ public class PaintingCompiler
                         t = resolve.Replace('{', '}').Split('}');
                         for (int j = 0; j < t.Length; j++)
                         {
-                            if (j % 2 == 1) param.Add(t[j]);
-                            if(param.Count > 15) ThrowException("[Standard.ParameterOverflow]请求的参数个数过多（0~15个）。");
+                            if (!t[j].StartsWith("QQ"))
+                            {
+                                if (j % 2 == 1) param.Add(t[j]);
+                                if (param.Count > 15) ThrowException("[Standard.ParameterOverflow]请求的参数个数过多（0~15个）。");
+                            }
                         }
                     }
                     cmd = new PaintCommands(PaintCommandType.Write, x, y, 0f, 0f, resolve, 18f, FontStyle.Regular, Color.FromArgb(255, 0, 0, 0), PaintAdjustWriteMode.None, false, "", 1f, PaintAlign.Left, PaintAlign.Left);
@@ -117,7 +114,7 @@ public class PaintingCompiler
                     ParsePos(resolve, out x, out y);
                     string[] t = sen[i].Split('：');
                     if (t.Length == 1) ThrowException("[ImagePainter.FileMissing]应指定要绘制的图片。");
-                    resolve = t[1];
+                    resolve = strconst[int.Parse(t[1])];
                     if (resolve.Contains('*') || resolve.Contains('\\') || resolve.Contains('/') || resolve.Contains('|') || resolve.Contains('?')
                         || resolve.Contains(':') || resolve.Contains('\"') || resolve.Contains('<') || resolve.Contains('>'))
                     {
@@ -470,7 +467,7 @@ public class PaintingProcessing
         Bitmap bitmap;
         List<PaintCommands> cmd = Source.Commands!;
         string dataPath = IntallkConfig.DataPath + "\\DrawingScript\\" + Source.Name + "\\";
-        if ((double)cmd[0].Args[0] == 0) bitmap = new(dataPath + (string)cmd[0].Args[1]); else bitmap = new((int)cmd[0].Args[1], (int)cmd[0].Args[2]);
+        if ((double)cmd[0].Args[0] == 0) bitmap = new(dataPath + (string)cmd[0].Args[1]); else bitmap = new((int)(long)cmd[0].Args[1], (int)(long)cmd[0].Args[2]);
         Graphics g = Graphics.FromImage(bitmap);
         SolidBrush brush = new(Color.Transparent);
         Pen pen = new(Color.Transparent);
@@ -501,13 +498,16 @@ public class PaintingProcessing
                     else
                     {
                         string qqface = IntallkConfig.DataPath + "\\Resources\\face_" + qq!.Id.ToString() + ".jpg";
-                        DownLoad($"http://q.qlogo.cn/headimg_dl?dst_uin={qq!.Id}&spec=160", qqface);
+                        if (!File.Exists(qqface))
+                        {
+                            DownLoad("http://q.qlogo.cn/headimg_dl?dst_uin=" + qq!.Id + "&spec=160", qqface);
+                        }
                         image = new(qqface);
                     }
                 }
                 else
                 {
-                    image = new((string)cmd[i].Args[4]);
+                    image = new(dataPath + (string)cmd[i].Args[4]);
                 }
                 if (w == 0) w = image.Width;
                 if (h == 0) h = image.Height;
@@ -572,12 +572,12 @@ public class PaintingProcessing
                             s = s.Replace("{QQ名称}", MainModule.GetQQName(e, qq.Id));
                             s = s.Replace("{QQ号}", qq.Id.ToString());
                             s = s.Replace("{QQ年龄}", ginfo.Age.ToString());
-                            s = s.Replace("{QQ等级}", ginfo.Level.ToString());
-                            s = s.Replace("{QQ地区}", ginfo.Area.ToString());
-                            s = s.Replace("{QQ名片}", ginfo.Card.ToString());
-                            s = s.Replace("{QQ昵称}", ginfo.Nick.ToString());
+                            s = s.Replace("{QQ等级}", ginfo.Level == null ? "？" : ginfo.Level);
+                            s = s.Replace("{QQ地区}", ginfo.Area == null ? "？" : ginfo.Area);
+                            s = s.Replace("{QQ名片}", ginfo.Card);
+                            s = s.Replace("{QQ昵称}", ginfo.Nick);
                             s = s.Replace("{QQ禁言截止时间}", ginfo.ShutUpTime.ToString());
-                            s = s.Replace("{QQ头衔}", ginfo.Title.ToString());
+                            s = s.Replace("{QQ头衔}", ginfo.Title == null ? "无" : ginfo.Title);
                             s = s.Replace("{QQ性别}", ginfo.Sex.ToString());
                             s = s.Replace("{QQ入群时间}", ginfo.JoinTime.ToString());
                             s = s.Replace("{QQ上次发言时间}", ginfo.LastSentTime.ToString());
@@ -645,5 +645,9 @@ public class PaintingProcessing
         if (p.Length == 1) return Color.FromName(str);
         return Color.FromArgb((int)(float.Parse(p[0]) * 255), int.Parse(p[1]), int.Parse(p[2]), int.Parse(p[3]));
     }
-    static void DownLoad(string url, string path) => File.WriteAllBytes(path, new RestClient(url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result);
+    static async void DownLoad(string url, string path) 
+    {
+        byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(url, Method.Get));
+        if (data != null) File.WriteAllBytes(path, data!); else throw new Exception("下载失败。");
+    }
 }

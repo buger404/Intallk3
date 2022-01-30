@@ -36,12 +36,12 @@ class Nbnhhsh : IOneBotController
         var response = await client.ExecuteAsync<List<SXRespond>>(request);
         if (!response.IsSuccessful)
         {
-            await e.Reply(SoraSegment.Reply(e.Message.MessageId) + $"黑嘴试图气死你({response.ErrorMessage})。");
+            await e.Reply(e.Sender.At() + $"黑嘴试图气死你({response.ErrorMessage})。");
             return;
         }
         if (response.Data == null)
         {
-            await e.Reply(SoraSegment.Reply(e.Message.MessageId) + "咦，这是什么的中文缩写呀，查不到呢。");
+            await e.Reply(e.Sender.At() + "咦，这是什么的中文缩写呀，查不到呢。");
         }
         else
         {
@@ -59,11 +59,11 @@ class Nbnhhsh : IOneBotController
             }
             if (hasResult)
             {
-                await e.Reply(SoraSegment.Reply(e.Message.MessageId) + trans.ToString());
+                await e.Reply(e.Sender.At() + trans.ToString());
             }
             else
             {
-                await e.Reply(SoraSegment.Reply(e.Message.MessageId) + "咦，这是什么的中文缩写呀，查不到呢。");
+                await e.Reply(e.Sender.At() + "咦，这是什么的中文缩写呀，查不到呢。");
             }
 
         }
