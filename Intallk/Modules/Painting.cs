@@ -21,25 +21,25 @@ class Painting : IOneBotController
 {
     public static List<PaintingProcessing> paints = new List<PaintingProcessing>();
     [Command("draw <template> <qq> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
-    public void Draw(GroupMessageEventArgs e, string template, User qq, [ParsedArguments] object[] args)
+    public async void Draw(GroupMessageEventArgs e, string template, User qq, [ParsedArguments] object[] args)
     {
         int pi = -1;
         if (!int.TryParse(template, out pi)) pi = paints.FindIndex(m => m.Source.Name == template); else pi--;
         if (pi < 0 || pi >= paints.Count)
         {
-            e.Reply(e.Sender.At() + "什么嘛，黑嘴...可不是因为不会画这个才不帮你画的呢！");
-            e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\angry.jpg"));
+            await e.Reply(e.Sender.At() + "什么嘛，黑嘴...可不是因为不会画这个才不帮你画的呢！");
+            await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\angry.jpg"));
             return;
         }
         if ((paints[pi].Source.NeedQQParameter && qq == null) || 
             args.Length != paints[pi].Source.Parameters!.Count + 2 + (paints[pi].Source.NeedQQParameter ? 1 : 0))
         {
-            e.Reply(e.Sender.At() + "绘制指令有误噢，您可以发送“.draw help " + template + "”取得帮助。");
+            await e.Reply(e.Sender.At() + "绘制指令有误噢，您可以发送“.draw help " + template + "”取得帮助。");
             return;
         }
-        string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd") + ".png";
-        paints[pi].Paint(outfile, e, qq, args);
-        e.Reply(SoraSegment.Image(outfile, false));
+        string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
+        await paints[pi].Paint(outfile, e, qq, args);
+        await e.Reply(SoraSegment.Image(outfile, false));
     }
     [Command("draw <template> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public void Draw(GroupMessageEventArgs e, string template, [ParsedArguments] object[] args) => Draw(e, template, null!, args);
@@ -176,7 +176,7 @@ class Painting : IOneBotController
             e.Reply(ex.Message);
         }
     }
-    public bool DrawImageUploadCallBack(PrivateMessageEventArgs e, MainModule.PrivateMessageHook hook)
+    public async Task<bool> DrawImageUploadCallBack(PrivateMessageEventArgs e, MainModule.PrivateMessageHook hook)
     {
         foreach (SoraSegment msg in e.Message.MessageBody)
         {
@@ -185,7 +185,7 @@ class Painting : IOneBotController
                 var img = (ImageSegment)msg.Data;
                 string file = IntallkConfig.DataPath + "\\DrawingScript\\" + ((List<string>)hook.Data!)[^1] + "\\" + ((List<string>)hook.Data)[0];
                 if (!File.Exists(file))
-                    File.WriteAllBytes(file, new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result);
+                    File.WriteAllBytes(file, await new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)));
 
                 ((List<string>)hook.Data).RemoveAt(0);
                 if (((List<string>)hook.Data).Count == 1) break;
@@ -194,32 +194,32 @@ class Painting : IOneBotController
         if (((List<string>)hook.Data!).Count == 1)
         {
             string template = ((List<string>)hook.Data!)[^1];
-            string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd") + ".png";
+            string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
             string code = File.ReadAllText(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json");
             JsonSerializer serializer = new();
             PaintFile paintfile = (PaintFile)serializer.Deserialize(new StringReader(code), typeof(PaintFile))!;
             PaintingProcessing painter = new(paintfile);
-            painter.Paint(outfile, null!, null!, null!);
-            e.Reply("感谢哥哥的配合~以下是根据您提交的模板绘制的~\n" + 
+            await painter.Paint(outfile, null!, null!, null!);
+            await e.Reply("感谢哥哥的配合~以下是根据您提交的模板绘制的~\n" + 
                     "如果您觉得满意，请回复“是”；放弃本次提交，请回复“取消”；回复其他内容则当作修改脚本重新绘制~");
-            e.Reply(SoraSegment.Image(outfile, false));
+            await e.Reply(SoraSegment.Image(outfile, false));
             MainModule.RegisterHook(e.Sender.Id, DrawImageConfirmCallBack, painter);
             return true;
         }
         return false;
     }
-    public bool DrawImageConfirmCallBack(PrivateMessageEventArgs e, MainModule.PrivateMessageHook hook)
+    public async Task<bool> DrawImageConfirmCallBack(PrivateMessageEventArgs e, MainModule.PrivateMessageHook hook)
     {
         string? template = ((PaintingProcessing)hook.Data!).Source.Name;
         if (e.Message.RawText == "是")
         {
-            e.Reply("🎉恭喜，绘图模板已收录！感谢您为黑嘴的绘图模板生态增添活力！");
+            await e.Reply("🎉恭喜，绘图模板已收录！感谢您为黑嘴的绘图模板生态增添活力！");
             paints.Add((PaintingProcessing)hook.Data!);
             return true;
         } 
         else if (e.Message.RawText == "取消")
         {
-            e.Reply("好的。");
+            await e.Reply("好的。");
             File.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
             Directory.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
             return true;
@@ -241,21 +241,21 @@ class Painting : IOneBotController
                 {
                     if (!File.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template + "\\" + picList[i]))
                     {
-                        e.Reply("脚本更正失败，请不要在更正过程中添加新的图片。");
+                        await e.Reply("脚本更正失败，请不要在更正过程中添加新的图片。");
                         return false;
                     }
                 }
-                e.Reply("脚本更正成功，并已重新为您生成预览图片。\n" +
+                await e.Reply("脚本更正成功，并已重新为您生成预览图片。\n" +
                         "如果您觉得满意，请回复“是”；放弃本次提交，请回复“取消”；回复其他内容则当作修改脚本重新绘制~");
                 painter.Source = paintfile;
-                string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd") + ".png";
-                painter.Paint(outfile, null!, null!, null!);
-                e.Reply(SoraSegment.Image(outfile, false));
+                string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
+                await painter.Paint(outfile, null!, null!, null!);
+                await e.Reply(SoraSegment.Image(outfile, false));
                 File.WriteAllText(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json", sb.ToString());
             }
             catch (Exception ex)
             {
-                e.Reply(ex.Message + "\n更正脚本失败。");
+                await e.Reply(ex.Message + "\n更正脚本失败。");
             }
         }
         return false;

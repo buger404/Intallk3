@@ -12,7 +12,7 @@ namespace Intallk.Modules;
 
 public class MainModule : IOneBotController
 {
-    public delegate bool PrivateMessageHookCallback(PrivateMessageEventArgs e, PrivateMessageHook hook);
+    public delegate Task<bool> PrivateMessageHookCallback(PrivateMessageEventArgs e, PrivateMessageHook hook);
     public class PrivateMessageHook
     {
         public long QQ { get; set; }
@@ -109,7 +109,7 @@ public class MainModule : IOneBotController
                 {
                     if (hook2.QQ == e.Sender.Id)
                     {
-                        if (hook2.Callback!(e, hook2))
+                        if (hook2.Callback!(e, hook2).Result)
                         {
                             hook2.QQ = 0;
                             needClear = true;

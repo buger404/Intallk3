@@ -462,7 +462,7 @@ public class PaintingProcessing
 {
     public PaintFile Source;
     public PaintingProcessing(PaintFile src) => Source = src;
-    public async void Paint(string path, GroupMessageEventArgs e, User qq, object[] args)
+    public async Task Paint(string path, GroupMessageEventArgs e, User qq, object[] args)
     {
         Bitmap bitmap;
         List<PaintCommands> cmd = Source.Commands!;
@@ -500,7 +500,7 @@ public class PaintingProcessing
                         string qqface = IntallkConfig.DataPath + "\\Resources\\face_" + qq!.Id.ToString() + ".jpg";
                         if (!File.Exists(qqface))
                         {
-                            DownLoad("http://q.qlogo.cn/headimg_dl?dst_uin=" + qq!.Id + "&spec=160", qqface);
+                            await DownLoad("http://q.qlogo.cn/headimg_dl?dst_uin=" + qq!.Id + "&spec=160", qqface);
                         }
                         image = new(qqface);
                     }
@@ -645,7 +645,7 @@ public class PaintingProcessing
         if (p.Length == 1) return Color.FromName(str);
         return Color.FromArgb((int)(float.Parse(p[0]) * 255), int.Parse(p[1]), int.Parse(p[2]), int.Parse(p[3]));
     }
-    static async void DownLoad(string url, string path) 
+    static async Task DownLoad(string url, string path) 
     {
         byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(url, Method.Get));
         if (data != null) File.WriteAllBytes(path, data!); else throw new Exception("下载失败。");
