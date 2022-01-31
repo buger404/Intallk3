@@ -29,7 +29,7 @@ builder.ConfigureServices((context, services) =>
         .AddSingleton<IOneBotController, Painting>()
         .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
 
-    foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs" })
+    foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs", "\\FileDetection" })
     {
         if (!Directory.Exists(IntallkConfig.DataPath + childPath))
             Directory.CreateDirectory(IntallkConfig.DataPath + childPath);

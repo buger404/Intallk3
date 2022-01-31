@@ -5,10 +5,12 @@ using Intallk.Modules;
 using RestSharp;
 using Sora.Entities;
 using Sora.Entities.Info;
+using Sora.Entities.Segment;
 using Sora.EventArgs.SoraEvent;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
+using Sora.Util;
 
 public class PaintingCompiler
 {
@@ -55,11 +57,7 @@ public class PaintingCompiler
         resolve = GetFront(resolve, "为背景");
         if (resolve != "")
         {
-            if (resolve.Contains('*') || resolve.Contains('\\') || resolve.Contains('/') || resolve.Contains('|') || resolve.Contains('?')
-                || resolve.Contains(':') || resolve.Contains('\"') || resolve.Contains('<') || resolve.Contains('>'))
-            {
-                ThrowException("[ImageUploading.InvalidFileName]设定的图片文件名存在非法字符。");
-            }
+            IsFileNameValid(resolve);
             piclist.Add(resolve);
             cmd = new PaintCommands(PaintCommandType.SetCanvas, 0f, resolve);
         }
@@ -115,11 +113,7 @@ public class PaintingCompiler
                     string[] t = sen[i].Split('：');
                     if (t.Length == 1) ThrowException("[ImagePainter.FileMissing]应指定要绘制的图片。");
                     resolve = strconst[int.Parse(t[1])];
-                    if (resolve.Contains('*') || resolve.Contains('\\') || resolve.Contains('/') || resolve.Contains('|') || resolve.Contains('?')
-                        || resolve.Contains(':') || resolve.Contains('\"') || resolve.Contains('<') || resolve.Contains('>'))
-                    {
-                        ThrowException("[ImageUploading.InvalidFileName]设定的图片文件名存在非法字符。");
-                    }
+                    IsFileNameValid(resolve);
                     if (!piclist.Contains(resolve) && resolve != "QQ头像") piclist.Add(resolve);
                     if (resolve == "QQ头像") paintfile.NeedQQParameter = true;
                     cmd = new PaintCommands(PaintCommandType.DrawImage, x, y, 0f, 0f, resolve, PaintAlign.Left, PaintAlign.Left);
@@ -456,6 +450,24 @@ public class PaintingCompiler
         if (temp.Length == 1) return "";
         return temp[1];
     }
+    public void IsFileNameValid(string name)
+    {
+        char[] c = { '*', '\\', '/', '|', '?', ':', '\"', '<', '>' };
+        foreach (char cc in c)
+        {
+            if (name.Contains(cc)) ThrowException("[InvalidFileName]设定的文件名存在非法字符。");
+        }
+        // 试探
+        try
+        {
+            File.ReadAllText(IntallkConfig.DataPath + "\\FileDetection\\" + name);
+        }
+        catch(Exception ex)
+        {
+            if(ex.GetType() != typeof(FileNotFoundException))
+                ThrowException("[InvalidFileName]设定的文件名非法。");
+        }
+    }
 }
 
 public class PaintingProcessing
@@ -467,7 +479,7 @@ public class PaintingProcessing
         Bitmap bitmap;
         List<PaintCommands> cmd = Source.Commands!;
         string dataPath = IntallkConfig.DataPath + "\\DrawingScript\\" + Source.Name + "\\";
-        if ((double)cmd[0].Args[0] == 0) bitmap = new(dataPath + (string)cmd[0].Args[1]); else bitmap = new((int)(long)cmd[0].Args[1], (int)(long)cmd[0].Args[2]);
+        if (PfO<int>(cmd[0].Args[0]) == 0) bitmap = new(dataPath + (string)cmd[0].Args[1]); else bitmap = new(PfO<int>(cmd[0].Args[1]), PfO<int>(cmd[0].Args[2]));
         Graphics g = Graphics.FromImage(bitmap);
         SolidBrush brush = new(Color.Transparent);
         Pen pen = new(Color.Transparent);
@@ -479,10 +491,10 @@ public class PaintingProcessing
 
         for (int i = 1;i < cmd.Count; i++)
         {
-            x = (float)(double)cmd[i].Args[0]; y = (float)(double)cmd[i].Args[1];
-            w = (float)(double)cmd[i].Args[2]; h = (float)(double)cmd[i].Args[3];
-            align[0] = (PaintAlign)(long)cmd[i].Args[^2];
-            align[1] = (PaintAlign)(long)cmd[i].Args[^1];
+            x = PfO<float>(cmd[i].Args[0]); y = PfO<float>(cmd[i].Args[1]);
+            w = PfO<float>(cmd[i].Args[2]); h = PfO<float>(cmd[i].Args[3]);
+            align[0] = (PaintAlign)PfO<int>(cmd[i].Args[^2]);
+            align[1] = (PaintAlign)PfO<int>(cmd[i].Args[^1]);
             if (x < 1) x *= bitmap.Width;
             if (y < 1) y *= bitmap.Height;
             if (w < 1) w *= bitmap.Width;
@@ -531,20 +543,20 @@ public class PaintingProcessing
                     break;
                 case PaintCommandType.DrawRectangle:
                     pen.Color = ParseColor((string)cmd[i].Args[4]);
-                    pen.Width = (float)(double)cmd[i].Args[5];
+                    pen.Width = PfO<float>(cmd[i].Args[5]);
                     g.DrawRectangle(pen, new((int)x, (int)y, (int)w, (int)h));
                     break;
                 case PaintCommandType.DrawEllipse:
                     pen.Color = ParseColor((string)cmd[i].Args[4]);
-                    pen.Width = (float)(double)cmd[i].Args[5];
+                    pen.Width = PfO<float>(cmd[i].Args[5]);
                     g.DrawEllipse(pen, new((int)x, (int)y, (int)w, (int)h));
                     break;
                 case PaintCommandType.DrawImage:
                     g.DrawImage(image!, new Rectangle((int)x, (int)y, (int)w, (int)h));
                     break;
                 case PaintCommandType.Write:
-                    float fsize = (float)(double)cmd[i].Args[5]; 
-                    FontStyle fstyle = (FontStyle)(long)cmd[i].Args[6];
+                    float fsize = PfO<float>(cmd[i].Args[5]); 
+                    FontStyle fstyle = (FontStyle)PfO<int>(cmd[i].Args[6]);
                     var gp = new GraphicsPath(FillMode.Winding);
                     switch (align[0])
                     {
@@ -561,9 +573,22 @@ public class PaintingProcessing
                     }
                     if(args != null)
                     {
+                        int k;
+                        string rep = "";
                         for (int j = 0; j < Source.Parameters!.Count; j++)
                         {
-                            s = s.Replace("{" + Source.Parameters[j] + "}", (string)args[j + 2 + (qq != null ? 1 : 0)]);
+                            rep = "";
+                            k = j + 2 + (qq != null ? 1 : 0);
+                            switch (args[k])
+                            {
+                                case string ss:
+                                    rep = ss;
+                                    break;
+                                case MessageBody mb:
+                                    rep = mb.SerializeMessage();
+                                    break;
+                            }
+                            s = s.Replace("{" + Source.Parameters[j] + "}", rep);
                         }
                         if (qq != null)
                         {
@@ -585,7 +610,7 @@ public class PaintingProcessing
                             s = s.Replace("{QQ登录天数}", info.LoginDays.ToString());
                         }
                     }
-                    PaintAdjustWriteMode adjust = (PaintAdjustWriteMode)(long)cmd[i].Args[8];
+                    PaintAdjustWriteMode adjust = (PaintAdjustWriteMode)PfO<int>(cmd[i].Args[8]);
                     if (adjust != PaintAdjustWriteMode.None)
                     {
                         Font ffont = new(font, fsize, fstyle);
@@ -614,7 +639,7 @@ public class PaintingProcessing
                     if ((bool)cmd[i].Args[9])
                     {
                         pen.Color = ParseColor((string)cmd[i].Args[7]);
-                        pen.Width = (float)cmd[i].Args[11];
+                        pen.Width = PfO<float>(cmd[i].Args[11]);
                         g.DrawPath(pen, gp);
                     }
                     else
@@ -638,6 +663,23 @@ public class PaintingProcessing
         pen.Dispose();
         g.Dispose();
         bitmap.Dispose();
+    }
+    // Parse From Object
+    public T PfO<T>(object src)
+    {
+        double d = 0;
+        switch (src)
+        {
+            case int i: d = i; break;
+            case long l: d = l; break;
+            case float f: d = f; break;
+            case double dd: d = dd; break;
+        }
+        if (typeof(T) == typeof(int)) return (T)(object)(int)d;
+        if (typeof(T) == typeof(long)) return (T)(object)(long)d;
+        if (typeof(T) == typeof(float)) return (T)(object)(float)d;
+        if (typeof(T) == typeof(double)) return (T)(object)d;
+        return default(T)!;
     }
     public Color ParseColor(string str)
     {
