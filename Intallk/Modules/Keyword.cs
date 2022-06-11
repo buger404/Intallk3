@@ -38,6 +38,25 @@ class Keyword : IOneBotController
         JiebaNet.Segmenter.ConfigManager.ConfigFileBaseDir = @"C:\jiebanet\config";
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
     }
+    [Command("keyword")]
+    public void KeywordToday(GroupMessageEventArgs e)
+    {
+        int i = messages.FindIndex(m => m.group == e.SourceGroup);
+        if (i == -1)
+        {
+            e.Reply("你群暂无记录。");
+            return;
+        }
+        MessageRecord r = messages[i];
+        string text = r.str.ToString(), hlist = "";
+        TfidfExtractor tfidfExtractor = new TfidfExtractor();
+        List<string> key = tfidfExtractor.ExtractTags(text, 5, null).ToList();
+        for (int s = 0; s < key.Count; s++)
+        {
+            hlist += $"{s}.{key[s]}\n";
+        }
+        r.e.Reply("今日截至现在你群最热聊天话题：\n" + hlist + "-来自黑嘴窥屏统计~");
+    }
     private int Event_OnGroupMessage(OneBotContext scope)
     {
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
