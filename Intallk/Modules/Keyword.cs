@@ -1,6 +1,7 @@
 ﻿using Intallk.Config;
 
 using JiebaNet.Analyser;
+using Newtonsoft.Json;
 using OneBot.CommandRoute.Attributes;
 using OneBot.CommandRoute.Models;
 using OneBot.CommandRoute.Services;
@@ -17,6 +18,7 @@ namespace Intallk.Modules;
 
 class Keyword : IOneBotController
 {
+    [Serializable]
     struct MessageRecord
     {
         public StringBuilder str = new StringBuilder();
@@ -28,15 +30,39 @@ class Keyword : IOneBotController
             group = id; this.e = e;
         }
     }
+    [Serializable]
+    struct MessageRecordFile
+    {
+        public List<MessageRecord> messages;
+    }
     readonly ILogger<Keyword> _logger;
-    Timer announceTimer = new Timer(Announce, null, new TimeSpan(0, 1, 0), new TimeSpan(0, 1, 0));
+    Timer announceTimer = new Timer(Announce, null, new TimeSpan(0, 0, 5), new TimeSpan(0, 0, 5));
+    Timer dumpTimer = new Timer(Dump, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
     static DateTime announceTime = DateTime.MinValue;
     static List<MessageRecord> messages = new List<MessageRecord>();
     public Keyword(ICommandService commandService, ILogger<Keyword> logger)
     {
         _logger = logger;
         JiebaNet.Segmenter.ConfigManager.ConfigFileBaseDir = @"C:\jiebanet\config";
+        string file = IntallkConfig.DataPath + "\\keyword.json";
+        if (File.Exists(file))
+        {
+            JsonSerializer serializer = new();
+            MessageRecordFile mrf = new MessageRecordFile();
+            mrf = (MessageRecordFile)serializer.Deserialize(new StringReader(File.ReadAllText(file)), typeof(MessageRecordFile))!;
+            messages = mrf.messages;
+        }
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
+    }
+    public static void Dump(object? state)
+    {
+        string file = IntallkConfig.DataPath + "\\keyword.json";
+        MessageRecordFile mrf = new MessageRecordFile();
+        mrf.messages = messages;
+        JsonSerializer serializer = new();
+        var sb = new StringBuilder();
+        serializer.Serialize(new StringWriter(sb), mrf);
+        File.WriteAllText(file, sb.ToString());
     }
     [Command("keyword")]
     public void KeywordToday(GroupMessageEventArgs e)
@@ -53,7 +79,7 @@ class Keyword : IOneBotController
         List<string> key = tfidfExtractor.ExtractTags(text, 5, null).ToList();
         for (int s = 0; s < key.Count; s++)
         {
-            hlist += $"{s}.{key[s]}\n";
+            hlist += $"{s+1}.{key[s]}\n";
         }
         r.e.Reply("今日截至现在你群最热聊天话题：\n" + hlist + "-来自黑嘴窥屏统计~");
     }
@@ -85,7 +111,7 @@ class Keyword : IOneBotController
             List<string> key = tfidfExtractor.ExtractTags(text, 5, null).ToList();
             for(int i = 0;i < key.Count;i++)    
             {
-                hlist += $"{i}.{key[i]}\n";
+                hlist += $"{i+1}.{key[i]}\n";
             }
             r.e.Reply("今日你群最热聊天话题：\n" + hlist + "-来自黑嘴窥屏统计~");
             r.str.Clear();
