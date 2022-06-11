@@ -11,6 +11,7 @@ using Sora.Entities.Segment.DataModel;
 using Sora.EventArgs.SoraEvent;
 using System.Text;
 using Sora.Util;
+using RestSharp;
 
 namespace Intallk.Modules;
 
@@ -111,6 +112,11 @@ public class RepeatCollector : IOneBotController
         }
         return messages;
     }
+    static async void DownLoad(string url, string path)
+    {
+        byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(url, Method.Get));
+        if (data != null) File.WriteAllBytes(path, data!); else throw new Exception("下载失败。");
+    }
     private static MessageBody ToMessageBody(List<MessageSegment> seg)
     {
         MessageBody body = new MessageBody();
@@ -173,6 +179,18 @@ public class RepeatCollector : IOneBotController
                 // Record
                 if (!heat.Repeated) 
                 {
+                    foreach(MessageHeat he in messagepond)
+                    {
+                        foreach(MessageSegment se in he.Message)
+                        {
+                            if (se.isImage)
+                            {
+                                string file = "context_" + DateTime.Now.ToString("yy.MM.dd.HH.mm.ss.") + se.GetHashCode() + ".jpg";
+                                DownLoad(se.Content!, IntallkConfig.DataPath + "\\Resources\\" + file);
+                                se.Content = file;
+                            }
+                        }
+                    }
                     heat.ForwardMessages = messagepond;
                     collection.messages.Add(heat);
                     e.Reply(ToMessageBody(heat.Message));

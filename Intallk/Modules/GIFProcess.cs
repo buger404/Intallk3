@@ -42,7 +42,7 @@ class GIFProcess : IOneBotController
                 var img = (ImageSegment)msg.Data;
                 string file = IntallkConfig.DataPath + "\\Images\\" + img.ImgFile + ".png";
                 if (!File.Exists(file))
-                    File.WriteAllBytes(file, new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result);
+                    File.WriteAllBytes(file, new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)).Result!);
                 var bitmap = (Bitmap)Bitmap.FromFile(file);
                 var fd = new FrameDimension(bitmap.FrameDimensionsList[0]);
                 var convert = new Bitmap(bitmap.Width, bitmap.Height * bitmap.GetFrameCount(fd));
