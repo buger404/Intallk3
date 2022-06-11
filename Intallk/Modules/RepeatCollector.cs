@@ -54,7 +54,7 @@ public class RepeatCollector : IOneBotController
     static RepeatCollection collection = new RepeatCollection();
     Timer dumpTimer = new Timer(Dump, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
     readonly Random random = new(Guid.NewGuid().GetHashCode());
-    readonly ILogger<MainModule> _logger;
+    readonly ILogger<RepeatCollector> _logger;
     public static void Dump(object? state)
     {
         string file = IntallkConfig.DataPath + "\\collection.json",
@@ -72,7 +72,7 @@ public class RepeatCollector : IOneBotController
             File.Copy(file_backup, file, true);
         }
     }
-    public RepeatCollector(ICommandService commandService, ILogger<MainModule> logger)
+    public RepeatCollector(ICommandService commandService, ILogger<RepeatCollector> logger)
     {
         _logger = logger;
         try
@@ -192,6 +192,15 @@ public class RepeatCollector : IOneBotController
                         }
                     }
                     heat.ForwardMessages = messagepond;
+                    foreach (MessageSegment se in heat.Message)
+                    {
+                        if (se.isImage)
+                        {
+                            string file = "context_" + DateTime.Now.ToString("yy.MM.dd.HH.mm.ss.") + se.GetHashCode() + ".jpg";
+                            DownLoad(se.Content!, IntallkConfig.DataPath + "\\Resources\\" + file);
+                            se.Content = file;
+                        }
+                    }
                     collection.messages.Add(heat);
                     e.Reply(ToMessageBody(heat.Message));
                     heat.Repeated = true;
