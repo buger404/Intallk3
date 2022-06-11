@@ -25,7 +25,7 @@ builder.ConfigureServices((context, services) =>
         .AddSingleton<IOneBotController, Testing>()
         .AddSingleton<IOneBotController, BugLanguage>()
         .AddSingleton<IOneBotController, Nbnhhsh>()
-        //.AddSingleton<IOneBotController, ScriptDrawer>()
+        .AddSingleton<IOneBotController, RepeatCollector>()
         .AddSingleton<IOneBotController, Painting>()
         .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
 

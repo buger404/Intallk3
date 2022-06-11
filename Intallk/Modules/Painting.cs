@@ -32,7 +32,7 @@ class Painting : IOneBotController
             return;
         }
         if ((paints[pi].Source.NeedQQParameter && qq == null) || 
-            args.Length != paints[pi].Source.Parameters!.Count + 2 + (paints[pi].Source.NeedQQParameter ? 1 : 0))
+            args.Length < paints[pi].Source.Parameters!.Count + 2 + (paints[pi].Source.NeedQQParameter ? 1 : 0))
         {
             await e.Reply(e.Sender.At() + "绘制指令有误噢，您可以发送“.draw help " + template + "”取得帮助。");
             return;
@@ -43,6 +43,21 @@ class Painting : IOneBotController
     }
     [Command("draw <template> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public void Draw(GroupMessageEventArgs e, string template, [ParsedArguments] object[] args) => Draw(e, template, null!, args);
+    [Command("draw")]
+    public void DrawHelp(GroupMessageEventArgs e)
+    {
+        e.Reply(e.Sender.At() + "☆*: .｡. o(≧▽≦)o .｡.:*☆黑嘴最喜欢画画啦！！！\n" +
+            "绘图脚本说明：https://github.com/buger404/Intallk3/blob/main/PaintScript.md" + "\n" +
+            "绘图功能指令指南：\n" +
+            ".draw list：列出制图库的第一页。\n" +
+            ".draw list <页数>：导航到制图库的第几页。\n" +
+            ".draw help <模板>：让黑嘴教你指定模板的使用方法。\n" +
+            ".draw <模板> (因模板而异)：请本小姐给你画画~\n" +
+            "（私聊）.draw build <模板> <模板脚本>：把你的绘图模板送给黑嘴~\n" +
+            "（私聊）.draw edit <模板> <模板脚本>：修改你送给黑嘴的绘图模板~\n" +
+            "（私聊）.draw remove <模板>：把你送给黑嘴的绘图模板拿回去呜呜呜。");
+        return;
+    }
     [Command("draw help <template>")]
     public void DrawHelp(GroupMessageEventArgs e, string template)
     {
@@ -55,7 +70,7 @@ class Painting : IOneBotController
             return;
         }
         e.Reply(e.Sender.At() + "作者：" + MainModule.GetQQName(e, paints[pi].Source.Author) + "\n"
-                                    + "绘制步骤：共" + paints[pi].Source.Commands!.Count.ToString() + "步"
+                                    + "绘制步骤：共" + paints[pi].Source.Commands!.Count.ToString() + "步\n"
                                     + "使用方法：.draw " + (pi+1).ToString() + "/" + paints[pi].Source.Name + paints[pi].Source.ParameterDescription);
         return;
     }
@@ -78,7 +93,7 @@ class Painting : IOneBotController
     public void DrawRemove(PrivateMessageEventArgs e, string template)
     {
         int pi = -1;
-        if (!int.TryParse(template, out pi)) paints.FindIndex(m => m.Source.Name == template); else pi--;
+        if (!int.TryParse(template, out pi)) pi = paints.FindIndex(m => m.Source.Name == template); else pi--;
         if (pi < 0 || pi >= paints.Count)
         {
             e.Reply("这是什么绘图模板呀，黑嘴找不到呢。");
@@ -92,7 +107,8 @@ class Painting : IOneBotController
             return;
         }
         File.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
-        Directory.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
+        if (Directory.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template))
+            Directory.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
         paints.RemoveAt(pi);
         e.Reply("删掉啦~");
     }
@@ -100,18 +116,18 @@ class Painting : IOneBotController
     public void DrawEdit(PrivateMessageEventArgs e, string name, string code) => DrawBuild(e, name, code, true);
     [Command("draw build <name> <code>", EventType = EventType.PrivateMessage)]
     public void DrawBuild(PrivateMessageEventArgs e, string name, string code) => DrawBuild(e, name, code, false);
-    public void DrawBuild(PrivateMessageEventArgs e, string name, string code, bool skipNameCheck)
+    public async void DrawBuild(PrivateMessageEventArgs e, string name, string code, bool skipNameCheck)
     {
         if (name.Contains('*') || name.Contains('\\') || name.Contains('/') || name.Contains('|') || name.Contains('?')
             || name.Contains(':') || name.Contains('\"') || name.Contains('<') || name.Contains('>'))
         {
-            e.Reply("设定的模板名字里面不能有特殊符号噢！");
-            e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+            await e.Reply("设定的模板名字里面不能有特殊符号噢！");
+            await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
             return;
         }
         if (name == "")
         {
-            e.Reply("设定的模板名字不能为空。");
+            await e.Reply("设定的模板名字不能为空。");
             return;
         }
         int pi = paints.FindIndex(m => m.Source.Name == name);
@@ -119,14 +135,14 @@ class Painting : IOneBotController
         {
             if (pi == -1)
             {
-                e.Reply("没有这个模板啦！");
-                e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\angry.jpg"));
+                await e.Reply("没有这个模板啦！");
+                await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\angry.jpg"));
                 return;
             }
             if (paints[pi].Source.Author != e.Sender.Id && e.Sender.Id != 1361778219)
             {
-                e.Reply("不可以改别人的模板文件哦！");
-                e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+                await e.Reply("不可以改别人的模板文件哦！");
+                await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
                 return;
             }
         }
@@ -134,14 +150,14 @@ class Painting : IOneBotController
         {
             if (pi != -1)
             {
-                e.Reply("设定的模板名字'" + name + "'已经被'" + MainModule.GetQQName(e, paints[pi].Source.Author) + "'使用过了。");
+                await e.Reply("设定的模板名字'" + name + "'已经被'" + MainModule.GetQQName(e, paints[pi].Source.Author) + "'使用过了。");
                 return;
             }
         }
         if (MainModule.hooks2.Exists(m => m.QQ == e.Sender.Id))
         {
-            e.Reply("黑嘴还在等待您完成上一个操作呢！");
-            e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\angry.jpg"));
+            await e.Reply("黑嘴还在等待您完成上一个操作呢！");
+            await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\angry.jpg"));
             return;
         }
         var paintfile = new PaintFile();
@@ -155,7 +171,7 @@ class Painting : IOneBotController
             var sb = new StringBuilder();
             serializer.Serialize(new StringWriter(sb), paintfile);
             //e.Reply(e.Sender.At() + sb.ToString());
-            e.Reply("恭喜您，绘图脚本编译通过了，以下是模板信息：\n" +
+            await e.Reply("恭喜您，绘图脚本编译通过了，以下是模板信息：\n" +
                                                              "作者：" + e.SenderInfo.Nick + "\n" +
                                                              "模板名称：" + name + "\n" +
                                                              "参数说明：" + paintfile.ParameterDescription + "\n" +
@@ -166,14 +182,24 @@ class Painting : IOneBotController
             {
                 picList.Add(name);
                 Directory.CreateDirectory(IntallkConfig.DataPath + "\\DrawingScript\\" + name);
-                e.Reply("👍只差一步...接下来按照下面图片的顺序依次发出图片：\n" + picl, new TimeSpan(0,0,2));
+                await e.Reply("👍只差一步...接下来按照下面图片的顺序依次发出图片：\n" + picl, new TimeSpan(0,0,2));
                 MainModule.RegisterHook(e.Sender.Id, DrawImageUploadCallBack, picList);
+            }
+            else
+            {
+                string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
+                PaintingProcessing painter = new PaintingProcessing(paintfile);
+                await painter.Paint(outfile, null!, null!, null!);
+                await e.Reply("感谢哥哥的配合~以下是根据您提交的模板绘制的~\n" +
+                        "如果您觉得满意，请回复“是”；放弃本次提交，请回复“取消”；回复其他内容则当作修改脚本重新绘制~");
+                await e.Reply(SoraSegment.Image(outfile, false));
+                MainModule.RegisterHook(e.Sender.Id, DrawImageConfirmCallBack, painter);
             }
             File.WriteAllText(IntallkConfig.DataPath + "\\DrawingScript\\" + name + ".json", sb.ToString());
         }
         catch (Exception ex)
         {
-            e.Reply(ex.Message);
+            await e.Reply(ex.Message);
         }
     }
     public async Task<bool> DrawImageUploadCallBack(PrivateMessageEventArgs e, MainModule.PrivateMessageHook hook)
@@ -214,7 +240,11 @@ class Painting : IOneBotController
         if (e.Message.RawText == "是")
         {
             await e.Reply("🎉恭喜，绘图模板已收录！感谢您为黑嘴的绘图模板生态增添活力！");
-            paints.Add((PaintingProcessing)hook.Data!);
+            int pi = paints.FindIndex(m => m.Source.Name == template);
+            if (pi != -1)
+                paints[pi] = (PaintingProcessing)hook.Data!;
+            else
+                paints.Add((PaintingProcessing)hook.Data!);
             return true;
         } 
         else if (e.Message.RawText == "取消")

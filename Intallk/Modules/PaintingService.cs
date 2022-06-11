@@ -481,6 +481,9 @@ public class PaintingProcessing
         string dataPath = IntallkConfig.DataPath + "\\DrawingScript\\" + Source.Name + "\\";
         if (PfO<int>(cmd[0].Args[0]) == 0) bitmap = new(dataPath + (string)cmd[0].Args[1]); else bitmap = new(PfO<int>(cmd[0].Args[1]), PfO<int>(cmd[0].Args[2]));
         Graphics g = Graphics.FromImage(bitmap);
+        g.InterpolationMode = InterpolationMode.High;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
         SolidBrush brush = new(Color.Transparent);
         Pen pen = new(Color.Transparent);
         FontFamily font = new("HarmonyOS Sans SC Medium");
@@ -510,10 +513,8 @@ public class PaintingProcessing
                     else
                     {
                         string qqface = IntallkConfig.DataPath + "\\Resources\\face_" + qq!.Id.ToString() + ".jpg";
-                        if (!File.Exists(qqface))
-                        {
-                            await DownLoad("http://q.qlogo.cn/headimg_dl?dst_uin=" + qq!.Id + "&spec=160", qqface);
-                        }
+                        if (File.Exists(qqface)) File.Delete(qqface);
+                        await DownLoad("http://q.qlogo.cn/headimg_dl?dst_uin=" + qq!.Id + "&spec=640", qqface);
                         image = new(qqface);
                     }
                 }
@@ -534,20 +535,20 @@ public class PaintingProcessing
             switch (cmd[i].CommandType)
             {
                 case PaintCommandType.FillRectangle:
-                    brush.Color = ParseColor((string)cmd[i].Args[4]);
+                    brush.Color = ParseColor(cmd[i].Args[4]);
                     g.FillRectangle(brush, new((int)x, (int)y, (int)w, (int)h));
                     break;
                 case PaintCommandType.FillEllipse:
-                    brush.Color = ParseColor((string)cmd[i].Args[4]);
+                    brush.Color = ParseColor(cmd[i].Args[4]);
                     g.FillEllipse(brush, new((int)x, (int)y, (int)w, (int)h));
                     break;
                 case PaintCommandType.DrawRectangle:
-                    pen.Color = ParseColor((string)cmd[i].Args[4]);
+                    pen.Color = ParseColor(cmd[i].Args[4]);
                     pen.Width = PfO<float>(cmd[i].Args[5]);
                     g.DrawRectangle(pen, new((int)x, (int)y, (int)w, (int)h));
                     break;
                 case PaintCommandType.DrawEllipse:
-                    pen.Color = ParseColor((string)cmd[i].Args[4]);
+                    pen.Color = ParseColor(cmd[i].Args[4]);
                     pen.Width = PfO<float>(cmd[i].Args[5]);
                     g.DrawEllipse(pen, new((int)x, (int)y, (int)w, (int)h));
                     break;
@@ -638,13 +639,13 @@ public class PaintingProcessing
                     }
                     if ((bool)cmd[i].Args[9])
                     {
-                        pen.Color = ParseColor((string)cmd[i].Args[7]);
+                        pen.Color = ParseColor(cmd[i].Args[7]);
                         pen.Width = PfO<float>(cmd[i].Args[11]);
                         g.DrawPath(pen, gp);
                     }
                     else
                     {
-                        brush.Color = ParseColor((string)cmd[i].Args[7]);
+                        brush.Color = ParseColor(cmd[i].Args[7]);
                         g.FillPath(brush, gp);
                     }
                     gp.Dispose();
@@ -681,11 +682,21 @@ public class PaintingProcessing
         if (typeof(T) == typeof(double)) return (T)(object)d;
         return default(T)!;
     }
-    public Color ParseColor(string str)
+    public Color ParseColor(object src)
     {
-        string[] p = str.Split(',');
-        if (p.Length == 1) return Color.FromName(str);
-        return Color.FromArgb((int)(float.Parse(p[0]) * 255), int.Parse(p[1]), int.Parse(p[2]), int.Parse(p[3]));
+        switch (src)
+        {
+            case string str:
+                string[] p = str.Split(',');
+                if (p.Length == 1) return Color.FromName(str);
+                return Color.FromArgb((int)(float.Parse(p[0]) * 255), int.Parse(p[1]), int.Parse(p[2]), int.Parse(p[3]));
+            case Color color:
+                if (color.A == 1) color = Color.FromArgb(255, color.R, color.G, color.B);
+                return color;
+            case int i:
+                return Color.FromArgb(i);
+        }
+        return Color.Black;
     }
     static async Task DownLoad(string url, string path) 
     {

@@ -70,11 +70,11 @@ public class MainModule : IOneBotController
             switch (context.SoraEventArgs)
             {
                 case GroupMessageEventArgs group:
-                    group.Reply(SoraSegment.Reply(group.Message.MessageId) + "我...我才不是为了气死你才出错的呢！");
+                    group.Reply("我...我才不是为了气死你才出错的呢！");
                     group.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\error.jpg"));
                     break;
                 case PrivateMessageEventArgs qq:
-                    qq.Reply(SoraSegment.Reply(qq.Message.MessageId) + "我...我才不是为了气死你才出错的呢！");
+                    qq.Reply("我...我才不是为了气死你才出错的呢！");
                     qq.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\error.jpg"));
                     break;
             }
@@ -89,8 +89,17 @@ public class MainModule : IOneBotController
             {
                 if (hook.QQ == e.Sender.Id && hook.Group == e.SourceGroup.Id)
                 {
-                    if (hook.Callback!(e, hook))
+                    try
                     {
+                        if (hook.Callback!(e, hook))
+                        {
+                            hook.QQ = 0;
+                            needClear = true;
+                        }
+                    }
+                    catch
+                    {
+                        e.Reply(e.Sender.At() + "本次会话出错啦，黑嘴被迫掐断了本次会话，给您带来不便敬请见谅嗷~");
                         hook.QQ = 0;
                         needClear = true;
                     }
@@ -109,8 +118,17 @@ public class MainModule : IOneBotController
                 {
                     if (hook2.QQ == e.Sender.Id)
                     {
-                        if (hook2.Callback!(e, hook2).Result)
+                        try
                         {
+                            if (hook2.Callback!(e, hook2).Result)
+                            {
+                                hook2.QQ = 0;
+                                needClear = true;
+                            }
+                        }
+                        catch
+                        {
+                            e.Reply("本次会话出错啦，黑嘴被迫掐断了本次会话，给您带来不便敬请见谅嗷~");
                             hook2.QQ = 0;
                             needClear = true;
                         }
@@ -151,6 +169,34 @@ public class MainModule : IOneBotController
     public void Bark(GroupMessageEventArgs e)
     {
         string[] eg = { "爬", "才...才不告诉你我在呢", "干嘛啦", "老娘活着", "我不在" };
+        e.Reply(eg[random.Next(0, eg.Length)]);
+    }
+
+    [Command("黑嘴！")]
+    public void Bark2(GroupMessageEventArgs e)
+    {
+        string[] eg = { "爬！", "老娘忙着！", "？什么事", "？", "我不在！不在！不在！不在！" };
+        e.Reply(eg[random.Next(0, eg.Length)]);
+    }
+    [Command("黑嘴？")]
+    public void Bark3(GroupMessageEventArgs e)
+    {
+        string[] eg = { "😅", "🤔", "😕", "？", "咋？" };
+        e.Reply(eg[random.Next(0, eg.Length)]);
+    }
+    [Command("黑嘴晚安")]
+    public void Bark4(GroupMessageEventArgs e)
+    {
+        string[] eg = { "嗯嗯，晚安哦", "晚安~", "嗯嗯，早点休息~", "快睡吧，一天下来也累了吧" };
+        e.Reply(eg[random.Next(0, eg.Length)]);
+    }
+    [Command("黑嘴爱你")]
+    public void Bark5(GroupMessageEventArgs e)
+    {
+        string[] eg = { "？？？？？？？？？？", "你不对劲你不对劲？？", "？？？不要这样，很突然，我很害怕", "？？嗯，，，嗯，。。。我，我也。。。爱   你！",
+                        "（怎么办怎么办有人和我告白呜哇哇哇哇）","谢谢你，但是。。。我已经有喜欢的狗了。","！！！黑嘴很感动，但是...人和狗是...不可以的",
+                        "你xp有点怪嗷","别，别，别。。。我没有经验的。","！！！对不起！现在才意识到！谢谢你，但是。不行","我知道，其实...但是...真的不可以",
+                        "老娘下班了","不可以~现在黑嘴还在工作呢~谢谢你的心意。"};
         e.Reply(eg[random.Next(0, eg.Length)]);
     }
 
