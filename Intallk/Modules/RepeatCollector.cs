@@ -26,6 +26,7 @@ public class RepeatCollector : IOneBotController
     class MessageSegment
     {
         public string? Content { get; set; }
+        public string? Url { get; set; }
         public bool isImage;
     }
     [Serializable]
@@ -43,14 +44,19 @@ public class RepeatCollector : IOneBotController
         public void Cool() => Heat -= 0.1f;
         public void Hot()
         {
+            if (Heat < 0) Heat = 0.5f;
             Heat *= 2f;
             RepeatCount++;
         }
     }
-
+    class MessagePond
+    {
+        public long group;
+        public List<MessageHeat> pond;
+    }
     const float HeatLimit = 2f;
     List<MessageHeat> heats = new List<MessageHeat>();
-    List<MessageHeat> messagepond = new List<MessageHeat>();
+    List<MessagePond> messagepond = new List<MessagePond>();
     static RepeatCollection collection = new RepeatCollection();
     Timer dumpTimer = new Timer(Dump, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
     readonly Random random = new(Guid.NewGuid().GetHashCode());
@@ -103,7 +109,7 @@ public class RepeatCollector : IOneBotController
                 messages.Add(new MessageSegment { Content = ((TextSegment)m.Data).Content, isImage = false });
             }else if(m.MessageType == Sora.Enumeration.SegmentType.Image)
             {
-                messages.Add(new MessageSegment { Content = ((ImageSegment)m.Data).Url, isImage = true });
+                messages.Add(new MessageSegment { Content = ((ImageSegment)m.Data).ImgFile, isImage = true, Url = ((ImageSegment)m.Data).Url });
             }else if(m.MessageType == Sora.Enumeration.SegmentType.RedBag)
             {
                 RedbagSegment redbag = (RedbagSegment)m.Data;
@@ -133,14 +139,30 @@ public class RepeatCollector : IOneBotController
         }
         return body;
     }
+    private static bool CompareMessageSegment(List<MessageSegment> seg1, List<MessageSegment> seg2)
+    {
+        if (seg1.Count != seg2.Count) return false;
+        for(int i = 0; i < seg1.Count; i++)
+        {
+            if (seg1[i].isImage != seg2[i].isImage || seg1[i].Content != seg2[i].Content) return false;
+        }
+        return true;
+    }
     private int Event_OnGroupMessage(OneBotContext scope)
     {
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
         List<MessageSegment> seg = GetMessageSegments(e.Message.MessageBody);
         if (e.Message.RawText.StartsWith("dy") || e.Message.RawText.StartsWith(".")) return 0;
-        int f = heats.FindIndex(m => m.Group == e.SourceGroup.Id && m.Message.SequenceEqual(seg));
+        int f = heats.FindIndex(m => (m.Group == e.SourceGroup.Id && CompareMessageSegment(m.Message,seg)));
+        int g = messagepond.FindIndex(m => m.group == e.SourceGroup.Id);
+        if (g == -1)
+        {
+            messagepond.Add(new MessagePond { group = e.SourceGroup.Id, pond = new List<MessageHeat>() });
+            g = messagepond.Count - 1;
+        }
         if(f == -1)
         {
+            //Console.WriteLine("New message.");
             MessageHeat h = new MessageHeat
             {
                 Message = seg,
@@ -150,23 +172,30 @@ public class RepeatCollector : IOneBotController
             };
             h.Repeaters.Add(e.Sender.Id);
             heats.Add(h);
-            messagepond.Add(h);
-            if (messagepond.Count > 10) messagepond.RemoveAt(0);
+            messagepond[g].pond.Add(h);
+            if (messagepond[g].pond.Count > 10) messagepond[g].pond.RemoveAt(0);
         }
         else
         {
             if (heats[f].Repeaters.Contains(e.Sender.Id))
             {
                 // 复读自己，这人多半有点无聊
-                heats[f].Cool();
+                heats[f].Heat -= 1f;
+                if (heats[f].Heat <= -3)
+                {
+                    e.Reply(e.Sender.At() + "别刷啦~小心黑嘴把你吃掉哦~");
+                    e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+                }
+                Console.WriteLine("Cool record " + f + " due to duplicate sending. (" + heats[f].Heat + "）");
             }
             else
             {
                 heats[f].Hot();
                 heats[f].Repeaters.Add(e.Sender.Id);
+                Console.WriteLine("Heat record " + f + " by " + e.Sender.Id + " (" + heats[f].Heat + ")");
             }
-            messagepond.Add(heats[f]);
-            if (messagepond.Count > 10) messagepond.RemoveAt(0);
+            messagepond[g].pond.Add(heats[f]);
+            if (messagepond[g].pond.Count > 10) messagepond[g].pond.RemoveAt(0);
         }
 
         for (int i = 0; i < heats.Count; i++)
@@ -179,36 +208,62 @@ public class RepeatCollector : IOneBotController
                 // Record
                 if (!heat.Repeated) 
                 {
-                    foreach(MessageHeat he in messagepond)
+                    Console.WriteLine("Start recording...");
+                    foreach (MessageHeat he in messagepond[g].pond)
                     {
                         foreach(MessageSegment se in he.Message)
                         {
                             if (se.isImage)
                             {
                                 string file = "context_" + DateTime.Now.ToString("yy.MM.dd.HH.mm.ss.") + se.GetHashCode() + ".jpg";
-                                DownLoad(se.Content!, IntallkConfig.DataPath + "\\Resources\\" + file);
+                                Console.WriteLine("Downloading " + file);
+                                DownLoad(se.Url!, IntallkConfig.DataPath + "\\Resources\\" + file);
+                                DateTime time = DateTime.Now;
                                 se.Content = file;
+                                while (!File.Exists(IntallkConfig.DataPath + "\\Resources\\" + file))
+                                {
+                                    if ((DateTime.Now - time).TotalSeconds > 5)
+                                    {
+                                        se.Content = "oh.png";
+                                        break;
+                                    }
+                                    Thread.Sleep(100);
+                                }
+                                Console.WriteLine("Succeed in downloading(" + (DateTime.Now - time).TotalMilliseconds + "ms）");
                             }
                         }
                     }
-                    heat.ForwardMessages = messagepond;
+                    heat.ForwardMessages = messagepond[g].pond;
                     foreach (MessageSegment se in heat.Message)
                     {
                         if (se.isImage)
                         {
                             string file = "context_" + DateTime.Now.ToString("yy.MM.dd.HH.mm.ss.") + se.GetHashCode() + ".jpg";
-                            DownLoad(se.Content!, IntallkConfig.DataPath + "\\Resources\\" + file);
+                            Console.WriteLine("Downloading " + file);
+                            DownLoad(se.Url!, IntallkConfig.DataPath + "\\Resources\\" + file);
+                            DateTime time = DateTime.Now;
                             se.Content = file;
+                            while (!File.Exists(IntallkConfig.DataPath + "\\Resources\\" + file))
+                            {
+                                if ((DateTime.Now - time).TotalSeconds > 5)
+                                {
+                                    se.Content = "oh.png";
+                                    break;
+                                }
+                                Thread.Sleep(100);
+                            }
+                            Console.WriteLine("Succeed in downloading(" + (DateTime.Now - time).TotalMilliseconds + "ms）");
                         }
                     }
                     collection.messages.Add(heat);
                     e.Reply(ToMessageBody(heat.Message));
+                    Console.WriteLine("Sent.");
                     heat.Repeated = true;
                 }
             }
             if (!heat.Repeated && heat.Group == e.SourceGroup.Id) heat.Cool();
         }
-        heats.RemoveAll(m => m.Heat <= 0);
+        heats.RemoveAll(m => m.Heat <= -3);
         return 0;
     }
 
@@ -231,7 +286,7 @@ public class RepeatCollector : IOneBotController
     [Command("re context <id>")]
     public void RepeatContext(GroupMessageEventArgs e, User QQ, int id)
     {
-        if(id < 0 || id >= collection.messages.Count - 1)
+        if(id < 0 || id >= collection.messages.Count)
         {
             e.Reply("呜呜，这是什么id呢，请按照黑嘴教你的发送指令好嘛？");
             return;
@@ -283,7 +338,7 @@ public class RepeatCollector : IOneBotController
             if(m.Heat < 0)
             {
                 heatName = "过气";
-            }else if(m.Heat > 5)
+            }else if(m.Heat >= 0)
             {
                 heatName = "一般";
             }else if(m.Heat > 10)
@@ -295,7 +350,7 @@ public class RepeatCollector : IOneBotController
             }
             e.Reply(e.Sender.At() + ("发送自" + ((m.Group == e.SourceGroup.Id) ? "你群" : "群") + 
                                      m.Group.ToString() + "（" + m.SendTime.ToString() + "），总计被" + m.RepeatCount +
-                                     "人复读过，复读热度：" + heatName));
+                                     "人复读过，复读热度：" + heatName + "\n发送“.re context " + i + "”查看上文。"));
             e.Reply(MainModule.GetQQName(e, m.QQ) + "：" + ToMessageBody(m.Message));
         }
     }
