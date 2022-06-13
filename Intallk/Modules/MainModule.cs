@@ -226,7 +226,7 @@ public class MainModule : IOneBotController
                 ".re <QQ> info：看看黑嘴收集某个人的复读语录的情况\n" +
                 ".re <QQ> <id/内容>：看看某个人指定序号的语录/包含这个内容的语录\n" +
                 ".re <QQ> <id/内容> info：看看某个人指定序号的语录/包含这个内容的语录的情况\n" +
-                ".re context <id>：查看复读语录的上下文\n" +
+                ".re context <id>：查看复读语录的上文\n" +
                 ".re：随机抽一条语录\n" +
                 ".keyword：查看你群今日截至现在最热话题");
 

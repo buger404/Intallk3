@@ -130,6 +130,7 @@ public class RepeatCollector : IOneBotController
     }
     static void DownloadMessageImage(MessageSegment se)
     {
+        if (!se.Content!.EndsWith(".image")) return;
         string file = "context_" + DateTime.Now.ToString("yy.MM.dd.HH.mm.ss.") + se.GetHashCode() + ".jpg";
         Console.WriteLine("Downloading " + file);
         DownLoad(se.Url!, IntallkConfig.DataPath + "\\Resources\\" + file);
@@ -266,17 +267,32 @@ public class RepeatCollector : IOneBotController
         heats.RemoveAll(m => m.Heat <= -2);
         return 0;
     }
-
+    [Command("t")]
+    public void ForwardMessages(GroupMessageEventArgs e)
+    {
+        int g = messagepond.FindIndex(m => m.group == e.SourceGroup.Id);
+        if (g == -1)
+        {
+            e.Reply("你群暂无记录。");
+            return;
+        }
+        MessageBody body = new MessageBody();
+        foreach (MessageHeat message in messagepond[g].pond)
+        {
+            body += MainModule.GetQQName(e, message.QQ) + "：" + ToMessageBody(message.Message) + "\n";
+        }
+        e.Reply(body);
+    }
     [Command("re help")]
     public void RepeatHelp(GroupMessageEventArgs e)
     {
-        e.Reply(e.Sender.At() + "黑嘴珍藏的复读语录集~目前收集语录总条数：" + collection.messages.Count.ToString() + 
+        e.Reply(e.Sender.At() + "黑嘴珍藏的复读语录集~目前收集语录总条数：" + collection.messages.Count.ToString() +
                                 "\n嗯，你想看的话，黑嘴也可以给你看哦~\n指令：\n" +
                                 ".re <QQ>：随机抽一条黑嘴收集过的某人的复读语录\n" +
                                 ".re <QQ> info：看看黑嘴收集某个人的复读语录的情况\n" +
                                 ".re <QQ> <id/内容>：看看某个人指定序号的语录/包含这个内容的语录\n" +
                                 ".re <QQ> <id/内容> info：看看某个人指定序号的语录/包含这个内容的语录的情况\n" +
-                                ".re context <id>：查看复读语录的上下文\n" +
+                                ".re context <id>：查看复读语录的上文\n" +
                                 ".re：随机抽一条语录");
     }
     [Command("re")]
