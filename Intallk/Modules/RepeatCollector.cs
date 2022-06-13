@@ -12,6 +12,7 @@ using Sora.EventArgs.SoraEvent;
 using System.Text;
 using Sora.Util;
 using RestSharp;
+using Newtonsoft.Json.Linq;
 
 namespace Intallk.Modules;
 
@@ -99,6 +100,15 @@ public class RepeatCollector : IOneBotController
         
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
     }
+    private static List<MessageSegment> CopyMsgSegments(List<MessageSegment> seg)
+    {
+        List<MessageSegment> segs = new List<MessageSegment>();
+        foreach(MessageSegment se in seg)
+        {
+            segs.Add(new MessageSegment { Content = se.Content, isImage = se.isImage, Url = se.Url });
+        }
+        return segs;
+    }
     private static List<MessageSegment> GetMessageSegments(MessageBody mb)
     {
         List<MessageSegment> messages = new List<MessageSegment>();
@@ -118,6 +128,24 @@ public class RepeatCollector : IOneBotController
         }
         return messages;
     }
+    static void DownloadMessageImage(MessageSegment se)
+    {
+        string file = "context_" + DateTime.Now.ToString("yy.MM.dd.HH.mm.ss.") + se.GetHashCode() + ".jpg";
+        Console.WriteLine("Downloading " + file);
+        DownLoad(se.Url!, IntallkConfig.DataPath + "\\Resources\\" + file);
+        DateTime time = DateTime.Now;
+        se.Content = file;
+        while (!File.Exists(IntallkConfig.DataPath + "\\Resources\\" + file))
+        {
+            if ((DateTime.Now - time).TotalSeconds > 5)
+            {
+                se.Content = "oh.png";
+                break;
+            }
+            Thread.Sleep(100);
+        }
+        Console.WriteLine("Succeed in downloading(" + (DateTime.Now - time).TotalMilliseconds + "ms）");
+    }
     static async void DownLoad(string url, string path)
     {
         byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(url, Method.Get));
@@ -130,6 +158,8 @@ public class RepeatCollector : IOneBotController
         {
             if (s.isImage)
             {
+                // 漏网之鱼
+                if (s.Content!.EndsWith(".image")) DownloadMessageImage(s);
                 body.Add(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\" + s.Content));
             }
             else
@@ -177,15 +207,16 @@ public class RepeatCollector : IOneBotController
         }
         else
         {
-            if (heats[f].Repeaters.Contains(e.Sender.Id))
+            if (heats[f].Repeaters.Contains(e.Sender.Id) && false)
             {
                 // 复读自己，这人多半有点无聊
                 heats[f].Heat -= 1f;
-                if (heats[f].Heat <= -3)
+                /**heats[f].RepeatCount++;
+                if (heats[f].Heat <= -2 && heats[f].RepeatCount >= 3)
                 {
                     e.Reply(e.Sender.At() + "别刷啦~小心黑嘴把你吃掉哦~");
                     e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
-                }
+                }**/
                 Console.WriteLine("Cool record " + f + " due to duplicate sending. (" + heats[f].Heat + "）");
             }
             else
@@ -209,51 +240,20 @@ public class RepeatCollector : IOneBotController
                 if (!heat.Repeated) 
                 {
                     Console.WriteLine("Start recording...");
+                    List<MessageHeat> heats = new List<MessageHeat>();
                     foreach (MessageHeat he in messagepond[g].pond)
                     {
-                        foreach(MessageSegment se in he.Message)
+                        MessageHeat heat2 = new MessageHeat { QQ = he.QQ, SendTime = he.SendTime, Message = CopyMsgSegments(he.Message) };
+                        heats.Add(heat2);
+                        foreach(MessageSegment se in heat2.Message)
                         {
-                            if (se.isImage)
-                            {
-                                string file = "context_" + DateTime.Now.ToString("yy.MM.dd.HH.mm.ss.") + se.GetHashCode() + ".jpg";
-                                Console.WriteLine("Downloading " + file);
-                                DownLoad(se.Url!, IntallkConfig.DataPath + "\\Resources\\" + file);
-                                DateTime time = DateTime.Now;
-                                se.Content = file;
-                                while (!File.Exists(IntallkConfig.DataPath + "\\Resources\\" + file))
-                                {
-                                    if ((DateTime.Now - time).TotalSeconds > 5)
-                                    {
-                                        se.Content = "oh.png";
-                                        break;
-                                    }
-                                    Thread.Sleep(100);
-                                }
-                                Console.WriteLine("Succeed in downloading(" + (DateTime.Now - time).TotalMilliseconds + "ms）");
-                            }
+                            if (se.isImage) DownloadMessageImage(se);
                         }
                     }
-                    heat.ForwardMessages = messagepond[g].pond;
+                    heat.ForwardMessages = heats;
                     foreach (MessageSegment se in heat.Message)
                     {
-                        if (se.isImage)
-                        {
-                            string file = "context_" + DateTime.Now.ToString("yy.MM.dd.HH.mm.ss.") + se.GetHashCode() + ".jpg";
-                            Console.WriteLine("Downloading " + file);
-                            DownLoad(se.Url!, IntallkConfig.DataPath + "\\Resources\\" + file);
-                            DateTime time = DateTime.Now;
-                            se.Content = file;
-                            while (!File.Exists(IntallkConfig.DataPath + "\\Resources\\" + file))
-                            {
-                                if ((DateTime.Now - time).TotalSeconds > 5)
-                                {
-                                    se.Content = "oh.png";
-                                    break;
-                                }
-                                Thread.Sleep(100);
-                            }
-                            Console.WriteLine("Succeed in downloading(" + (DateTime.Now - time).TotalMilliseconds + "ms）");
-                        }
+                        if (se.isImage) DownloadMessageImage(se);
                     }
                     collection.messages.Add(heat);
                     e.Reply(ToMessageBody(heat.Message));
@@ -263,7 +263,7 @@ public class RepeatCollector : IOneBotController
             }
             if (!heat.Repeated && heat.Group == e.SourceGroup.Id) heat.Cool();
         }
-        heats.RemoveAll(m => m.Heat <= -3);
+        heats.RemoveAll(m => m.Heat <= -2);
         return 0;
     }
 
@@ -293,7 +293,19 @@ public class RepeatCollector : IOneBotController
         }
         MessageHeat heat = collection.messages[id];
         MessageBody body = new MessageBody();
-        foreach(MessageHeat message in (List<MessageHeat>)heat.ForwardMessages!)
+        List<MessageHeat> heats = new List<MessageHeat>();
+        switch (heat.ForwardMessages)
+        {
+            case JArray jarray:
+                JsonSerializer serializer = new();
+                heats = (List<MessageHeat>)serializer.Deserialize(jarray.CreateReader(), typeof(List<MessageHeat>))!;
+                heat.ForwardMessages = heats;
+                break;
+            case List<MessageHeat> list:
+                heats = list;
+                break;
+        }
+        foreach(MessageHeat message in heats)
         {
             body += MainModule.GetQQName(e, message.QQ) + "：" + ToMessageBody(message.Message) + "\n";
         }

@@ -106,7 +106,8 @@ class Painting : IOneBotController
             e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\no.png"));
             return;
         }
-        File.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
+        if (File.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json"))
+            File.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json");
         if (Directory.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template))
             Directory.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
         paints.RemoveAt(pi);
@@ -210,8 +211,8 @@ class Painting : IOneBotController
             {
                 var img = (ImageSegment)msg.Data;
                 string file = IntallkConfig.DataPath + "\\DrawingScript\\" + ((List<string>)hook.Data!)[^1] + "\\" + ((List<string>)hook.Data)[0];
-                if (!File.Exists(file))
-                    File.WriteAllBytes(file, await new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)));
+                if (File.Exists(file)) File.Delete(file);
+                File.WriteAllBytes(file, await new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)));
 
                 ((List<string>)hook.Data).RemoveAt(0);
                 if (((List<string>)hook.Data).Count == 1) break;
@@ -250,7 +251,7 @@ class Painting : IOneBotController
         else if (e.Message.RawText == "取消")
         {
             await e.Reply("好的。");
-            File.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
+            File.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json");
             Directory.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
             return true;
         } 

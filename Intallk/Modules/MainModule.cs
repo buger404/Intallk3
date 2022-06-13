@@ -84,6 +84,13 @@ public class MainModule : IOneBotController
         commandService.Event.OnGroupMessage += (context) =>
         {
             var e = (GroupMessageEventArgs)context.SoraEventArgs;
+            // Debug
+            /**
+            if (e.Sender.Id != 1361778219 && e.Message.RawText.StartsWith('.'))
+            {
+                e.Reply("非常抱歉，现在黑嘴正在被404调整改造中，暂时无法使用呢qwq");
+                return 1;
+            }**/
             bool needClear = false;
             foreach (var hook in hooks)
             {
@@ -202,7 +209,7 @@ public class MainModule : IOneBotController
 
     [Command("help")]
     public void Help(GroupMessageEventArgs e) => 
-        e.Reply("欢迎玩...嗯？(/ω＼*)玩，玩黑嘴...！现在就让黑嘴教教你怎么玩她吧！\n" +
+        e.Reply("欢迎玩...嗯？(/ω＼*)玩，玩黑嘴...！现在就让黑嘴教教你怎么玩它吧！\n" +
                 "黑嘴：不要叫我，黑嘴超级忙，我不在！！！听见没！！\n" +
                 ".test <次数>：让我骂我自己神经病...欸？（我要把404杀掉）\n" + 
                 ".sx <中文缩写>：让黑嘴帮你搜一下这个缩写的意思\n" + 
