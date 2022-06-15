@@ -204,11 +204,11 @@ public class RepeatCollector : IOneBotController
             h.Repeaters.Add(e.Sender.Id);
             heats.Add(h);
             messagepond[g].pond.Add(h);
-            if (messagepond[g].pond.Count > 10) messagepond[g].pond.RemoveAt(0);
+            if (messagepond[g].pond.Count > 15) messagepond[g].pond.RemoveAt(0);
         }
         else
         {
-            if (heats[f].Repeaters.Contains(e.Sender.Id) && false)
+            if (heats[f].Repeaters.Contains(e.Sender.Id))
             {
                 // 复读自己，这人多半有点无聊
                 heats[f].Heat -= 1f;
@@ -227,7 +227,7 @@ public class RepeatCollector : IOneBotController
                 Console.WriteLine("Heat record " + f + " by " + e.Sender.Id + " (" + heats[f].Heat + ")");
             }
             messagepond[g].pond.Add(heats[f]);
-            if (messagepond[g].pond.Count > 10) messagepond[g].pond.RemoveAt(0);
+            if (messagepond[g].pond.Count > 15) messagepond[g].pond.RemoveAt(0);
         }
 
         for (int i = 0; i < heats.Count; i++)
@@ -293,8 +293,19 @@ public class RepeatCollector : IOneBotController
                                 ".re <QQ> <id/内容>：看看某个人指定序号的语录/包含这个内容的语录\n" +
                                 ".re <QQ> <id/内容> info：看看某个人指定序号的语录/包含这个内容的语录的情况\n" +
                                 ".re context <id>：查看复读语录的上文\n" +
+                                ".re <id>：查看指定序号对应的复读语录\n" +
                                 ".re：随机抽一条语录");
     }
+    [Command("re remove <id>")]
+    public void RepeatRemove(GroupMessageEventArgs e, int id)
+    {
+        if (e.Sender.Id != 1361778219) return;
+        e.Reply("好的，已经帮您移除语录" + id + "\n" + ToMessageBody(collection.messages[id].Message));
+        collection.messages.RemoveAt(id);
+        Dump(null);
+    }
+    [Command("re <id>")]
+    public void Repeat(GroupMessageEventArgs e, int id) => GeneralRepeat(e, null!, id.ToString(), false);
     [Command("re")]
     public void Repeat(GroupMessageEventArgs e) => GeneralRepeat(e, null!, "", false);
     [Command("re <QQ>")]
@@ -350,7 +361,12 @@ public class RepeatCollector : IOneBotController
                 i = random.Next(0, c.Count);
             }
         }
-        if(i == -1 || c.Count == 0)
+        if (i < 0 || i >= c.Count)
+        {
+            e.Reply(e.Sender.At() + "咦，这个id好像不太对呢。");
+            return;
+        }
+        if (i == -1 || c.Count == 0)
         {
             e.Reply(e.Sender.At() + "没有找到这样的语录呢。");
             return;
