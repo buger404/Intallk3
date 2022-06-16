@@ -29,6 +29,7 @@ public class MainModule : IOneBotController
     }
     public static List<GroupMessageHook> hooks = new();
     public static List<PrivateMessageHook> hooks2 = new();
+    public static int ExceptionCount = 0;
     readonly Random random = new(Guid.NewGuid().GetHashCode());
     readonly ILogger<MainModule> _logger;
     public static string GetQQName(object? e, long qqid)
@@ -66,6 +67,7 @@ public class MainModule : IOneBotController
         logger.LogInformation("已读入" + Painting.paints.Count + "个绘图模板。");
         commandService.Event.OnException += (context, exception) =>
         {
+            ExceptionCount++;
             logger.LogError(exception.Message + "\n" + exception.StackTrace);
             switch (context.SoraEventArgs)
             {
@@ -211,6 +213,7 @@ public class MainModule : IOneBotController
     public void Help(GroupMessageEventArgs e) => 
         e.Reply("欢迎玩...嗯？(/ω＼*)玩，玩黑嘴...！现在就让黑嘴教教你怎么玩它吧！\n" +
                 "黑嘴：不要叫我，黑嘴超级忙，我不在！！！听见没！！\n" +
+                "<>表示必填，[]表示可不填，/表示前后两个皆可。\n" +
                 ".test <次数>：让我骂我自己神经病...欸？（我要把404杀掉）\n" + 
                 ".sx <中文缩写>：让黑嘴帮你搜一下这个缩写的意思\n" + 
                 ".bug <内容>：欸？这是什么我也不知道呢。\n" +
@@ -222,13 +225,25 @@ public class MainModule : IOneBotController
                 "（私聊）.draw build <模板> <模板脚本>：把你的绘图模板送给黑嘴~\n" +
                 "（私聊）.draw edit <模板> <模板脚本>：修改你送给黑嘴的绘图模板~\n" +
                 "（私聊）.draw remove <模板>：把你送给黑嘴的绘图模板拿回去呜呜呜。\n" +
+                ".re <内容>：查看包含指定内容的语录\n" +
+                ".re context <内容>：查看上文包含指定内容的语录\n" +
                 ".re <QQ>：随机抽一条黑嘴收集过的某人的复读语录\n" +
                 ".re <QQ> info：看看黑嘴收集某个人的复读语录的情况\n" +
                 ".re <QQ> <id/内容>：看看某个人指定序号的语录/包含这个内容的语录\n" +
                 ".re <QQ> <id/内容> info：看看某个人指定序号的语录/包含这个内容的语录的情况\n" +
                 ".re context <id>：查看复读语录的上文\n" +
+                ".re id <id>：查看指定序号对应的复读语录\n" +
                 ".re：随机抽一条语录\n" +
-                ".keyword：查看你群今日截至现在最热话题\n" +
+                ".keyword [列出项数]：查看你群今日截至现在最热话题\n" +
                 ".t：回溯最近的10条消息");
+
+    [Command("status")]
+    public void Status(GroupMessageEventArgs e) =>
+        e.Reply("黑嘴黑嘴运转良好。\n" +
+                "语录库总收录：" + RepeatCollector.collection.messages.Count + "\n" +
+                "语录库备份时间：" + RepeatCollector.DumpTime.ToString() + "\n" +
+                "关键词备份时间：" + Keyword.DumpTime.ToString() + "\n" +
+                "绘图模板总收录：" + Painting.paints.Count + "\n" +
+                "总计异常抛出数量：" + ExceptionCount.ToString());
 
 }

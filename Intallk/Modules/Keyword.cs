@@ -38,8 +38,9 @@ class Keyword : IOneBotController
     Timer announceTimer = new Timer(Announce, null, new TimeSpan(0, 0, 5), new TimeSpan(0, 0, 5));
     Timer dumpTimer = new Timer(Dump, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
     static DateTime announceTime = DateTime.MinValue;
+    public static DateTime DumpTime;
     static List<MessageRecord> messages = new List<MessageRecord>();
-    static SoraApi sora = null;
+    static SoraApi sora = null!;
     public Keyword(ICommandService commandService, ILogger<Keyword> logger)
     {
         _logger = logger;
@@ -56,6 +57,7 @@ class Keyword : IOneBotController
     }
     public static void Dump(object? state)
     {
+        DumpTime = DateTime.Now;
         string file = IntallkConfig.DataPath + "\\keyword.json";
         MessageRecordFile mrf = new MessageRecordFile();
         mrf.messages = messages;
@@ -64,8 +66,8 @@ class Keyword : IOneBotController
         serializer.Serialize(new StringWriter(sb), mrf);
         File.WriteAllText(file, sb.ToString());
     }
-    [Command("keyword")]
-    public void KeywordToday(GroupMessageEventArgs e)
+    [Command("keyword [count]")]
+    public void KeywordToday(GroupMessageEventArgs e,int count = 5)
     {
         int i = messages.FindIndex(m => m.group == e.SourceGroup);
         if (i == -1)
@@ -76,10 +78,10 @@ class Keyword : IOneBotController
         MessageRecord r = messages[i];
         string text = r.str.ToString(), hlist = "";
         TfidfExtractor tfidfExtractor = new TfidfExtractor();
-        List<string> key = tfidfExtractor.ExtractTags(text, 5, null).ToList();
+        List<WordWeightPair> key = tfidfExtractor.ExtractTagsWithWeight(text, count, null).ToList();
         for (int s = 0; s < key.Count; s++)
         {
-            hlist += $"{s+1}.{key[s]}\n";
+            hlist += $"{s+1}.{key[s].Word}（{Math.Floor(key[i].Weight * 1000) / 10}%）\n";
         }
         e.Reply("今日截至现在你群最热聊天话题：\n" + hlist + "~来自黑嘴窥屏统计~");
     }
@@ -90,13 +92,17 @@ class Keyword : IOneBotController
         int i = messages.FindIndex(m => m.group == e.SourceGroup);
         if (i == -1)
         {
-            messages.Add(new MessageRecord(e.SourceGroup));
+            messages.Add(new MessageRecord(e!.SourceGroup));
             i = messages.Count - 1;
         }
         string msg = "";
         foreach(SoraSegment se in e.Message.MessageBody)
         {
-            if(se.MessageType == SegmentType.Text) msg += ((TextSegment)se.Data).Content;
+            if (se.MessageType == SegmentType.Text)
+            {
+                string text = ((TextSegment)se.Data).Content;
+                if(!text.StartsWith("http")) msg += text;
+            }
         }
         messages[i].str.AppendLine(msg);
         return 0;
@@ -110,10 +116,10 @@ class Keyword : IOneBotController
         {
             string text = r.str.ToString(), hlist = "";
             TfidfExtractor tfidfExtractor = new TfidfExtractor();
-            List<string> key = tfidfExtractor.ExtractTags(text, 5, null).ToList();
+            List<WordWeightPair> key = tfidfExtractor.ExtractTagsWithWeight(text, 5, null).ToList();
             for(int i = 0;i < key.Count;i++)    
             {
-                hlist += $"{i+1}.{key[i]}\n";
+                hlist += $"{i + 1}.{key[i].Word}（{Math.Floor(key[i].Weight * 1000) / 10}%）\n";
             }
             sora.GetGroup(r.group).SendGroupMessage("今日你群最热聊天话题：\n" + hlist + "~来自黑嘴窥屏统计~");
             r.str.Clear();

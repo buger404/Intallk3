@@ -19,19 +19,19 @@ namespace Intallk.Modules;
 public class RepeatCollector : IOneBotController
 {
     [Serializable]
-    class RepeatCollection
+    public class RepeatCollection
     {
         public List<MessageHeat> messages = new List<MessageHeat>();
     }
     [Serializable]
-    class MessageSegment
+    public class MessageSegment
     {
         public string? Content { get; set; }
         public string? Url { get; set; }
         public bool isImage;
     }
     [Serializable]
-    class MessageHeat
+    public class MessageHeat
     {
         public bool Repeated = false;
         public object? ForwardMessages;
@@ -50,7 +50,7 @@ public class RepeatCollector : IOneBotController
             RepeatCount++;
         }
     }
-    class MessagePond
+    public class MessagePond
     {
         public long group;
         public List<MessageHeat> pond;
@@ -58,12 +58,14 @@ public class RepeatCollector : IOneBotController
     const float HeatLimit = 2f;
     List<MessageHeat> heats = new List<MessageHeat>();
     List<MessagePond> messagepond = new List<MessagePond>();
-    static RepeatCollection collection = new RepeatCollection();
+    public static RepeatCollection collection = new RepeatCollection();
+    public static DateTime DumpTime;
     Timer dumpTimer = new Timer(Dump, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
     readonly Random random = new(Guid.NewGuid().GetHashCode());
     readonly ILogger<RepeatCollector> _logger;
     public static void Dump(object? state)
     {
+        DumpTime = DateTime.Now;
         string file = IntallkConfig.DataPath + "\\collection.json",
         file_backup = IntallkConfig.DataPath + "\\collection_backup.json";
         if(File.Exists(file)) File.Copy(file, file_backup, true);
@@ -96,8 +98,17 @@ public class RepeatCollector : IOneBotController
             File.Copy(IntallkConfig.DataPath + "\\collection.json", 
                 IntallkConfig.DataPath + "\\collection_restore_" + DateTime.Now.ToString("yy.MM.dd.HH.mm") + ".json");
         }
-
-        
+        foreach(MessageHeat heat in collection.messages)
+        {
+            switch (heat.ForwardMessages)
+            {
+                case JArray jarray:
+                    JsonSerializer serializer = new();
+                    heats = (List<MessageHeat>)serializer.Deserialize(jarray.CreateReader(), typeof(List<MessageHeat>))!;
+                    heat.ForwardMessages = heats;
+                    break;
+            }
+        }
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
     }
     private static List<MessageSegment> CopyMsgSegments(List<MessageSegment> seg)
@@ -288,12 +299,14 @@ public class RepeatCollector : IOneBotController
     {
         e.Reply(e.Sender.At() + "黑嘴珍藏的复读语录集~目前收集语录总条数：" + collection.messages.Count.ToString() +
                                 "\n嗯，你想看的话，黑嘴也可以给你看哦~\n指令：\n" +
+                                ".re <内容>：查看包含指定内容的语录\n" +
+                                ".re context <内容>：查看上文包含指定内容的语录\n" +
                                 ".re <QQ>：随机抽一条黑嘴收集过的某人的复读语录\n" +
                                 ".re <QQ> info：看看黑嘴收集某个人的复读语录的情况\n" +
                                 ".re <QQ> <id/内容>：看看某个人指定序号的语录/包含这个内容的语录\n" +
                                 ".re <QQ> <id/内容> info：看看某个人指定序号的语录/包含这个内容的语录的情况\n" +
                                 ".re context <id>：查看复读语录的上文\n" +
-                                ".re <id>：查看指定序号对应的复读语录\n" +
+                                ".re id <id>：查看指定序号对应的复读语录\n" +
                                 ".re：随机抽一条语录");
     }
     [Command("re remove <id>")]
@@ -304,10 +317,14 @@ public class RepeatCollector : IOneBotController
         collection.messages.RemoveAt(id);
         Dump(null);
     }
-    [Command("re <id>")]
+    [Command("re id <id>")]
     public void Repeat(GroupMessageEventArgs e, int id) => GeneralRepeat(e, null!, id.ToString(), false);
     [Command("re")]
     public void Repeat(GroupMessageEventArgs e) => GeneralRepeat(e, null!, "", false);
+    [Command("re context <content>")]
+    public void RepeatContext(GroupMessageEventArgs e, string content) => GeneralRepeat(e, m => ((List<MessageHeat>)m.ForwardMessages!).FindIndex(n => n.Message.FindIndex(o => o.Content!.Contains(content)) != -1) != -1, "", false);
+    [Command("re <content>")]
+    public void Repeat(GroupMessageEventArgs e, string content) => GeneralRepeat(e, m => m.Message.FindIndex(n => n.Content!.Contains(content)) != -1, "", false);
     [Command("re <QQ>")]
     public void Repeat(GroupMessageEventArgs e, User QQ) => GeneralRepeat(e, m => m.QQ == QQ.Id, "", false);
     [Command("re context <id>")]

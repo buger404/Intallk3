@@ -71,7 +71,7 @@ class Painting : IOneBotController
         }
         e.Reply(e.Sender.At() + "作者：" + MainModule.GetQQName(e, paints[pi].Source.Author) + "\n"
                                     + "绘制步骤：共" + paints[pi].Source.Commands!.Count.ToString() + "步\n"
-                                    + "使用方法：.draw " + (pi+1).ToString() + "/" + paints[pi].Source.Name + paints[pi].Source.ParameterDescription);
+                                    + "使用方法：.draw " + (pi+1).ToString() + "/" + paints[pi].Source.Name + " " + paints[pi].Source.ParameterDescription);
         return;
     }
     [Command("draw list")]
