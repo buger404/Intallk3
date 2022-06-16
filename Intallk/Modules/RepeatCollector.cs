@@ -214,7 +214,13 @@ public class RepeatCollector : IOneBotController
             };
             h.Repeaters.Add(e.Sender.Id);
             heats.Add(h);
-            messagepond[g].pond.Add(h);
+            messagepond[g].pond.Add(new MessageHeat
+            {
+                Message = CopyMsgSegments(seg),
+                QQ = e.Sender.Id,
+                Group = e.SourceGroup.Id,
+                SendTime = DateTime.Now
+            });
             if (messagepond[g].pond.Count > 15) messagepond[g].pond.RemoveAt(0);
         }
         else
@@ -300,13 +306,13 @@ public class RepeatCollector : IOneBotController
         e.Reply(e.Sender.At() + "黑嘴珍藏的复读语录集~目前收集语录总条数：" + collection.messages.Count.ToString() +
                                 "\n嗯，你想看的话，黑嘴也可以给你看哦~\n指令：\n" +
                                 ".re <内容>：查看包含指定内容的语录\n" +
-                                ".re context <内容>：查看上文包含指定内容的语录\n" +
-                                ".re <QQ>：随机抽一条黑嘴收集过的某人的复读语录\n" +
+                                ".re bycontext <内容>：查看上文包含指定内容的语录\n" +
+                                ".re byqq <QQ>：随机抽一条黑嘴收集过的某人的复读语录\n" +
                                 ".re <QQ> info：看看黑嘴收集某个人的复读语录的情况\n" +
                                 ".re <QQ> <id/内容>：看看某个人指定序号的语录/包含这个内容的语录\n" +
                                 ".re <QQ> <id/内容> info：看看某个人指定序号的语录/包含这个内容的语录的情况\n" +
                                 ".re context <id>：查看复读语录的上文\n" +
-                                ".re id <id>：查看指定序号对应的复读语录\n" +
+                                ".re byid <id>：查看指定序号对应的复读语录\n" +
                                 ".re：随机抽一条语录");
     }
     [Command("re remove <id>")]
@@ -317,15 +323,15 @@ public class RepeatCollector : IOneBotController
         collection.messages.RemoveAt(id);
         Dump(null);
     }
-    [Command("re id <id>")]
+    [Command("re byid <id>")]
     public void Repeat(GroupMessageEventArgs e, int id) => GeneralRepeat(e, null!, id.ToString(), false);
     [Command("re")]
     public void Repeat(GroupMessageEventArgs e) => GeneralRepeat(e, null!, "", false);
-    [Command("re context <content>")]
+    [Command("re bycontext <content>")]
     public void RepeatContext(GroupMessageEventArgs e, string content) => GeneralRepeat(e, m => ((List<MessageHeat>)m.ForwardMessages!).FindIndex(n => n.Message.FindIndex(o => o.Content!.Contains(content)) != -1) != -1, "", false);
     [Command("re <content>")]
     public void Repeat(GroupMessageEventArgs e, string content) => GeneralRepeat(e, m => m.Message.FindIndex(n => n.Content!.Contains(content)) != -1, "", false);
-    [Command("re <QQ>")]
+    [Command("re byqq <QQ>")]
     public void Repeat(GroupMessageEventArgs e, User QQ) => GeneralRepeat(e, m => m.QQ == QQ.Id, "", false);
     [Command("re context <id>")]
     public void RepeatContext(GroupMessageEventArgs e, User QQ, int id)
@@ -351,7 +357,16 @@ public class RepeatCollector : IOneBotController
         }
         foreach(MessageHeat message in heats)
         {
-            body += MainModule.GetQQName(e, message.QQ) + "：" + ToMessageBody(message.Message) + "\n";
+            string name = "";
+            if(message.Repeaters.Count > 0)
+            {
+                name = MainModule.GetQQName(e, message.QQ) + "等共" + (message.Repeaters.Count + 1) + "人";
+            }
+            else
+            {
+                name = MainModule.GetQQName(e, message.QQ);
+            }
+            body += name + "：" + ToMessageBody(message.Message) + "\n";
         }
         e.Reply(body);
     }
@@ -410,8 +425,8 @@ public class RepeatCollector : IOneBotController
                 heatName = "冰棍会融化的程度";
             }
             e.Reply(e.Sender.At() + ("发送自" + ((m.Group == e.SourceGroup.Id) ? "你群" : "群") + 
-                                     m.Group.ToString() + "（" + m.SendTime.ToString() + "），总计被" + m.RepeatCount +
-                                     "人复读过，复读热度：" + heatName + "\n发送“.re context " + i + "”查看上文。"));
+                                     m.Group.ToString() + "（" + m.SendTime.ToString() + "），总计被" + m.RepeatCount.ToString() +
+                                     "人复读过，复读热度：" + heatName + "\n发送“.re context " + i.ToString() + "”查看上文。"));
             e.Reply(MainModule.GetQQName(e, m.QQ) + "：" + ToMessageBody(m.Message));
         }
     }
