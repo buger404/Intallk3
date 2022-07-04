@@ -34,6 +34,7 @@ public class RepeatCollector : IOneBotController
     public class MessageHeat
     {
         public bool Repeated = false;
+        public int Index = 0;
         public object? ForwardMessages;
         public List<MessageSegment> Message = new List<MessageSegment>();
         public DateTime SendTime;
@@ -53,7 +54,7 @@ public class RepeatCollector : IOneBotController
     public class MessagePond
     {
         public long group;
-        public List<MessageHeat> pond;
+        public List<MessageHeat>? pond;
     }
     const float HeatLimit = 2f;
     List<MessageHeat> heats = new List<MessageHeat>();
@@ -98,7 +99,11 @@ public class RepeatCollector : IOneBotController
             File.Copy(IntallkConfig.DataPath + "\\collection.json", 
                 IntallkConfig.DataPath + "\\collection_restore_" + DateTime.Now.ToString("yy.MM.dd.HH.mm") + ".json");
         }
-        foreach(MessageHeat heat in collection.messages)
+        for (int i = 0; i < collection.messages.Count; i++)
+        {
+            collection.messages[i].Index = i;
+        }
+        foreach (MessageHeat heat in collection.messages)
         {
             switch (heat.ForwardMessages)
             {
@@ -197,12 +202,22 @@ public class RepeatCollector : IOneBotController
         if (e.Message.RawText.StartsWith("dy") || e.Message.RawText.StartsWith(".")) return 0;
         int f = heats.FindIndex(m => (m.Group == e.SourceGroup.Id && CompareMessageSegment(m.Message,seg)));
         int g = messagepond.FindIndex(m => m.group == e.SourceGroup.Id);
+        if (e.SourceGroup.Id == 1078432121) return 0;
         if (g == -1)
         {
             messagepond.Add(new MessagePond { group = e.SourceGroup.Id, pond = new List<MessageHeat>() });
             g = messagepond.Count - 1;
         }
-        if(f == -1)
+        messagepond[g].pond.Add(new MessageHeat
+        {
+            Message = CopyMsgSegments(seg),
+            QQ = e.Sender.Id,
+            Group = e.SourceGroup.Id,
+            SendTime = DateTime.Now
+        });
+        if (messagepond[g].pond.Count > 15) messagepond[g].pond.RemoveAt(0);
+
+        if (f == -1)
         {
             //Console.WriteLine("New message.");
             MessageHeat h = new MessageHeat
@@ -214,14 +229,6 @@ public class RepeatCollector : IOneBotController
             };
             h.Repeaters.Add(e.Sender.Id);
             heats.Add(h);
-            messagepond[g].pond.Add(new MessageHeat
-            {
-                Message = CopyMsgSegments(seg),
-                QQ = e.Sender.Id,
-                Group = e.SourceGroup.Id,
-                SendTime = DateTime.Now
-            });
-            if (messagepond[g].pond.Count > 15) messagepond[g].pond.RemoveAt(0);
         }
         else
         {
@@ -243,8 +250,6 @@ public class RepeatCollector : IOneBotController
                 heats[f].Repeaters.Add(e.Sender.Id);
                 Console.WriteLine("Heat record " + f + " by " + e.Sender.Id + " (" + heats[f].Heat + ")");
             }
-            messagepond[g].pond.Add(heats[f]);
-            if (messagepond[g].pond.Count > 15) messagepond[g].pond.RemoveAt(0);
         }
 
         for (int i = 0; i < heats.Count; i++)
@@ -273,6 +278,7 @@ public class RepeatCollector : IOneBotController
                     {
                         if (se.isImage) DownloadMessageImage(se);
                     }
+                    heat.Index = collection.messages.Count;
                     collection.messages.Add(heat);
                     e.Reply(ToMessageBody(heat.Message));
                     Console.WriteLine("Sent.");
@@ -315,6 +321,14 @@ public class RepeatCollector : IOneBotController
                                 ".re byid <id>：查看指定序号对应的复读语录\n" +
                                 ".re：随机抽一条语录");
     }
+    [Command("re remove bygroup <id>")]
+    public void RepeatRemoveGroup(GroupMessageEventArgs e, int id)
+    {
+        if (e.Sender.Id != 1361778219) return;
+        e.Reply("好的，移除语录总数：" + collection.messages.FindAll(m => m.Group == id).Count);
+        collection.messages.RemoveAll(m => m.Group == id);
+        Dump(null);
+    }
     [Command("re remove <id>")]
     public void RepeatRemove(GroupMessageEventArgs e, int id)
     {
@@ -336,7 +350,12 @@ public class RepeatCollector : IOneBotController
     [Command("re context <id>")]
     public void RepeatContext(GroupMessageEventArgs e, User QQ, int id)
     {
-        if(id < 0 || id >= collection.messages.Count)
+        if (e.SourceGroup.Id == 1078432121)
+        {
+            e.Reply("很抱歉，复读语录功能在本群不可用。");
+            return;
+        }
+        if (id < 0 || id >= collection.messages.Count)
         {
             e.Reply("呜呜，这是什么id呢，请按照黑嘴教你的发送指令好嘛？");
             return;
@@ -378,6 +397,11 @@ public class RepeatCollector : IOneBotController
     public void RepeatI(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, true);
     private void GeneralRepeat(GroupMessageEventArgs e, Predicate<MessageHeat> p, string key, bool infoOnly)
     {
+        if (e.SourceGroup.Id == 1078432121)
+        {
+            e.Reply("很抱歉，复读语录功能在本群不可用。");
+            return;
+        }
         List<MessageHeat> c = collection.messages;
         if (p != null) c = c.FindAll(p);
         int i = -1;
@@ -389,8 +413,18 @@ public class RepeatCollector : IOneBotController
         {
             if (!int.TryParse(key, out i))
             {
-                c = c.FindAll(m => m.Message.FindIndex(n => n.Content!.Contains(key)) != -1);
-                i = random.Next(0, c.Count);
+                List<int> si = new List<int>();
+                for(int j = 0;j < c.Count; j++)
+                {
+                    if (c[j].Message.FindIndex(n => n.Content!.Contains(key)) != -1)
+                        si.Add(j);
+                }
+                if(si.Count == 0)
+                {
+                    e.Reply(e.Sender.At() + "找不到这样的语录捏。");
+                    return;
+                }
+                i = si[random.Next(0, si.Count)];
             }
         }
         if (i < 0 || i >= c.Count)
@@ -410,24 +444,7 @@ public class RepeatCollector : IOneBotController
         else
         {
             MessageHeat m = c[i];
-            string heatName = "";
-            if(m.Heat < 0)
-            {
-                heatName = "过气";
-            }else if(m.Heat >= 0)
-            {
-                heatName = "一般";
-            }else if(m.Heat > 10)
-            {
-                heatName = "狂热";
-            }else if(m.Heat > 15)
-            {
-                heatName = "冰棍会融化的程度";
-            }
-            e.Reply(e.Sender.At() + ("发送自" + ((m.Group == e.SourceGroup.Id) ? "你群" : "群") + 
-                                     m.Group.ToString() + "（" + m.SendTime.ToString() + "），总计被" + m.RepeatCount.ToString() +
-                                     "人复读过，复读热度：" + heatName + "\n发送“.re context " + i.ToString() + "”查看上文。"));
-            e.Reply(MainModule.GetQQName(e, m.QQ) + "：" + ToMessageBody(m.Message));
+            e.Reply("(" + m.Index + ")" + MainModule.GetQQName(e, m.QQ) + "：" + ToMessageBody(m.Message));
         }
     }
 }

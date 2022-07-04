@@ -30,6 +30,7 @@ public class MainModule : IOneBotController
     public static List<GroupMessageHook> hooks = new();
     public static List<PrivateMessageHook> hooks2 = new();
     public static int ExceptionCount = 0;
+    public static Dictionary<long, DateTime> replyTime = new Dictionary<long, DateTime>();
     readonly Random random = new(Guid.NewGuid().GetHashCode());
     readonly ILogger<MainModule> _logger;
     public static string GetQQName(object? e, long qqid)
@@ -93,6 +94,10 @@ public class MainModule : IOneBotController
                 e.Reply("非常抱歉，现在黑嘴正在被404调整改造中，暂时无法使用呢qwq");
                 return 1;
             }**/
+            if(e.Message.RawText.ToLower() == "let's get higher!")
+            {
+                e.Reply(SoraSegment.Record(IntallkConfig.DataPath + "\\Resources\\letsgethigher.mp3"));
+            }
             bool needClear = false;
             foreach (var hook in hooks)
             {
@@ -117,9 +122,45 @@ public class MainModule : IOneBotController
             if (needClear) hooks.RemoveAll(m => m.QQ == 0);
             return 0;
         };
+        commandService.Event.OnFriendRequest += (context) =>
+        {
+            var e = (FriendRequestEventArgs)context.SoraEventArgs;
+            e.Accept();
+            e.Sender.SendPrivateMessage("您已成功与黑嘴添加好友，感谢您对黑嘴的支持。😘");
+            e.Sender.SendPrivateMessage(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+            return 1;
+        };
+        commandService.Event.OnGroupRequest += (context) =>
+        {
+            var e = (AddGroupRequestEventArgs)context.SoraEventArgs;
+            e.Accept();
+            e.SourceGroup.SendGroupMessage("大家好呀，我是机器人黑嘴~发送'.help'可以查看说明书哦~");
+            e.SourceGroup.SendGroupMessage(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+            return 1;
+        };
         commandService.Event.OnPrivateMessage += (context) =>
         {
             var e = (PrivateMessageEventArgs)context.SoraEventArgs;
+            bool sendBio = false;
+            if (!replyTime.ContainsKey(e.Sender.Id))
+            {
+                replyTime.Add(e.Sender.Id, DateTime.Now);
+                sendBio = true;
+            }
+            else
+            {
+                if ((DateTime.Now - replyTime[e.Sender.Id]).TotalMinutes > 20)
+                {
+                    sendBio = true;
+                    replyTime[e.Sender.Id] = DateTime.Now;
+                }
+            }
+            if (sendBio)
+            {
+                e.Reply("😊您好呀，我是404的机器人黑嘴，您可以在群里发送'.help'查看我的指令说明书噢~\n" +
+                        "如果您要联系404，也可以：QQ1361778219。\n黑嘴将自动处理消息，因此404很少查看黑嘴的消息，有事请联系404，谢谢ヾ(≧▽≦*)o");
+            }
+
             bool needClear = false;
             try
             {

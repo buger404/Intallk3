@@ -33,14 +33,16 @@ class Keyword : IOneBotController
     struct MessageRecordFile
     {
         public List<MessageRecord> messages;
+        public Dictionary<long, bool> switches;
     }
     readonly ILogger<Keyword> _logger;
     Timer announceTimer = new Timer(Announce, null, new TimeSpan(0, 0, 5), new TimeSpan(0, 0, 5));
     Timer dumpTimer = new Timer(Dump, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
     static DateTime announceTime = DateTime.MinValue;
     public static DateTime DumpTime;
+    static Dictionary<long, bool> switches = new Dictionary<long, bool>();
     static List<MessageRecord> messages = new List<MessageRecord>();
-    static SoraApi sora = null!;
+    public static SoraApi sora = null!;
     public Keyword(ICommandService commandService, ILogger<Keyword> logger)
     {
         _logger = logger;
@@ -52,6 +54,8 @@ class Keyword : IOneBotController
             MessageRecordFile mrf = new MessageRecordFile();
             mrf = (MessageRecordFile)serializer.Deserialize(new StringReader(File.ReadAllText(file)), typeof(MessageRecordFile))!;
             messages = mrf.messages;
+            switches = mrf.switches;
+            if (mrf.switches != null) switches = mrf.switches;
         }
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
     }
@@ -61,10 +65,60 @@ class Keyword : IOneBotController
         string file = IntallkConfig.DataPath + "\\keyword.json";
         MessageRecordFile mrf = new MessageRecordFile();
         mrf.messages = messages;
+        mrf.switches = switches;
         JsonSerializer serializer = new();
         var sb = new StringBuilder();
         serializer.Serialize(new StringWriter(sb), mrf);
         File.WriteAllText(file, sb.ToString());
+    }
+    [Command("keyword switch off")]
+    public void KeywordOff(GroupMessageEventArgs e)
+    {
+        if (!switches.ContainsKey(e.SourceGroup.Id))
+        {
+            switches.Add(e.SourceGroup.Id, false);
+        }
+        else
+        {
+            switches[e.SourceGroup.Id] = false;
+        }
+        e.Reply("已在你群关闭关键词统计。");
+        Dump(null);
+    }
+    [Command("keyword switch on")]
+    public void KeywordOn(GroupMessageEventArgs e)
+    {
+        if (!switches.ContainsKey(e.SourceGroup.Id))
+        {
+            switches.Add(e.SourceGroup.Id, true);
+        }
+        else
+        {
+            switches[e.SourceGroup.Id] = true;
+        }
+        e.Reply("已在你群开启关键词统计。");
+        Dump(null);
+    }
+    [Command("keyword switch")]
+    public void KeywordSwitch(GroupMessageEventArgs e)
+    {
+        if (!switches.ContainsKey(e.SourceGroup.Id))
+        {
+            e.Reply("你群关键词统计：关闭。");
+        }
+        else
+        {
+            e.Reply("你群关键词统计：" + (switches[e.SourceGroup.Id] ? "开启" : "关闭") + "。");
+        }
+    }
+    [Command("keyword clear")]
+    public void KeywordClear(GroupMessageEventArgs e)
+    {
+        if (e.Sender.Id != 1361778219) return;
+        int i = messages.FindIndex(m => m.group == e.SourceGroup);
+        if (i == -1) return;
+        messages[i].str.Clear();
+        e.Reply("清除成功。");
     }
     [Command("keyword [count]")]
     public void KeywordToday(GroupMessageEventArgs e,int count = 5)
@@ -88,6 +142,8 @@ class Keyword : IOneBotController
     private int Event_OnGroupMessage(OneBotContext scope)
     {
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
+        if (!switches.ContainsKey(e.SourceGroup.Id)) return 0;
+        if (!switches[e.SourceGroup.Id]) return 0;
         if (sora == null) sora = e.SoraApi;
         int i = messages.FindIndex(m => m.group == e.SourceGroup);
         if (i == -1)
@@ -114,15 +170,21 @@ class Keyword : IOneBotController
         announceTime = DateTime.Now;
         foreach(MessageRecord r in messages)
         {
-            string text = r.str.ToString(), hlist = "";
-            TfidfExtractor tfidfExtractor = new TfidfExtractor();
-            List<WordWeightPair> key = tfidfExtractor.ExtractTagsWithWeight(text, 5, null).ToList();
-            for(int i = 0;i < key.Count;i++)    
+            if (switches.ContainsKey(r.group))
             {
-                hlist += $"{i + 1}.{key[i].Word}（{Math.Floor(key[i].Weight * 1000) / 10}%）\n";
+                if (switches[r.group])
+                {
+                    string text = r.str.ToString(), hlist = "";
+                    TfidfExtractor tfidfExtractor = new TfidfExtractor();
+                    List<WordWeightPair> key = tfidfExtractor.ExtractTagsWithWeight(text, 5, null).ToList();
+                    for (int i = 0; i < key.Count; i++)
+                    {
+                        hlist += $"{i + 1}.{key[i].Word}（{Math.Floor(key[i].Weight * 1000) / 10}%）\n";
+                    }
+                    sora.GetGroup(r.group).SendGroupMessage("今日你群最热聊天话题：\n" + hlist + "~来自黑嘴窥屏统计~");
+                    r.str.Clear();
+                }
             }
-            sora.GetGroup(r.group).SendGroupMessage("今日你群最热聊天话题：\n" + hlist + "~来自黑嘴窥屏统计~");
-            r.str.Clear();
         }
 
     }
