@@ -7,6 +7,7 @@ public class PaintFile
     public string? Name { get; set; }
     public string? ParameterDescription { get; set; }
     public List<PaintCommands>? Commands { get; set; }
+    public List<string>? CustomImages { get; set; }
     public List<string>? Parameters { get; set; }
     public bool NeedQQParameter { get; set; }
 }
@@ -24,7 +25,12 @@ public class PaintCommands
 [Serializable]
 public enum PaintCommandType
 {
-    SetCanvas, FillRectangle, FillEllipse, DrawImage, DrawRectangle, DrawEllipse, Write
+    SetCanvas, FillRectangle, FillEllipse, DrawImage, DrawRectangle, DrawEllipse, Write, Effect
+}
+[Serializable]
+public enum EffectType
+{
+    Blur,GrayScale
 }
 [Serializable]
 public enum PaintAdjustWriteMode

@@ -30,7 +30,7 @@ class GIFProcess : IOneBotController
         MainModule.RegisterHook(e.Sender.Id, e.SourceGroup.Id, GIFExtractCallBack);
     }
 
-    public bool GIFExtractCallBack(GroupMessageEventArgs e, MainModule.GroupMessageHook hook)
+    public async Task<bool> GIFExtractCallBack(GroupMessageEventArgs e, MainModule.GroupMessageHook hook)
     {
         bool hasImage = false;
         foreach (SoraSegment msg in e.Message.MessageBody)
@@ -59,12 +59,12 @@ class GIFProcess : IOneBotController
                 g.Dispose();
                 convert.Dispose();
 
-                e.Reply(e.Sender.At() + SoraSegment.Image(outfile));
+                await e.Reply(e.Sender.At() + SoraSegment.Image(outfile));
             }
         }
         if (!hasImage)
         {
-            e.Reply(e.Sender.At() + "那好吧~你不想发图片，那黑嘴就不帮你展开了。");
+            await e.Reply(e.Sender.At() + "那好吧~你不想发图片，那黑嘴就不帮你展开了。");
         }
         return true;
     }

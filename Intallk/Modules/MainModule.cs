@@ -19,7 +19,7 @@ public class MainModule : IOneBotController
         public PrivateMessageHookCallback? Callback { get; set; }
         public object? Data { get; set; }
     }
-    public delegate bool GroupMessageHookCallback(GroupMessageEventArgs e, GroupMessageHook hook);
+    public delegate Task<bool> GroupMessageHookCallback(GroupMessageEventArgs e, GroupMessageHook hook);
     public class GroupMessageHook
     {
         public long Group { get; set; }
@@ -105,7 +105,7 @@ public class MainModule : IOneBotController
                 {
                     try
                     {
-                        if (hook.Callback!(e, hook))
+                        if (hook.Callback!(e, hook).Result)
                         {
                             hook.QQ = 0;
                             needClear = true;

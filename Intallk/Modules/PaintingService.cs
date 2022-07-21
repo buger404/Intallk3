@@ -11,6 +11,9 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
 using Sora.Util;
+using Sora.Entities.Segment.DataModel;
+using System.Runtime.InteropServices;
+using System.Reflection;
 
 public class PaintingCompiler
 {
@@ -30,6 +33,7 @@ public class PaintingCompiler
         string[] str = src.Split('\'', StringSplitOptions.RemoveEmptyEntries);
         var strconst = new List<string>();
         var param = new List<string>();
+        var customImg = new List<string>();
         piclist = new List<string>();
         src = "";
         for (int i = 0; i < str.Length; i++)
@@ -117,6 +121,25 @@ public class PaintingCompiler
                     if (!piclist.Contains(resolve) && resolve != "QQ头像") piclist.Add(resolve);
                     if (resolve == "QQ头像") paintfile.NeedQQParameter = true;
                     cmd = new PaintCommands(PaintCommandType.DrawImage, x, y, 0f, 0f, resolve, PaintAlign.Left, PaintAlign.Left);
+                    if (resolve.StartsWith("img;")){
+                        customImg.Add(resolve.Substring(4));
+                    }
+                    solved = true;
+                }
+                if (sen[i].Contains("应用滤镜"))
+                {
+                    if (solved) ThrowException("[Standard.DoubleCommand]不应在一个句子中同时指定多个绘制指令。");
+                    resolve = GetCenter("在", sen[i], "处");
+                    if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
+                    float x = 0, y = 0;
+                    ParsePos(resolve, out x, out y);
+                    string[] t = sen[i].Split('：');
+                    if (t.Length == 1) ThrowException("[Effect.EffectMissing]应指定滤镜名称。");
+                    resolve = strconst[int.Parse(t[1])];
+                    EffectType ef = EffectType.Blur;
+                    if (resolve == "模糊") ef = EffectType.Blur;
+                    if (resolve == "黑白") ef = EffectType.GrayScale;
+                    cmd = new PaintCommands(PaintCommandType.Effect, x, y, 0f, 0f, (int)ef, 0, 0);
                     solved = true;
                 }
                 if (sen[i].Contains("填充矩形"))
@@ -214,6 +237,22 @@ public class PaintingCompiler
                     Color color;
                     ParseColor(resolve, out color);
                     if (cmd.CommandType != PaintCommandType.Write) cmd.Args[4] = color; else cmd.Args[7] = color;
+                }
+                if (sen[i].StartsWith("半径为"))
+                {
+                    if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
+                    if (cmd.CommandType != PaintCommandType.Effect) ThrowException("[Standard.InvalidParameter]该参数只对滤镜有效。");
+                    resolve = GetBack("为", sen[i]);
+                    float radius = 0;
+                    if (!float.TryParse(resolve, out radius))
+                    {
+                        ThrowException("[Effect.InvalidRadius]指定的半径数据无效。");
+                    }
+                    else
+                    {
+                        if(radius < 0) ThrowException("[Effect.InvalidRadius]指定的半径数据无效。");
+                        cmd.Args[5] = radius;
+                    }
                 }
                 if (sen[i].EndsWith("色"))
                 {
@@ -337,12 +376,17 @@ public class PaintingCompiler
         if (src.Contains("{QQ")) paintfile.NeedQQParameter = true;
         paintfile.ParameterDescription = "";
         paintfile.Parameters = param;
+        paintfile.CustomImages = customImg;
         foreach (string s in param)
         {
             paintfile.ParameterDescription += $"<{s}> ";
         }
         if (paintfile.ParameterDescription.Length == 0) paintfile.ParameterDescription = "不需要任何参数。";
         if (paintfile.NeedQQParameter) paintfile.ParameterDescription = "<QQ号/艾特对方> " + paintfile.ParameterDescription;
+        if (customImg.Count > 0)
+        {
+            paintfile.ParameterDescription += "\n*需要您额外提供" + customImg.Count + "张图片。";
+        }
         return paintfile;
     }
     public void ThrowException(string message) => throw new Exception($"第{li + 1}句中存在错误，黑嘴无法为您编译绘图脚本。\n" + lines![li] + "\n" + message);
@@ -491,7 +535,6 @@ public class PaintingProcessing
         Bitmap image = null!;
         PaintAlign[] align = new PaintAlign[2];
         float x, y, w, h;
-
         for (int i = 1;i < cmd.Count; i++)
         {
             x = PfO<float>(cmd[i].Args[0]); y = PfO<float>(cmd[i].Args[1]);
@@ -520,7 +563,15 @@ public class PaintingProcessing
                 }
                 else
                 {
-                    image = new(dataPath + (string)cmd[i].Args[4]);
+                    string filename = (string)cmd[i].Args[4];
+                    if (!File.Exists(dataPath + filename))
+                    {
+                        image = new(IntallkConfig.DataPath + "\\Resources\\example.jpg");
+                    }
+                    else
+                    {
+                        image = new(dataPath + filename);
+                    }
                 }
                 if (w == 0) w = image.Width;
                 if (h == 0) h = image.Height;
@@ -551,6 +602,16 @@ public class PaintingProcessing
                     pen.Color = ParseColor(cmd[i].Args[4]);
                     pen.Width = PfO<float>(cmd[i].Args[5]);
                     g.DrawEllipse(pen, new((int)x, (int)y, (int)w, (int)h));
+                    break;
+                case PaintCommandType.Effect:
+                    EffectType et = (EffectType)PfO<int>(cmd[i].Args[4]);
+                    Rectangle rect = new Rectangle((int)x, (int)y, (int)w, (int)h);
+                    if (et == EffectType.Blur)
+                    {
+                        float radius = PfO<float>(cmd[i].Args[5]);
+                        bitmap.GaussianBlur(ref rect, radius, false);
+                    }
+                    if (et == EffectType.GrayScale) bitmap.ImageGrayscale(ref rect);
                     break;
                 case PaintCommandType.DrawImage:
                     g.DrawImage(image!, new Rectangle((int)x, (int)y, (int)w, (int)h));
@@ -702,5 +763,244 @@ public class PaintingProcessing
     {
         byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(url, Method.Get));
         if (data != null) File.WriteAllBytes(path, data!); else throw new Exception("下载失败。");
+    }
+}
+
+// ***************** GDI+ Effect函数的示例代码 *********************
+// 作者     ： laviewpbt 
+// 作者简介 ： 对图像处理（非识别）有着较深程度的理解
+// 使用语言 ： VB6.0/C#/VB.NET
+// 联系方式 ： QQ-33184777  E-Mail:laviewpbt@sina.com
+// 开发时间 ： 2012.12.10-2012.12.12
+// 致谢     ： Aaron Lee Murgatroyd
+// 版权声明 ： 复制或转载请保留以上个人信息
+// *****************************************************************
+
+public static class ImageEffect
+{
+    private static Guid BlurEffectGuid = new Guid("{633C80A4-1843-482B-9EF2-BE2834C5FDD4}");
+    private static Guid UsmSharpenEffectGuid = new Guid("{63CBF3EE-C526-402C-8F71-62C540BF5142}");
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct BlurParameters
+    {
+        internal float Radius;
+        internal bool ExpandEdges;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SharpenParams
+    {
+        internal float Radius;
+        internal float Amount;
+    }
+
+    internal enum PaletteType               // GDI+1.1还可以针对一副图像获取某种特殊的调色
+    {
+        PaletteTypeCustom = 0,
+        PaletteTypeOptimal = 1,
+        PaletteTypeFixedBW = 2,
+        PaletteTypeFixedHalftone8 = 3,
+        PaletteTypeFixedHalftone27 = 4,
+        PaletteTypeFixedHalftone64 = 5,
+        PaletteTypeFixedHalftone125 = 6,
+        PaletteTypeFixedHalftone216 = 7,
+        PaletteTypeFixedHalftone252 = 8,
+        PaletteTypeFixedHalftone256 = 9
+    };
+
+    internal enum DitherType                    // 这个主要用于将真彩色图像转换为索引图像，并尽量减低颜色损失
+    {
+        DitherTypeNone = 0,
+        DitherTypeSolid = 1,
+        DitherTypeOrdered4x4 = 2,
+        DitherTypeOrdered8x8 = 3,
+        DitherTypeOrdered16x16 = 4,
+        DitherTypeOrdered91x91 = 5,
+        DitherTypeSpiral4x4 = 6,
+        DitherTypeSpiral8x8 = 7,
+        DitherTypeDualSpiral4x4 = 8,
+        DitherTypeDualSpiral8x8 = 9,
+        DitherTypeErrorDiffusion = 10
+    }
+
+
+    [DllImport("gdiplus.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int GdipCreateEffect(Guid guid, out IntPtr effect);
+
+    [DllImport("gdiplus.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int GdipDeleteEffect(IntPtr effect);
+
+    [DllImport("gdiplus.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int GdipGetEffectParameterSize(IntPtr effect, out uint size);
+
+    [DllImport("gdiplus.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int GdipSetEffectParameters(IntPtr effect, IntPtr parameters, uint size);
+
+    [DllImport("gdiplus.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int GdipGetEffectParameters(IntPtr effect, ref uint size, IntPtr parameters);
+
+    [DllImport("gdiplus.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int GdipBitmapApplyEffect(IntPtr bitmap, IntPtr effect, ref Rectangle rectOfInterest, bool useAuxData, IntPtr auxData, int auxDataSize);
+
+    [DllImport("gdiplus.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int GdipBitmapCreateApplyEffect(ref IntPtr SrcBitmap, int numInputs, IntPtr effect, ref Rectangle rectOfInterest, ref Rectangle outputRect, out IntPtr outputBitmap, bool useAuxData, IntPtr auxData, int auxDataSize);
+
+
+    // 这个函数我在C#下已经调用成功
+    [DllImport("gdiplus.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int GdipInitializePalette(IntPtr palette, int palettetype, int optimalColors, int useTransparentColor, int bitmap);
+
+    // 该函数一致不成功，不过我在VB6下调用很简单，也很成功，主要是结构体的问题。
+    [DllImport("gdiplus.dll", SetLastError = true, ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int GdipBitmapConvertFormat(IntPtr bitmap, int pixelFormat, int dithertype, int palettetype, IntPtr palette, float alphaThresholdPercent);
+
+    /// <summary>
+    /// 获取对象的私有字段的值，感谢Aaron Lee Murgatroyd
+    /// </summary>
+    /// <typeparam name="TResult">字段的类型</typeparam>
+    /// <param name="obj">要从其中获取字段值的对象</param>
+    /// <param name="fieldName">字段的名称.</param>
+    /// <returns>字段的值</returns>
+    /// <exception cref="System.InvalidOperationException">无法找到该字段.</exception>
+    /// 
+    internal static TResult GetPrivateField<TResult>(this object obj, string fieldName)
+    {
+        if (obj == null) return default(TResult);
+        Type ltType = obj.GetType();
+        FieldInfo lfiFieldInfo = ltType.GetField(fieldName, System.Reflection.BindingFlags.GetField | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        if (lfiFieldInfo != null)
+            return (TResult)lfiFieldInfo.GetValue(obj);
+        else
+            throw new InvalidOperationException(string.Format("Instance field '{0}' could not be located in object of type '{1}'.", fieldName, obj.GetType().FullName));
+    }
+
+    public static IntPtr NativeHandle(this Bitmap Bmp)
+    {
+        return Bmp.GetPrivateField<IntPtr>("nativeImage");
+        /*  用Reflector反编译System.Drawing.Dll可以看到Image类有如下的私有字段
+            internal IntPtr nativeImage;
+            private byte[] rawData;
+            private object userData;
+            然后还有一个 SetNativeImage函数
+            internal void SetNativeImage(IntPtr handle)
+            {
+                if (handle == IntPtr.Zero)
+                {
+                    throw new ArgumentException(SR.GetString("NativeHandle0"), "handle");
+                }
+                this.nativeImage = handle;
+            }
+            这里在看看FromFile等等函数，其实也就是调用一些例如GdipLoadImageFromFile之类的GDIP函数，并把返回的GDIP图像句柄
+            通过调用SetNativeImage赋值给变量nativeImage，因此如果我们能获得该值，就可以调用VS2010暂时还没有封装的GDIP函数
+            进行相关处理了，并且由于.NET肯定已经初始化过了GDI+，我们也就无需在调用GdipStartup初始化他了。
+         */
+    }
+
+    /// <summary>
+    /// 对图像进行高斯模糊,参考：http://msdn.microsoft.com/en-us/library/ms534057(v=vs.85).aspx
+    /// </summary>
+    /// <param name="Rect">需要模糊的区域，会对该值进行边界的修正并返回.</param>
+    /// <param name="Radius">指定高斯卷积核的半径，有效范围[0，255],半径越大，图像变得越模糊.</param>
+    /// <param name="ExpandEdge">指定是否对边界进行扩展，设置为True，在边缘处可获得较为柔和的效果. </param>
+
+    public static void GaussianBlur(this Bitmap Bmp, ref Rectangle Rect, float Radius = 10, bool ExpandEdge = false)
+    {
+        int Result;
+        IntPtr BlurEffect;
+        BlurParameters BlurPara;
+        if ((Radius < 0) || (Radius > 255))
+        {
+            throw new ArgumentOutOfRangeException("半径必须在[0,255]范围内");
+        }
+        BlurPara.Radius = Radius;
+        BlurPara.ExpandEdges = ExpandEdge;
+        Result = GdipCreateEffect(BlurEffectGuid, out BlurEffect);
+        if (Result == 0)
+        {
+            IntPtr Handle = Marshal.AllocHGlobal(Marshal.SizeOf(BlurPara));
+            Marshal.StructureToPtr(BlurPara, Handle, true);
+            GdipSetEffectParameters(BlurEffect, Handle, (uint)Marshal.SizeOf(BlurPara));
+            GdipBitmapApplyEffect(Bmp.NativeHandle(), BlurEffect, ref Rect, false, IntPtr.Zero, 0);
+            // 使用GdipBitmapCreateApplyEffect函数可以不改变原始的图像，而把模糊的结果写入到一个新的图像中
+            GdipDeleteEffect(BlurEffect);
+            Marshal.FreeHGlobal(Handle);
+        }
+        else
+        {
+            throw new ExternalException("不支持的GDI+版本，必须为GDI+1.1及以上版本，且操作系统要求为Win Vista及之后版本.");
+        }
+    }
+
+
+    /// <summary>
+    /// 对图像进行锐化,参考：http://msdn.microsoft.com/en-us/library/ms534073(v=vs.85).aspx
+    /// </summary>
+    /// <param name="Rect">需要锐化的区域，会对该值进行边界的修正并返回.</param>
+    /// <param name="Radius">指定高斯卷积核的半径，有效范围[0，255],因为这个锐化算法是以高斯模糊为基础的，所以他的速度肯定比高斯模糊妈妈</param>
+    /// <param name="ExpandEdge">指定锐化的程度，0表示不锐化。有效范围[0,255]. </param>
+    /// 
+    public static void UsmSharpen(this Bitmap Bmp, ref Rectangle Rect, float Radius = 10, float Amount = 50f)
+    {
+        int Result;
+        IntPtr UnSharpMaskEffect;
+        SharpenParams sharpenParams;
+        if ((Radius < 0) || (Radius > 255))
+        {
+            throw new ArgumentOutOfRangeException("参数Radius必须在[0,255]范围内");
+        }
+        if ((Amount < 0) || (Amount > 100))
+        {
+            throw new ArgumentOutOfRangeException("参数Amount必须在[0,255]范围内");
+        }
+        sharpenParams.Radius = Radius;
+        sharpenParams.Amount = Amount;
+        Result = GdipCreateEffect(UsmSharpenEffectGuid, out UnSharpMaskEffect);
+        if (Result == 0)
+        {
+            IntPtr Handle = Marshal.AllocHGlobal(Marshal.SizeOf(sharpenParams));
+            Marshal.StructureToPtr(sharpenParams, Handle, true);
+            GdipSetEffectParameters(UnSharpMaskEffect, Handle, (uint)Marshal.SizeOf(sharpenParams));
+            GdipBitmapApplyEffect(Bmp.NativeHandle(), UnSharpMaskEffect, ref Rect, false, IntPtr.Zero, 0);
+            GdipDeleteEffect(UnSharpMaskEffect);
+            Marshal.FreeHGlobal(Handle);
+        }
+        else
+        {
+            throw new ExternalException("不支持的GDI+版本，必须为GDI+1.1及以上版本，且操作系统要求为Win Vista及之后版本.");
+        }
+    }
+
+    public static void ImageGrayscale(this Bitmap image, ref Rectangle Rect)
+    {
+        Color pixel;
+        for (int x = Rect.Left; x < Rect.Right; x++)
+        {
+            for (int y = Rect.Top; y < Rect.Bottom; y++)
+            {
+                pixel = image.GetPixel(x, y);
+                int r, g, b, Result = 0;
+                r = pixel.R;
+                g = pixel.G;
+                b = pixel.B;
+                int iType = 2;
+                switch (iType)
+                {
+                    case 0://平均值法
+                        Result = ((r + g + b) / 3);
+                        break;
+                    case 1://最大值法
+                        Result = r > g ? r : g;
+                        Result = Result > b ? Result : b;
+                        break;
+                    case 2://加权平均值法
+                        Result = ((int)(0.7 * r) + (int)(0.2 * g) + (int)(0.1 * b));
+                        break;
+                }
+                //pixel.A
+                //alpha 分量指定颜色的透明度：0 是完全透明的，255 是完全不透明的。 同样，值为 A 255 表示不透明颜色。 从 A 1 到 254 的值表示半透明颜色。 接近 A 255 时，颜色变得更加不透明。
+                image.SetPixel(x, y, Color.FromArgb(pixel.A, Result, Result, Result));
+            }
+        }
     }
 }

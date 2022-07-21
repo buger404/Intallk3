@@ -21,10 +21,10 @@ class HistorySearch : IOneBotController
     public static string? token,host,api;
     public HistorySearch()
     {
-        JObject j = JObject.Parse(File.ReadAllText("C:\\Intallk\\history_search.json"));
+        /**JObject j = JObject.Parse(File.ReadAllText("C:\\Intallk\\history_search.json"));
         token = j["token"]!.ToString();
         host = j["host"]!.ToString();
-        api = j["api"]!.ToString();
+        api = j["api"]!.ToString();**/
     }
     public bool Search(GroupMessageEventArgs e,string filter,string pagesize = "200")
     {

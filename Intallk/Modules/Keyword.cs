@@ -12,7 +12,10 @@ using Sora.Entities.Segment;
 using Sora.Entities.Segment.DataModel;
 using Sora.Enumeration;
 using Sora.EventArgs.SoraEvent;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Text;
+using WordCloudSharp;
 
 namespace Intallk.Modules;
 
@@ -130,14 +133,21 @@ class Keyword : IOneBotController
             return;
         }
         MessageRecord r = messages[i];
-        string text = r.str.ToString(), hlist = "";
+        string text = r.str.ToString(); //, hlist = "";
         TfidfExtractor tfidfExtractor = new TfidfExtractor();
         List<WordWeightPair> key = tfidfExtractor.ExtractTagsWithWeight(text, count, null).ToList();
-        for (int s = 0; s < key.Count; s++)
+        WordCloud wc = new WordCloud(2560, 1440, fontname: "HarmonyOS Sans SC Medium", allowVerical: true);
+        List<int> freqs = new List<int>();
+        foreach (WordWeightPair wp in key) freqs.Add((int)(wp.Weight * 1000));
+        Image wi = wc.Draw(key.Select(it => it.Word).ToList(), freqs);
+        string file = "\\Resources\\wordcloud" + r.group + ".jpg";
+        wi.Save(IntallkConfig.DataPath + file, ImageFormat.Jpeg);
+        /**for (int s = 0; s < key.Count; s++)
         {
-            hlist += $"{s+1}.{key[s].Word}（{Math.Floor(key[i].Weight * 1000) / 10}%）\n";
-        }
-        e.Reply("今日截至现在你群最热聊天话题：\n" + hlist + "~来自黑嘴窥屏统计~");
+            hlist += $"{s+1}.{key[s].Word}（{Math.Floor(key[s].Weight * 1000) / 10}%）\n";
+        }**/
+        e.Reply("今日你群词云：\n" + SoraSegment.Image(IntallkConfig.DataPath + file, false));
+        wi.Dispose();
     }
     private int Event_OnGroupMessage(OneBotContext scope)
     {
@@ -174,14 +184,21 @@ class Keyword : IOneBotController
             {
                 if (switches[r.group])
                 {
-                    string text = r.str.ToString(), hlist = "";
+                    string text = r.str.ToString();//, hlist = "";
                     TfidfExtractor tfidfExtractor = new TfidfExtractor();
-                    List<WordWeightPair> key = tfidfExtractor.ExtractTagsWithWeight(text, 5, null).ToList();
-                    for (int i = 0; i < key.Count; i++)
+                    List<WordWeightPair> key = tfidfExtractor.ExtractTagsWithWeight(text, 100, null).ToList();
+                    WordCloud wc = new WordCloud(2560, 1440, fontname: "HarmonyOS Sans SC Medium", allowVerical: true);
+                    List<int> freqs = new List<int>();
+                    foreach (WordWeightPair wp in key) freqs.Add((int)(wp.Weight * 1000));
+                    Image wi = wc.Draw(key.Select(it => it.Word).ToList(), freqs);
+                    string file = "\\Resources\\wordcloud" + r.group + ".jpg";
+                    wi.Save(IntallkConfig.DataPath + file, ImageFormat.Jpeg);
+                    /**for (int i = 0; i < key.Count; i++)
                     {
                         hlist += $"{i + 1}.{key[i].Word}（{Math.Floor(key[i].Weight * 1000) / 10}%）\n";
-                    }
-                    sora.GetGroup(r.group).SendGroupMessage("今日你群最热聊天话题：\n" + hlist + "~来自黑嘴窥屏统计~");
+                    }**/
+                    sora.GetGroup(r.group).SendGroupMessage("今日你群词云：\n" + SoraSegment.Image(IntallkConfig.DataPath + file, false));
+                    wi.Dispose();
                     r.str.Clear();
                 }
             }

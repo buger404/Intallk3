@@ -19,11 +19,23 @@ using System.Text;
 
 class Painting : IOneBotController
 {
+    public class GroupImageUploadData
+    {
+        public string? template;
+        public object[]? args;
+        public List<string>? imgs;
+    }
     public static List<PaintingProcessing> paints = new List<PaintingProcessing>();
     [Command("draw <template> <qq> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public async void Draw(GroupMessageEventArgs e, string template, User qq, [ParsedArguments] object[] args)
     {
         int pi = -1;
+        if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id))
+        {
+            await e.Reply("黑嘴还在等待您完成上一个操作呢！");
+            await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\angry.jpg"));
+            return;
+        }
         if (!int.TryParse(template, out pi)) pi = paints.FindIndex(m => m.Source.Name == template); else pi--;
         if (pi < 0 || pi >= paints.Count)
         {
@@ -38,11 +50,64 @@ class Painting : IOneBotController
             return;
         }
         string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
+        if (paints[pi].Source.CustomImages != null)
+        {
+            if (paints[pi].Source.CustomImages!.Count > 0)
+            {
+                if (!Directory.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template))
+                    Directory.CreateDirectory(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
+                string picl = "";
+                GroupImageUploadData giud = new GroupImageUploadData();
+                giud.imgs = new List<string>();
+                foreach (string s in paints[pi].Source.CustomImages!)
+                {
+                    picl += s + "，";
+                    giud.imgs.Add(s);
+                }
+                giud.template = template;
+                giud.args = args;
+                await e.Reply("请按下面的顺序依次发出图片：\n" + picl);
+                MainModule.RegisterHook(e.Sender.Id, e.SourceGroup.Id, DrawGroupImageUploadCallBack, giud);
+                return;
+            }
+        }
         await paints[pi].Paint(outfile, e, qq, args);
         await e.Reply(SoraSegment.Image(outfile, false));
     }
     [Command("draw <template> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public void Draw(GroupMessageEventArgs e, string template, [ParsedArguments] object[] args) => Draw(e, template, null!, args);
+    public async Task<bool> DrawGroupImageUploadCallBack(GroupMessageEventArgs e, MainModule.GroupMessageHook hook)
+    {
+        GroupImageUploadData giud = (hook.Data as GroupImageUploadData)!;
+        bool hasImg = false;
+        foreach (SoraSegment msg in e.Message.MessageBody)
+        {
+            if (msg.MessageType == SegmentType.Image)
+            {
+                var img = (ImageSegment)msg.Data;
+                string file = IntallkConfig.DataPath + "\\DrawingScript\\" + giud.template + "\\img;" + giud.imgs![0];
+                if (File.Exists(file)) File.Delete(file);
+                File.WriteAllBytes(file, await new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)));
+                giud.imgs!.RemoveAt(0);
+                hasImg = true;
+                if (giud.imgs!.Count == 0) break;
+            }
+        }
+        if (!hasImg)
+        {
+            await e.Reply("好吧，那黑嘴还是不帮你画画了。");
+            return true;
+        }
+        if (giud.imgs!.Count == 0)
+        {
+            string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
+            PaintingProcessing painter = paints.Find(m => m.Source.Name == giud.template)!;
+            await painter.Paint(outfile, e, e.Sender, giud.args!);
+            await e.Reply(SoraSegment.Image(outfile, false));
+            return true;
+        }
+        return false;
+    }
     [Command("draw")]
     public void DrawHelp(GroupMessageEventArgs e)
     {
@@ -109,7 +174,11 @@ class Painting : IOneBotController
         if (File.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json"))
             File.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json");
         if (Directory.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template))
+        {
+            foreach (string f in Directory.GetFiles(IntallkConfig.DataPath + "\\DrawingScript\\" + template))
+                File.Delete(f);
             Directory.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
+        }
         paints.RemoveAt(pi);
         e.Reply("删掉啦~");
     }
@@ -123,6 +192,12 @@ class Painting : IOneBotController
             || name.Contains(':') || name.Contains('\"') || name.Contains('<') || name.Contains('>'))
         {
             await e.Reply("设定的模板名字里面不能有特殊符号噢！");
+            await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+            return;
+        }
+        if(name.ToLower() == "list" || name.ToLower() == "help")
+        {
+            await e.Reply("设定的模板名字里面不能与命令冲突！");
             await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
             return;
         }
@@ -166,6 +241,7 @@ class Painting : IOneBotController
         {
             List<string> picList;
             paintfile = new PaintingCompiler().CompilePaintScript(code, out picList);
+            picList.RemoveAll(m => m.StartsWith("img;"));
             paintfile.Author = e.Sender.Id;
             paintfile.Name = name;
             var serializer = new JsonSerializer();
@@ -251,8 +327,18 @@ class Painting : IOneBotController
         else if (e.Message.RawText == "取消")
         {
             await e.Reply("好的。");
-            File.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json");
-            Directory.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
+            int pi = paints.FindIndex(m => m.Source.Name == template);
+            if (pi == -1)
+            {
+                if (File.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json"))
+                    File.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json");
+                if (Directory.Exists(IntallkConfig.DataPath + "\\DrawingScript\\" + template))
+                {
+                    foreach(string f in Directory.GetFiles(IntallkConfig.DataPath + "\\DrawingScript\\" + template))
+                        File.Delete(f);
+                    Directory.Delete(IntallkConfig.DataPath + "\\DrawingScript\\" + template);
+                }    
+            }
             return true;
         } 
         else

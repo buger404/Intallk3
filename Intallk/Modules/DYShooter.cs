@@ -54,7 +54,7 @@ class DYShooter : IOneBotController
     private int Event_OnGroupMessage(OneBot.CommandRoute.Models.OneBotContext scope)
     {
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
-        if (e.Message.RawText.Contains("404") && e.Message.RawText.Contains("狗") && e.SourceGroup.Id == 1078432121)
+        if (e.Message.RawText.Contains("404") && e.Message.RawText.Contains("狗") && e.SourceGroup.Id == 1078432121 && e.Sender.Id != 2487411076)
         {
             e.Reply("dy pvp " + e.Sender.Id);
             e.Reply(e.Message.RawText.Replace("404", MainModule.GetQQName(e, e.Sender.Id)));
@@ -80,5 +80,15 @@ class DYShooter : IOneBotController
                 e.Reply(SoraSegment.Record(IntallkConfig.DataPath + "\\Resources\\dogsong" + i + ".mp3"));
         }
         return 0;
+    }
+
+    [Command("dyrecovery")]
+    public void DyRecovery(GroupMessageEventArgs e)
+    {
+        if (Keyword.sora == null)
+        {
+            e.Reply("不听");
+            return;
+        }
     }
 }
