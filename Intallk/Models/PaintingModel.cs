@@ -10,6 +10,7 @@ public class PaintFile
     public List<string>? CustomImages { get; set; }
     public List<string>? Parameters { get; set; }
     public bool NeedQQParameter { get; set; }
+    public string? Code { get; set; }
 }
 [Serializable]
 public class PaintCommands

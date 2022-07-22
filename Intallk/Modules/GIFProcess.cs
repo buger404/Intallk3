@@ -22,11 +22,11 @@ class GIFProcess : IOneBotController
     {
         if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id && m.Group == e.SourceGroup.Id))
         {
-            e.Reply(e.Sender.At() + "干嘛呢，快发gif呀！");
+            e.Reply(e.Sender.At() + "还有上一个操作未完成。");
             e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\angry.jpg"));
             return;
         }
-        e.Reply(e.Sender.At() + "黑嘴准备好啦，快把gif交出来~如果你不发图片，黑嘴就不理你了哦！");
+        e.Reply(e.Sender.At() + "请发送一张gif图片。");
         MainModule.RegisterHook(e.Sender.Id, e.SourceGroup.Id, GIFExtractCallBack);
     }
 
@@ -64,7 +64,7 @@ class GIFProcess : IOneBotController
         }
         if (!hasImage)
         {
-            await e.Reply(e.Sender.At() + "那好吧~你不想发图片，那黑嘴就不帮你展开了。");
+            await e.Reply(e.Sender.At() + "已取消gif展开命令。");
         }
         return true;
     }

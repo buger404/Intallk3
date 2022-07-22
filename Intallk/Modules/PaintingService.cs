@@ -26,7 +26,8 @@ public class PaintingCompiler
         // 用'，'隔开参数。
         var paintfile = new PaintFile
         {
-            Commands = new List<PaintCommands>()
+            Commands = new List<PaintCommands>(),
+            Code = src
         };
         // 保护字符串
         src = src.Replace("\\：", "<protected>").Replace("\\:", "<protected>");
@@ -672,6 +673,7 @@ public class PaintingProcessing
                             s = s.Replace("{QQ登录天数}", info.LoginDays.ToString());
                         }
                     }
+                    s = s.Replace("\\n", "\n");
                     PaintAdjustWriteMode adjust = (PaintAdjustWriteMode)PfO<int>(cmd[i].Args[8]);
                     if (adjust != PaintAdjustWriteMode.None)
                     {
@@ -750,7 +752,14 @@ public class PaintingProcessing
             case string str:
                 string[] p = str.Split(',');
                 if (p.Length == 1) return Color.FromName(str);
-                return Color.FromArgb((int)(float.Parse(p[0]) * 255), int.Parse(p[1]), int.Parse(p[2]), int.Parse(p[3]));
+                if(p.Length == 4)
+                {
+                    return Color.FromArgb(int.Parse(p[0]), int.Parse(p[1]), int.Parse(p[2]), int.Parse(p[3]));
+                }
+                else
+                {
+                    return Color.FromArgb(255, int.Parse(p[0]), int.Parse(p[1]), int.Parse(p[2]));
+                }
             case Color color:
                 if (color.A == 1) color = Color.FromArgb(255, color.R, color.G, color.B);
                 return color;

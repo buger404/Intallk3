@@ -55,6 +55,10 @@ public class MainModule : IOneBotController
         }
         return ret;
     }
+    public void LogError(Exception exception)
+    {
+        File.AppendAllText(IntallkConfig.DataPath + "\\Logs\\error_" + DateTime.Now.ToString("yy_MM_dd") + ".txt", DateTime.Now.ToString() + "\n" + exception.Message + "\n" + exception.StackTrace + "\n");
+    }
     public MainModule(ICommandService commandService, ILogger<MainModule> logger)
     {
         _logger = logger;
@@ -73,16 +77,16 @@ public class MainModule : IOneBotController
             switch (context.SoraEventArgs)
             {
                 case GroupMessageEventArgs group:
-                    group.Reply("我...我才不是为了气死你才出错的呢！");
+                    group.Reply("出错啦");
                     group.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\error.jpg"));
                     break;
                 case PrivateMessageEventArgs qq:
-                    qq.Reply("我...我才不是为了气死你才出错的呢！");
+                    qq.Reply("出错啦");
                     qq.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\error.jpg"));
                     break;
             }
             // 记小本本
-            File.AppendAllText(IntallkConfig.DataPath + "\\Logs\\error_" + DateTime.Now.ToString("yy_MM_dd") + ".txt", DateTime.Now.ToString() + "\n" + exception.Message + "\n" + exception.StackTrace + "\n");
+            LogError(exception);
         };
         commandService.Event.OnGroupMessage += (context) =>
         {
@@ -111,9 +115,10 @@ public class MainModule : IOneBotController
                             needClear = true;
                         }
                     }
-                    catch
+                    catch(Exception err)
                     {
-                        e.Reply(e.Sender.At() + "本次会话出错啦，黑嘴被迫掐断了本次会话，给您带来不便敬请见谅嗷~");
+                        LogError(err);
+                        e.Reply(e.Sender.At() + "出了些问题，黑嘴无法继续会话。\n" + err.Message);
                         hook.QQ = 0;
                         needClear = true;
                     }
@@ -176,9 +181,10 @@ public class MainModule : IOneBotController
                                 needClear = true;
                             }
                         }
-                        catch
+                        catch(Exception err)
                         {
-                            e.Reply("本次会话出错啦，黑嘴被迫掐断了本次会话，给您带来不便敬请见谅嗷~");
+                            LogError(err);
+                            e.Reply("出了些问题，黑嘴无法继续会话。\n" + err.Message);
                             hook2.QQ = 0;
                             needClear = true;
                         }
@@ -259,13 +265,7 @@ public class MainModule : IOneBotController
                 ".sx <中文缩写>：让黑嘴帮你搜一下这个缩写的意思\n" + 
                 ".bug <内容>：欸？这是什么我也不知道呢。\n" +
                 ".gifextract：请黑嘴帮你展开GIF。\n" +
-                ".draw list：列出制图库的第一页。\n" +
-                ".draw list <页数>：导航到制图库的第几页。\n" +
-                ".draw help <模板>：让黑嘴教你指定模板的使用方法。\n" +
-                ".draw <模板> (因模板而异)：请本小姐给你画画~\n" + 
-                "（私聊）.draw build <模板> <模板脚本>：把你的绘图模板送给黑嘴~\n" +
-                "（私聊）.draw edit <模板> <模板脚本>：修改你送给黑嘴的绘图模板~\n" +
-                "（私聊）.draw remove <模板>：把你送给黑嘴的绘图模板拿回去呜呜呜。\n" +
+                ".draw：查看制图相关指定说明。\n" +
                 ".re <内容>：查看包含指定内容的语录\n" +
                 ".re bycontext <内容>：查看上文包含指定内容的语录\n" +
                 ".re byqq <QQ>：随机抽一条黑嘴收集过的某人的复读语录\n" +
@@ -275,7 +275,7 @@ public class MainModule : IOneBotController
                 ".re context <id>：查看复读语录的上文\n" +
                 ".re byid <id>：查看指定序号对应的复读语录\n" +
                 ".re：随机抽一条语录\n" +
-                ".keyword [列出项数]：查看你群今日截至现在最热话题\n" +
+                ".keyword [列出项数]：查看你群今日截至现在的词云\n" +
                 ".t：回溯最近的10条消息");
 
     [Command("status")]

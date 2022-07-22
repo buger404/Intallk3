@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="QQ图片20220716193154.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="QQ图片20220716193154.jpg" />
+  </ItemGroup>
+
+</Project>

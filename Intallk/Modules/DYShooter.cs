@@ -54,17 +54,19 @@ class DYShooter : IOneBotController
     private int Event_OnGroupMessage(OneBot.CommandRoute.Models.OneBotContext scope)
     {
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
-        if (e.Message.RawText.Contains("404") && e.Message.RawText.Contains("狗") && e.SourceGroup.Id == 1078432121 && e.Sender.Id != 2487411076)
+        if(e.SourceGroup.Id == 1078432121 && e.Sender.Id != 2487411076)
         {
-            e.Reply("dy pvp " + e.Sender.Id);
-            e.Reply(e.Message.RawText.Replace("404", MainModule.GetQQName(e, e.Sender.Id)));
-            int i = random.Next(0, 6);
-            if (i == 0)
-                e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\excited.jpg"));
-            else
-                e.Reply(SoraSegment.Record(IntallkConfig.DataPath + "\\Resources\\dogsong" + i + ".mp3"));
-            return 1;
+            if ((e.Message.RawText.Contains("404") || e.Message.RawText.Contains("4O4") || e.Message.RawText.Contains("4零4")
+                || e.Message.RawText.Contains("四零四")) &&
+            (e.Message.RawText.Contains("狗") || e.Message.RawText.Contains("🐶") || e.Message.RawText.ToLower().Replace(" ", "").Contains("dog")
+            || e.Message.RawText.Replace(" ", "").Contains("犭句")))
+            {
+                e.Message.RecallMessage();
+                e.Reply(e.Sender.At() + " 死");
+                return 1;
+            }
         }
+
         if (e!.Sender.Id != 2487411076) return 0;
         string msg = e!.Message.RawText;
         if (msg.Contains("黑嘴原路滚回去了。"))
