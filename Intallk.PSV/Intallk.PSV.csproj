@@ -8,10 +8,32 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="bg.png" />
+    <None Remove="color-picker.png" />
+    <None Remove="color-wheel.png" />
+    <None Remove="folder %281%29.png" />
+    <None Remove="folder.png" />
+    <None Remove="grid.png" />
+    <None Remove="maximize.png" />
+    <None Remove="paste.png" />
+    <None Remove="placeholder.png" />
     <None Remove="QQ图片20220716193154.jpg" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Intallk\Intallk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="bg.png" />
+    <Resource Include="color-picker.png" />
+    <Resource Include="color-wheel.png" />
+    <Resource Include="folder (1).png" />
+    <Resource Include="folder.png" />
+    <Resource Include="grid.png" />
+    <Resource Include="maximize.png" />
+    <Resource Include="paste.png" />
+    <Resource Include="placeholder.png" />
     <Resource Include="QQ图片20220716193154.jpg" />
   </ItemGroup>
 

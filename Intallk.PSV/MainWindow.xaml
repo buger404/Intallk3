@@ -5,11 +5,248 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Intallk.PSV"
         mc:Ignorable="d"
-        Title="Intallk Painting Script Tools" Height="548" Width="1010" Icon="/QQ图片20220716193154.jpg" Background="#FF404048" SizeChanged="Window_SizeChanged">
-    <Grid HorizontalAlignment="Left" Width="1000" Margin="0,0,0,0">
-        <DockPanel HorizontalAlignment="Left" LastChildFill="False" Width="206" Background="#FF50505A">
-            <Label Content="图片列表" Width="180" Height="37" DockPanel.Dock="Top" Foreground="#FFDCD7E6" Margin="10,0,10,0" FontWeight="Bold" Padding="5,10,5,10"/>
-            <ListBox x:Name="picList" Width="184" d:ItemsSource="{d:SampleData ItemCount=5}" DockPanel.Dock="Top" Margin="10,0,10,10" Height="497" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="#FFDCDCE6"/>
+        Title="Intallk Painting Script Tools" Height="583" Width="1010" Icon="/QQ图片20220716193154.jpg" Background="#FFF0F2F0" SizeChanged="Window_SizeChanged" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <SolidColorBrush x:Key="ListBox.Static.Background" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="ListBox.Static.Border" Color="#FFABADB3"/>
+        <SolidColorBrush x:Key="ListBox.Disabled.Background" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="ListBox.Disabled.Border" Color="#FFD9D9D9"/>
+        <Style x:Key="ListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Padding" Value="4,1" />
+            <Setter Property="HorizontalContentAlignment" Value="{Binding HorizontalContentAlignment,
+                          RelativeSource={RelativeSource FindAncestor,
+                                                         AncestorLevel=1,
+                                                         AncestorType={x:Type ItemsControl}}}" />
+            <Setter Property="VerticalContentAlignment" Value="{Binding VerticalContentAlignment,
+                          RelativeSource={RelativeSource FindAncestor,
+                                                         AncestorLevel=1,
+                                                         AncestorType={x:Type ItemsControl}}}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FocusVisualStyle">
+                <Setter.Value>
+                    <Style>
+                        <Setter Property="Control.Template">
+                            <Setter.Value>
+                                <ControlTemplate>
+                                    <Rectangle Margin="2"
+                                         SnapsToDevicePixels="True"
+                                         Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                         StrokeDashArray="1 2"
+                                         StrokeThickness="1" />
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                Content="{TemplateBinding Content}"
+                                                ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#261ADBCE" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="transparent" />
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Selector.IsSelectionActive" Value="False" />
+                                    <Condition Property="IsSelected" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#19000000" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="transparent" />
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Selector.IsSelectionActive" Value="True" />
+                                    <Condition Property="IsSelected" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#261ADBCE" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="transparent" />
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd"
+                                    Property="TextElement.Foreground"
+                                    Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="IntallkListBox" TargetType="{x:Type ListBox}">
+            <Setter Property="Background" Value="{StaticResource ListBox.Static.Background}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ListBox.Static.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+            <Setter Property="ScrollViewer.PanningMode" Value="Both"/>
+            <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBox}">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="1" SnapsToDevicePixels="true">
+                            <ScrollViewer Focusable="false" Padding="{TemplateBinding Padding}">
+                                <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            </ScrollViewer>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Background" TargetName="Bd" Value="{StaticResource ListBox.Disabled.Background}"/>
+                                <Setter Property="BorderBrush" TargetName="Bd" Value="{StaticResource ListBox.Disabled.Border}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsGrouping" Value="true"/>
+                                    <Condition Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="false"/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid x:Name="grid">
+        <DockPanel HorizontalAlignment="Left" LastChildFill="False" Width="209" Margin="0,0,0,29">
+            <DockPanel.Background>
+                <ImageBrush ImageSource="/bg.png" Stretch="UniformToFill"/>
+            </DockPanel.Background>
+            <Label Content="图片列表" Width="182" Height="37" DockPanel.Dock="Top" Foreground="#FF000A00" Margin="10,0,10,0" FontWeight="Bold" Padding="5,10,5,10" FontSize="14"/>
+            <ListBox Style="{DynamicResource IntallkListBox}" x:Name="picList" Width="207" d:ItemsSource="{d:SampleData ItemCount=5}" DockPanel.Dock="Top" Margin="0,0,0,10" Height="347" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="#FF606460" MouseLeftButtonUp="picList_MouseLeftButtonUp" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="picList_SelectionChanged" FontSize="14" Padding="10,0,10,0" ItemContainerStyle="{DynamicResource ListBoxItemStyle}"/>
+            <DockPanel LastChildFill="False" DockPanel.Dock="Bottom" Height="109" Background="#33FFFFFF">
+                <Image x:Name="assetsPreview" Source="/QQ图片20220716193154.jpg" Stretch="Uniform" DockPanel.Dock="Bottom" StretchDirection="DownOnly" Height="109" Width="208" ToolTip="图片资源预览"/>
+            </DockPanel>
         </DockPanel>
+        <DockPanel Height="129" LastChildFill="False" Margin="245,0,261,54" VerticalAlignment="Bottom" Background="White">
+            <DockPanel.Effect>
+                <DropShadowEffect BlurRadius="10" Direction="270" Opacity="0.04" ShadowDepth="6" RenderingBias="Performance"/>
+            </DockPanel.Effect>
+            <TextBox x:Name="script" TextWrapping="Wrap" Text="以300x300的尺寸创建画布。在0,0处绘制图片：'提醒小助手.png'。在123,135处书写：'{内容1}'，大小为32x24，自动调整大小，white色。在200,168处书写：'{内容1}'，大小为32x24，自动调整大小，颜色为255,163,123,122。在17,210处书写：'{内容2}'，大小为160x23，black色。在130,210处书写：'{内容3}'，大小为160x23，black色。在233,210处书写：'{内容4}'，大小为130x13，black色。在224,240处书写：'{内容5}'，大小为130x14，black色。在130,265处书写：'{内容6}'，大小为130x13，black色。" Background="{x:Null}" SelectionBrush="#CC1ADBCE" Foreground="#FF606460" BorderBrush="{x:Null}" Padding="5,5,5,5" HorizontalScrollBarVisibility="Auto" DockPanel.Dock="Top" Height="129" AcceptsTab="True" FontSize="14"/>
+        </DockPanel>
+        <DockPanel LastChildFill="False" Background="#FF1ADBCE" Height="29" VerticalAlignment="Bottom">
+            <Label x:Name="status" Content="一切就绪。" DockPanel.Dock="Top" Foreground="White" FontWeight="Bold" Padding="10,5,10,5" Height="29" FontSize="14">
+                <Label.Background>
+                    <LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5">
+                        <GradientStop Color="#FF6CF5C2" Offset="1"/>
+                        <GradientStop Color="#FF1ADBCE" Offset="0"/>
+                    </LinearGradientBrush>
+                </Label.Background>
+            </Label>
+        </DockPanel>
+        <DockPanel x:Name="previewPanel" LastChildFill="False" Margin="245,64,261,218" Background="White" ScrollViewer.HorizontalScrollBarVisibility="Visible" ScrollViewer.CanContentScroll="True" RenderTransformOrigin="0.5,0.5" MouseWheel="previewPanel_MouseWheel">
+            <DockPanel.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleX="1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </DockPanel.RenderTransform>
+            <ScrollViewer x:Name="previewScrollViewer" HorizontalContentAlignment="Stretch" DockPanel.Dock="Top" Height="255" Foreground="{x:Null}" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" PanningMode="Both" VerticalScrollBarVisibility="Auto">
+                <Image x:Name="preview" Width="161" Height="168" Stretch="Fill" Source="/QQ图片20220716193154.jpg" HorizontalAlignment="Center" VerticalAlignment="Center" MouseMove="preview_MouseMove" MouseDown="preview_MouseDown" MouseUp="preview_MouseUp">
+                    <Image.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform ScaleX="1"/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Image.RenderTransform>
+                </Image>
+            </ScrollViewer>
+        </DockPanel>
+        <DockPanel LastChildFill="False" Margin="245,0,261,0" Background="White" Height="44" VerticalAlignment="Top">
+            <Image x:Name="uploadBtn" Width="26" Source="/folder.png" Height="26" Margin="10,5,10,5" MouseUp="uploadBtn_MouseUp" ToolTip="上传文件到选定图片"/>
+            <Image x:Name="pasteBtn" Source="/paste.png" Width="26" Margin="0,5,10,5" MouseUp="pasteBtn_MouseUp" ToolTip="粘贴到选定图片"/>
+            <Image x:Name="colorPad" Source="/color-wheel.png" Width="26" DockPanel.Dock="Right" Margin="5,5,10,4" ToolTip="调色板" MouseUp="colorPad_MouseUp"/>
+            <Image x:Name="colorPicker" Source="/color-picker.png" DockPanel.Dock="Right" Width="26" Margin="5,5,5,5" ToolTip="取色器" MouseDown="colorPicker_MouseDown" MouseUp="colorPicker_MouseUp"/>
+            <Image Source="/folder (1).png" Width="26" Margin="0,5,5,5" ToolTip="查看资源文件夹" MouseUp="Image_MouseUp"/>
+            <Image x:Name="help" Source="/question.png" DockPanel.Dock="Right" Width="26" ToolTip="查看在线说明书" Margin="0,0,5,0"/>
+        </DockPanel>
+        <Rectangle Height="1" Margin="245,44,261,0" VerticalAlignment="Top">
+            <Rectangle.Stroke>
+                <LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5">
+                    <GradientStop Color="Black" Offset="0"/>
+                    <GradientStop Color="#FF6CF5C2" Offset="1"/>
+                    <GradientStop Color="#FF1ADBCE" Offset="0"/>
+                </LinearGradientBrush>
+            </Rectangle.Stroke>
+        </Rectangle>
+        <DockPanel x:Name="argListPanel" LastChildFill="False" Margin="0,0,0,29" HorizontalAlignment="Right" RenderTransformOrigin="0.5,0.5" Width="223" Background="White">
+            <DockPanel.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleX="-1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </DockPanel.RenderTransform>
+            <Label Content="参数列表" DockPanel.Dock="Top" Foreground="#FF000A00" FontWeight="Bold" Padding="5,10,5,10" FontSize="14" Height="37" FlowDirection="LeftToRight" RenderTransformOrigin="0.5,0.5" Width="200">
+                <Label.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="-1"/>
+                        <SkewTransform/>
+                        <RotateTransform/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </Label.RenderTransform>
+            </Label>
+            <ListBox x:Name="argList" d:ItemsSource="{d:SampleData ItemCount=5}" DockPanel.Dock="Top" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="#FF606460" MouseLeftButtonUp="argList_MouseLeftButtonUp" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="picList_SelectionChanged" FontSize="14" Height="499" RenderTransformOrigin="0.5,0.5" Width="223" Padding="10,0,10,0" Style="{DynamicResource IntallkListBox}" ItemContainerStyle="{DynamicResource ListBoxItemStyle}">
+                <ListBox.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="-1"/>
+                        <SkewTransform/>
+                        <RotateTransform/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </ListBox.RenderTransform>
+            </ListBox>
+        </DockPanel>
+        <DockPanel LastChildFill="False" Margin="245,317,261,183" Height="34" VerticalAlignment="Bottom">
+            <Slider x:Name="scaler" Width="109" DockPanel.Dock="Right" VerticalAlignment="Center" Minimum="1" Maximum="30" SmallChange="1" LargeChange="3" Value="10" ValueChanged="scaler_ValueChanged"/>
+            <Label x:Name="scaleDisplay" Content="100%" Width="52" DockPanel.Dock="Right" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Foreground="#FF606460"/>
+            <Image Width="16" Source="/placeholder.png" Stretch="Uniform" Margin="5,6,5,6"/>
+            <Label x:Name="posDisplay" Content="0,0" Width="85" Foreground="#FF606460" VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip="鼠标所在的坐标"/>
+            <Image Source="/maximize.png" Stretch="Uniform" Width="16" Margin="0,6,5,6"/>
+            <Label x:Name="sizeDisplay" Content="0,0   100x100" Width="126" Background="{x:Null}" Foreground="#FF606460" VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip="选中的坐标和大小"/>
+        </DockPanel>
+        <Rectangle x:Name="selRecct" HorizontalAlignment="Left" Height="0" Margin="458,162,0,0" VerticalAlignment="Top" Width="0" Stroke="#FF1ADBCE" RadiusX="0" RadiusY="0" StrokeLineJoin="Miter" Fill="#4C1ADBCE"/>
+        <TextBox x:Name="argInputs" HorizontalAlignment="Left" Height="100" Margin="787,232,0,0" TextWrapping="Wrap" Text="adgsg&#xD;&#xA;asgasdg&#xD;&#xA;sagdsag&#xD;&#xA;sdgsdg&#xD;&#xA;dgdfgdfg&#xD;&#xA;dfgdfgdfg&#xD;&#xA;dfgdfg" VerticalAlignment="Top" Width="223" BorderBrush="{x:Null}" SelectionBrush="#FF1ADBCE" AcceptsTab="True" AcceptsReturn="True" Padding="5,5,5,30" VerticalScrollBarVisibility="Hidden" FontSize="14" Foreground="#FF606460" TextChanged="argInputs_TextChanged" Background="White">
+            <TextBox.Effect>
+                <DropShadowEffect BlurRadius="16" Direction="315" ShadowDepth="8" Opacity="0.2"/>
+            </TextBox.Effect>
+        </TextBox>
+        <Button x:Name="argCancel" Content="取消" HorizontalAlignment="Left" Height="23" Margin="944,305,0,0" VerticalAlignment="Top" Width="56" BorderBrush="{x:Null}" Background="#FFDCE1DC" Foreground="#FF606460" PreviewMouseUp="argCancel_PreviewMouseUp"/>
+        <Button x:Name="argOK" Content="确定" HorizontalAlignment="Left" Height="23" Margin="883,305,0,0" VerticalAlignment="Top" Width="56" BorderBrush="{x:Null}" Foreground="White" PreviewMouseUp="argOK_PreviewMouseUp">
+            <Button.Background>
+                <LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5">
+                    <GradientStop Color="#FF6CF5C2" Offset="1"/>
+                    <GradientStop Color="#FF1ADBCE" Offset="0"/>
+                </LinearGradientBrush>
+            </Button.Background>
+        </Button>
+        <Label x:Name="argName" Content="参数" HorizontalAlignment="Left" Height="23" VerticalAlignment="Top" Width="91" Margin="787,305,0,0" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Padding="10,0,0,0"/>
     </Grid>
 </Window>

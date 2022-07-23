@@ -41,8 +41,17 @@ public class PaintingCompiler
         {
             if (i % 2 == 1)
             {
-                strconst.Add(str[i].Replace("<protected>", "："));
-                src += (strconst.Count - 1).ToString();
+                string argName = str[i].Replace("<protected>", "：");
+                int k = strconst.FindIndex(that => that == argName);
+                if (k == -1)
+                {
+                    strconst.Add(argName);
+                    src += (strconst.Count - 1).ToString();
+                }
+                else
+                {
+                    src += k.ToString();
+                }
             }
             else
             {
@@ -62,6 +71,7 @@ public class PaintingCompiler
         resolve = GetFront(resolve, "为背景");
         if (resolve != "")
         {
+            resolve = strconst[int.Parse(resolve)];
             IsFileNameValid(resolve);
             piclist.Add(resolve);
             cmd = new PaintCommands(PaintCommandType.SetCanvas, 0f, resolve);
@@ -100,12 +110,12 @@ public class PaintingCompiler
                         {
                             if (!t[j].StartsWith("QQ"))
                             {
-                                if (j % 2 == 1) param.Add(t[j]);
+                                if (j % 2 == 1 && !param.Contains(t[j])) param.Add(t[j]);
                                 if (param.Count > 15) ThrowException("[Standard.ParameterOverflow]请求的参数个数过多（0~15个）。");
                             }
                         }
                     }
-                    cmd = new PaintCommands(PaintCommandType.Write, x, y, 0f, 0f, resolve, 18f, FontStyle.Regular, Color.FromArgb(255, 0, 0, 0), PaintAdjustWriteMode.None, false, "", 1f, PaintAlign.Left, PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.Write, x, y, 0f, 0f, resolve, 18f, (int)FontStyle.Regular, Color.FromArgb(255, 0, 0, 0), (int)PaintAdjustWriteMode.None, false, "", 1f, (int)PaintAlign.Left, (int)PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].Contains("绘制图片"))
@@ -121,7 +131,7 @@ public class PaintingCompiler
                     IsFileNameValid(resolve);
                     if (!piclist.Contains(resolve) && resolve != "QQ头像") piclist.Add(resolve);
                     if (resolve == "QQ头像") paintfile.NeedQQParameter = true;
-                    cmd = new PaintCommands(PaintCommandType.DrawImage, x, y, 0f, 0f, resolve, PaintAlign.Left, PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.DrawImage, x, y, 0f, 0f, resolve, (int)PaintAlign.Left, (int)PaintAlign.Left);
                     if (resolve.StartsWith("img;")){
                         customImg.Add(resolve.Substring(4));
                     }
@@ -150,7 +160,7 @@ public class PaintingCompiler
                     if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
                     float x = 0, y = 0;
                     ParsePos(resolve, out x, out y);
-                    cmd = new PaintCommands(PaintCommandType.FillRectangle, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), PaintAlign.Left, PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.FillRectangle, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), (int)PaintAlign.Left, (int)PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].Contains("填充椭圆"))
@@ -160,7 +170,7 @@ public class PaintingCompiler
                     if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
                     float x = 0, y = 0;
                     ParsePos(resolve, out x, out y);
-                    cmd = new PaintCommands(PaintCommandType.FillEllipse, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), PaintAlign.Left, PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.FillEllipse, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), (int)PaintAlign.Left, (int)PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].Contains("描边矩形"))
@@ -170,7 +180,7 @@ public class PaintingCompiler
                     if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
                     float x = 0, y = 0;
                     ParsePos(resolve, out x, out y);
-                    cmd = new PaintCommands(PaintCommandType.DrawRectangle, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), 1f, PaintAlign.Left, PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.DrawRectangle, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), 1f, (int)PaintAlign.Left, (int)PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].Contains("描边椭圆"))
@@ -180,7 +190,7 @@ public class PaintingCompiler
                     if (resolve == "") ThrowException("[Standard.InproperPaintingHeader]每句绘制指令的开头都应用'在x,y处'指定绘制位置。");
                     float x = 0, y = 0;
                     ParsePos(resolve, out x, out y);
-                    cmd = new PaintCommands(PaintCommandType.DrawEllipse, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), 1f, PaintAlign.Left, PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.DrawEllipse, x, y, 16f, 16f, Color.FromArgb(255, 0, 0, 0), 1f, (int)PaintAlign.Left, (int)PaintAlign.Left);
                     solved = true;
                 }
                 if (sen[i].StartsWith("大小为"))
@@ -205,31 +215,31 @@ public class PaintingCompiler
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    cmd.Args[6] = FontStyle.Regular;
+                    cmd.Args[6] = (int)FontStyle.Regular;
                 }
                 if (sen[i].StartsWith("斜体"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    cmd.Args[6] = FontStyle.Italic;
+                    cmd.Args[6] = (int)FontStyle.Italic;
                 }
                 if (sen[i].StartsWith("粗体"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    cmd.Args[6] = FontStyle.Bold;
+                    cmd.Args[6] = (int)FontStyle.Bold;
                 }
                 if (sen[i].StartsWith("带下划线"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    cmd.Args[6] = FontStyle.Underline;
+                    cmd.Args[6] = (int)FontStyle.Underline;
                 }
                 if (sen[i].StartsWith("带删除线"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    cmd.Args[6] = FontStyle.Strikeout;
+                    cmd.Args[6] = (int)FontStyle.Strikeout;
                 }
                 if (sen[i].StartsWith("颜色为"))
                 {
@@ -275,21 +285,21 @@ public class PaintingCompiler
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
                     if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义文本绘制尺寸的情况下自动调整大小。");
-                    cmd.Args[8] = PaintAdjustWriteMode.Auto;
+                    cmd.Args[8] = (int)PaintAdjustWriteMode.Auto;
                 }
                 if (sen[i].StartsWith("适应宽度"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
                     if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义文本绘制尺寸的情况下自动调整大小。");
-                    cmd.Args[8] = PaintAdjustWriteMode.XFirst;
+                    cmd.Args[8] = (int)PaintAdjustWriteMode.XFirst;
                 }
                 if (sen[i].StartsWith("适应高度"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
                     if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
                     if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义文本绘制尺寸的情况下自动调整大小。");
-                    cmd.Args[8] = PaintAdjustWriteMode.YFirst;
+                    cmd.Args[8] = (int)PaintAdjustWriteMode.YFirst;
                 }
                 if (sen[i].StartsWith("描边"))
                 {
@@ -328,47 +338,47 @@ public class PaintingCompiler
                 if (sen[i] == "向左对齐")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[^1] = PaintAlign.Left; cmd.Args[^2] = PaintAlign.Left;
+                    cmd.Args[^1] = (int)PaintAlign.Left; cmd.Args[^2] = (int)PaintAlign.Left;
                 }
                 if (sen[i] == "向右对齐")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[^1] = PaintAlign.Right; cmd.Args[^2] = PaintAlign.Right;
+                    cmd.Args[^1] = (int)PaintAlign.Right; cmd.Args[^2] = (int)PaintAlign.Right;
                 }
                 if (sen[i] == "居中")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[^1] = PaintAlign.Center; cmd.Args[^2] = PaintAlign.Center;
+                    cmd.Args[^1] = (int)PaintAlign.Center; cmd.Args[^2] = (int)PaintAlign.Center;
                 }
                 if (sen[i] == "横向向左对齐")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[^2] = PaintAlign.Left;
+                    cmd.Args[^2] = (int)PaintAlign.Left;
                 }
                 if (sen[i] == "横向向右对齐")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[^2] = PaintAlign.Right;
+                    cmd.Args[^2] = (int)PaintAlign.Right;
                 }
                 if (sen[i] == "横向居中")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[^2] = PaintAlign.Center;
+                    cmd.Args[^2] = (int)PaintAlign.Center;
                 }
-                if (sen[i] == "纵向向左对齐")
+                if (sen[i] == "纵向向上对齐")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[^1] = PaintAlign.Left;
+                    cmd.Args[^1] = (int)PaintAlign.Left;
                 }
-                if (sen[i] == "纵向向右对齐")
+                if (sen[i] == "纵向向下对齐")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[^1] = PaintAlign.Right;
+                    cmd.Args[^1] = (int)PaintAlign.Right;
                 }
                 if (sen[i] == "纵向居中")
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    cmd.Args[^1] = PaintAlign.Center;
+                    cmd.Args[^1] = (int)PaintAlign.Center;
                 }
             }
             if (!solved) ThrowException("[Standard.UnknownGrammer]无法识别语义。");
@@ -519,12 +529,24 @@ public class PaintingProcessing
 {
     public PaintFile Source;
     public PaintingProcessing(PaintFile src) => Source = src;
-    public async Task Paint(string path, GroupMessageEventArgs e, User qq, object[] args)
+    public async Task<Bitmap> Paint(string path, GroupMessageEventArgs e, User qq, object[] args, string errorImg = null!,string assetsPath = null!)
     {
         Bitmap bitmap;
         List<PaintCommands> cmd = Source.Commands!;
         string dataPath = IntallkConfig.DataPath + "\\DrawingScript\\" + Source.Name + "\\";
-        if (PfO<int>(cmd[0].Args[0]) == 0) bitmap = new(dataPath + (string)cmd[0].Args[1]); else bitmap = new(PfO<int>(cmd[0].Args[1]), PfO<int>(cmd[0].Args[2]));
+        if (assetsPath != null) dataPath = assetsPath;
+        if (PfO<int>(cmd[0].Args[0]) == 0)
+        {
+            if (File.Exists(dataPath + (string)cmd[0].Args[1]))
+                bitmap = new(dataPath + (string)cmd[0].Args[1]);
+            else
+                bitmap = new(errorImg == null ? IntallkConfig.DataPath + "\\Resources\\example.jpg" : errorImg);
+        } 
+        else
+        {
+            bitmap = new(PfO<int>(cmd[0].Args[1]), PfO<int>(cmd[0].Args[2]));
+        }
+
         Graphics g = Graphics.FromImage(bitmap);
         g.InterpolationMode = InterpolationMode.High;
         g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -552,7 +574,7 @@ public class PaintingProcessing
                 {
                     if(qq == null)
                     {
-                        image = new(IntallkConfig.DataPath + "\\Resources\\defaultQQFace.png");
+                        image = new(errorImg == null ? IntallkConfig.DataPath + "\\Resources\\defaultQQFace.png" : errorImg);
                     }
                     else
                     {
@@ -567,7 +589,7 @@ public class PaintingProcessing
                     string filename = (string)cmd[i].Args[4];
                     if (!File.Exists(dataPath + filename))
                     {
-                        image = new(IntallkConfig.DataPath + "\\Resources\\example.jpg");
+                        image = new(errorImg == null ? IntallkConfig.DataPath + "\\Resources\\example.jpg" : errorImg);
                     }
                     else
                     {
@@ -606,13 +628,18 @@ public class PaintingProcessing
                     break;
                 case PaintCommandType.Effect:
                     EffectType et = (EffectType)PfO<int>(cmd[i].Args[4]);
-                    Rectangle rect = new Rectangle((int)x, (int)y, (int)w, (int)h);
+                    Rectangle rect;
                     if (et == EffectType.Blur)
                     {
                         float radius = PfO<float>(cmd[i].Args[5]);
+                        rect = new Rectangle((int)x, (int)y, (int)(w + x), (int)(h + y));
                         bitmap.GaussianBlur(ref rect, radius, false);
                     }
-                    if (et == EffectType.GrayScale) bitmap.ImageGrayscale(ref rect);
+                    if (et == EffectType.GrayScale)
+                    {
+                        rect = new Rectangle((int)x, (int)y, (int)w, (int)h);
+                        bitmap.ImageGrayscale(ref rect);
+                    }
                     break;
                 case PaintCommandType.DrawImage:
                     g.DrawImage(image!, new Rectangle((int)x, (int)y, (int)w, (int)h));
@@ -720,13 +747,21 @@ public class PaintingProcessing
                 image = null!;
             }
         }
-        bitmap.Save(path);
         font.Dispose();
         stf.Dispose();
         brush.Dispose();
         pen.Dispose();
         g.Dispose();
-        bitmap.Dispose();
+        if (path == "")
+        {
+            return bitmap;
+        }
+        else
+        {
+            bitmap.Save(path);
+            bitmap.Dispose();
+            return null!;
+        }
     }
     // Parse From Object
     public T PfO<T>(object src)
