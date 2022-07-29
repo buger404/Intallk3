@@ -302,8 +302,8 @@ namespace Intallk.PSV
 
         private void colorPad_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            
 
+            MessageBox.Show("还没做", "来自超级懒的404");
         }
 
         private void colorPicker_MouseDown(object sender, MouseButtonEventArgs e)
@@ -332,6 +332,14 @@ namespace Intallk.PSV
             MessageBox.Show(c.R + "," + c.G + "," + c.B + "\n已复制。", "取色器", MessageBoxButton.OK, MessageBoxImage.Information);
             Clipboard.SetText(c.R + "," + c.G + "," + c.B);
             b.Dispose();
+        }
+
+        private void help_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            Process p = new Process();
+            p.StartInfo.FileName = "explorer.exe";
+            p.StartInfo.Arguments = @"https://github.com/buger404/Intallk3/blob/main/PaintScript.md";
+            p.Start();
         }
 
         private void argCancel_PreviewMouseUp(object sender, MouseButtonEventArgs e)

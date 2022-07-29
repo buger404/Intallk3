@@ -183,7 +183,7 @@
             <Image x:Name="colorPad" Source="/color-wheel.png" Width="26" DockPanel.Dock="Right" Margin="5,5,10,4" ToolTip="调色板" MouseUp="colorPad_MouseUp"/>
             <Image x:Name="colorPicker" Source="/color-picker.png" DockPanel.Dock="Right" Width="26" Margin="5,5,5,5" ToolTip="取色器" MouseDown="colorPicker_MouseDown" MouseUp="colorPicker_MouseUp"/>
             <Image Source="/folder (1).png" Width="26" Margin="0,5,5,5" ToolTip="查看资源文件夹" MouseUp="Image_MouseUp"/>
-            <Image x:Name="help" Source="/question.png" DockPanel.Dock="Right" Width="26" ToolTip="查看在线说明书" Margin="0,0,5,0"/>
+            <Image x:Name="help" Source="/question.png" DockPanel.Dock="Right" Width="26" ToolTip="查看在线说明书" Margin="5,5,5,5" MouseUp="help_MouseUp"/>
         </DockPanel>
         <Rectangle Height="1" Margin="245,44,261,0" VerticalAlignment="Top">
             <Rectangle.Stroke>

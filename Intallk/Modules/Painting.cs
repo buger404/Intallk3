@@ -27,6 +27,10 @@ class Painting : IOneBotController
         public User qq;
     }
     public static List<PaintingProcessing> paints = new List<PaintingProcessing>();
+    public static string GetSavePath()
+    {
+        return IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
+    }
     [Command("draw showcode <template>")]
     public async void ShowCode(GroupMessageEventArgs e, string template)
     {
@@ -132,7 +136,7 @@ class Painting : IOneBotController
                     picl += s + "，";
                     giud.imgs.Add(s);
                 }
-                giud.template = template;
+                giud.template = paints[pi].Source.Name;
                 giud.args = args;
                 giud.qq = qq;
                 await e.Reply("请按下面的顺序依次发出图片：\n" + picl);
@@ -182,6 +186,7 @@ class Painting : IOneBotController
     {
         e.Reply(e.Sender.At() + "黑嘴制图功能\n" +
             "绘图脚本说明：https://github.com/buger404/Intallk3/blob/main/PaintScript.md" + "\n" +
+            "制图辅助工具下载：https://github.com/buger404/Intallk3/releases/tag/tool\n" +
             "绘图功能指令指南：\n" +
             ".draw list：列出制图库的第一页。\n" +
             ".draw list <页数>：导航到制图库的第几页。\n" +

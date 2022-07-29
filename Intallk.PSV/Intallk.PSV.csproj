@@ -5,12 +5,14 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="bg.png" />
     <None Remove="color-picker.png" />
     <None Remove="color-wheel.png" />
+    <None Remove="colorpick.png" />
     <None Remove="folder %281%29.png" />
     <None Remove="folder.png" />
     <None Remove="grid.png" />
@@ -18,6 +20,7 @@
     <None Remove="paste.png" />
     <None Remove="placeholder.png" />
     <None Remove="QQ图片20220716193154.jpg" />
+    <None Remove="question.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +31,7 @@
     <Resource Include="bg.png" />
     <Resource Include="color-picker.png" />
     <Resource Include="color-wheel.png" />
+    <Resource Include="colorpick.png" />
     <Resource Include="folder (1).png" />
     <Resource Include="folder.png" />
     <Resource Include="grid.png" />
@@ -35,6 +39,7 @@
     <Resource Include="paste.png" />
     <Resource Include="placeholder.png" />
     <Resource Include="QQ图片20220716193154.jpg" />
+    <Resource Include="question.png" />
   </ItemGroup>
 
 </Project>
