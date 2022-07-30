@@ -523,12 +523,32 @@ public class PaintingCompiler
                 ThrowException("[InvalidFileName]设定的文件名非法。");
         }
     }
+    public static bool IsDirectoryNameValid(string name)
+    {
+        char[] c = { '*', '\\', '/', '|', '?', ':', '\"', '<', '>' };
+        foreach (char cc in c)
+        {
+            if (name.Contains(cc)) return false;
+        }
+        // 试探
+        try
+        {
+            Directory.GetFiles(IntallkConfig.DataPath + "\\FileDetection\\" + name);
+        }
+        catch (Exception ex)
+        {
+            if (ex.GetType() != typeof(DirectoryNotFoundException))
+                return false;
+        }
+        return true;
+    }
 }
 
 public class PaintingProcessing
 {
     public PaintFile Source;
     public PaintingProcessing(PaintFile src) => Source = src;
+    public BaseSoraEventArgs? MsgSender;
     public async Task<Bitmap> Paint(string path, GroupMessageEventArgs e, User qq, object[] args, string errorImg = null!,string assetsPath = null!)
     {
         Bitmap bitmap;
@@ -557,9 +577,22 @@ public class PaintingProcessing
         StringFormat stf = new();
         Bitmap image = null!;
         PaintAlign[] align = new PaintAlign[2];
+        DateTime drawTime = DateTime.Now;
         float x, y, w, h;
         for (int i = 1;i < cmd.Count; i++)
         {
+            if((DateTime.Now - drawTime).TotalSeconds >= 5)
+            {
+                if (MsgSender != null)
+                {
+                    if (MsgSender is GroupMessageEventArgs) 
+                        await (MsgSender as GroupMessageEventArgs)!.Reply("该模板的绘制用时超出了5秒，为防止机器人卡死，被黑嘴打断了。");
+                    if (MsgSender is PrivateMessageEventArgs)
+                        await (MsgSender as PrivateMessageEventArgs)!.Reply("该模板的绘制用时超出了5秒，为防止机器人卡死，被黑嘴打断了。");
+                }
+                
+                goto last;
+            }
             x = PfO<float>(cmd[i].Args[0]); y = PfO<float>(cmd[i].Args[1]);
             w = PfO<float>(cmd[i].Args[2]); h = PfO<float>(cmd[i].Args[3]);
             align[0] = (PaintAlign)PfO<int>(cmd[i].Args[^2]);
@@ -747,6 +780,7 @@ public class PaintingProcessing
                 image = null!;
             }
         }
+        last:
         font.Dispose();
         stf.Dispose();
         brush.Dispose();

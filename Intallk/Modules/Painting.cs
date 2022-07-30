@@ -144,7 +144,8 @@ class Painting : IOneBotController
                 return;
             }
         }
-        await paints[pi].Paint(outfile, e, qq, args);
+        paints[pi].MsgSender = e;
+        await paints[pi].Paint(outfile, e, qq!, args);
         await e.Reply(SoraSegment.Image(outfile, false));
     }
     [Command("draw <template> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
@@ -262,8 +263,7 @@ class Painting : IOneBotController
     public void DrawBuild(PrivateMessageEventArgs e, string name, string code) => DrawBuild(e, name, code, false);
     public async void DrawBuild(PrivateMessageEventArgs e, string name, string code, bool skipNameCheck)
     {
-        if (name.Contains('*') || name.Contains('\\') || name.Contains('/') || name.Contains('|') || name.Contains('?')
-            || name.Contains(':') || name.Contains('\"') || name.Contains('<') || name.Contains('>'))
+        if (!PaintingCompiler.IsDirectoryNameValid(name))
         {
             await e.Reply("设定的模板名字里面不能有特殊符号的。");
             await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
@@ -340,6 +340,7 @@ class Painting : IOneBotController
             {
                 string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
                 PaintingProcessing painter = new PaintingProcessing(paintfile);
+                painter.MsgSender = e;
                 await painter.Paint(outfile, null!, null!, null!);
                 await e.Reply("感谢~以下是根据您提交的模板绘制的~\n" +
                         "如果您觉得满意，请回复“是”；放弃本次提交，请回复“取消”；回复其他内容则当作修改脚本重新绘制~");

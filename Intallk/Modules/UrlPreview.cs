@@ -30,6 +30,7 @@ public static class SvgString
         SvgDocument doc = SvgDocument.Open(xml);
         doc.Width *= 2; doc.Height *= 2;
         doc.Overflow = SvgOverflow.Inherit;
+        doc.FontFamily = "HarmonyOS Sans SC Medium";
         Bitmap bitmap = new Bitmap((int)doc.Width.Value, (int)doc.Height.Value);
         doc.Draw(bitmap);
         bitmap.Save(path);
@@ -168,9 +169,9 @@ public class UrlPreview : IOneBotController
             }
             #endregion
         }
-        catch
+        catch(Exception err)
         {
-
+            Console.WriteLine(err.Message + "\n" + err.StackTrace);
         }
         return 0;
     }
