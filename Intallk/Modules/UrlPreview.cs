@@ -44,8 +44,7 @@ public class UrlPreview : IOneBotController
     private static Regex biliReg = new Regex(
         @"^(((http(s)?:)?//)?((((www|m)\.)?bilibili\.com/(video/)?)|(acg\.tv/)))?(((av)?(?<aid>\d+))|(?<bvid>bv[fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF]{10}))(/.*)?(\?.*)?$"
                                              , RegexOptions.IgnoreCase);
-    private static string githubRepo = @"https://github-readme-stats.vercel.app/api/pin/?username={0}&repo={1}&show_owner=true";
-    private static string githubStat = @"https://github-readme-stats.vercel.app/api?username={0}&show_icons=true&count_private=true&include_all_commits=true&bg_color=62,8EC5FC,E0C3FC&icon_color=000000&title_color=000000&disable_animations=true";
+    private static string githubImg = @"https://opengraph.githubassets.com/6d7553a62b54a4e1ce5ec6db91e70e2775a230d045a7a3097f4474228446247a/{0}";
     private static string zhihuFeed = @"/api/v4/questions/{0}/feeds";
     private static string zhihuAnswer = @"/answers/{0}?include=excerpt";
 
@@ -67,21 +66,15 @@ public class UrlPreview : IOneBotController
             if (match.Success)
             {
                 string id = "", idname = "";
-                foreach(object o in match.Groups)
+                if (match.Groups["bvid"].Value != "")
                 {
-                    string? s = o.ToString();
-                    if (s != null)
-                    {
-                        if (s.ToLower().StartsWith("bv"))
-                        {
-                            idname = "bvid"; id = s.Substring(2); break;
-                        }
-                        if (s.ToLower().StartsWith("av"))
-                        {
-                            idname = "avid"; id = s.Substring(2); break;
-                        }
-                    }
+                    idname = "bvid"; id = match.Groups["bvid"].Value.Substring(2); 
                 }
+                if (match.Groups["aid"].Value != "")
+                {
+                    idname = "aid"; id = match.Groups["aid"].Value.Substring(2);
+                }
+                if (idname == "") return 0;
                 RestResponse response = new RestClient("https://api.bilibili.com").Execute(
                                         new RestRequest("/x/web-interface/view").AddParameter(idname,id));
                 if (response.IsSuccessful && response.Content != null)
@@ -105,20 +98,7 @@ public class UrlPreview : IOneBotController
             #region Github
             if (url.ToLower().StartsWith("https://github.com"))
             {
-                string[] t = url.Split('/');
-                string path = Painting.GetSavePath();
-                if(t.Length == 4)
-                {
-                    string username = t[^1];
-                    string.Format(githubStat, username).DrawAsSvg(path);
-                    e.Reply(SoraSegment.Image(path));
-                }
-                else if(t.Length == 5)
-                {
-                    string username = t[^2], repo = t[^1];
-                    string.Format(githubRepo, username, repo).DrawAsSvg(path);
-                    e.Reply(SoraSegment.Image(path));
-                }
+                e.Reply(SoraSegment.Image(string.Format(githubImg, url.Substring("https://github.com/".Length))));
             }
             #endregion
             #region 知乎
