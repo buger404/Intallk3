@@ -86,11 +86,14 @@ public class UrlPreview : IOneBotController
                         j = j["data"] as JObject;
                         if (j == null) return 0;
                         TimeSpan duration = TimeSpan.FromSeconds(double.Parse(j["duration"]?.ToString() ?? "0"));
-                        e.Reply(((SoraSegment.Image(j["pic"]?.ToString()) + "\n") ?? "") +
+                        string description = (j["desc"]?.ToString() ?? "无简介");
+                        if (description.Length > 200) description = description.Substring(0, 200) + "...";
+                        e.Reply(SoraSegment.Reply(e.Message.MessageId) + ((SoraSegment.Image(j["pic"]?.ToString()) + "\n") ?? "") +
                                 (j["owner"]?["name"]!.ToString() ?? "未知") + "：" +
                                 (j["title"]?.ToString() ?? "未知") + "\n" +
-                                (j["desc"]?.ToString() ?? "无简介") + "\n" +
-                                $"时长：{duration.Minutes}:{duration.Seconds.ToString("00")}");
+                                description + "\n" +
+                                $"时长：{duration.Minutes}:{duration.Seconds.ToString("00")}\n" +
+                                $"链接：{url}");
                     }
                 }
             }
@@ -98,7 +101,8 @@ public class UrlPreview : IOneBotController
             #region Github
             if (url.ToLower().StartsWith("https://github.com"))
             {
-                e.Reply(SoraSegment.Image(string.Format(githubImg, url.Substring("https://github.com/".Length))));
+                e.Reply(SoraSegment.Image(string.Format(githubImg, url.Substring("https://github.com/".Length))) +
+                        "\n链接：" + url);
             }
             #endregion
             #region 知乎
@@ -139,11 +143,12 @@ public class UrlPreview : IOneBotController
                         question = j["question"]!["title"]?.ToString() ?? "未知";
                         answer = j["excerpt"]?.ToString() ?? "未知";
                         if(answer.Length >= 200) answer = answer.Substring(0, 200) + "...";
-                        e.Reply(question + "\n" + author + (headline == "" ? "" : "|" + headline) + "：\n" + answer + "\n" +
+                        e.Reply(SoraSegment.Reply(e.Message.MessageId) +  question + "\n" + author + (headline == "" ? "" : "|" + headline) + "：\n" + answer + "\n" +
                                 "回答时间：" + createdTime.ToString("yy.MM.dd HH:mm") +
                                 (createdTime.Ticks == updateTime.Ticks ?
                                 "" :
-                                "\n更新时间：" + updateTime.ToString("yy.MM.dd HH:mm")));
+                                "\n修改时间：" + updateTime.ToString("yy.MM.dd HH:mm") + 
+                                "\n链接：" + url));
                     }
                 }
             }

@@ -35,6 +35,7 @@ public class MainModule : IOneBotController
     readonly ILogger<MainModule> _logger;
     public static string GetQQName(object? e, long qqid)
     {
+        Console.WriteLine("Fetching nick: " + qqid);
         string ret = "";
         switch (e)
         {
@@ -47,6 +48,7 @@ public class MainModule : IOneBotController
                     UserInfo userinfo = group.SoraApi.GetUserInfo(qqid).Result.userInfo;
                     ret = userinfo.Nick;
                 }
+                if (ret == "" || ret == null) ret = qqid.ToString();
                 break;
             case PrivateMessageEventArgs qq:
                 UserInfo user = qq.SoraApi.GetUserInfo(qqid).Result.userInfo;

@@ -16,6 +16,14 @@ using Newtonsoft.Json.Linq;
 
 namespace Intallk.Modules;
 
+public static class DownloadString
+{
+    public static void DownLoad(this string url, string path)
+    {
+        byte[]? data = new RestClient().DownloadDataAsync(new RestRequest(url, Method.Get)).Result;
+        if (data != null) File.WriteAllBytes(path, data!); else throw new Exception("下载失败。");
+    }
+}
 public class RepeatCollector : IOneBotController
 {
     [Serializable]
@@ -176,12 +184,17 @@ public class RepeatCollector : IOneBotController
             if (s.isImage)
             {
                 // 漏网之鱼
-                if (s.Content!.EndsWith(".image")) DownloadMessageImage(s);
+                if (s.Content!.EndsWith(".image"))
+                {
+                    DownloadMessageImage(s);
+                }  
                 body.Add(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\" + s.Content));
+                Console.WriteLine("Image prepared: " + s.Content);
             }
             else
             {
                 body.Add(SoraSegment.Text(s.Content));
+                Console.WriteLine("Text prepared: " + s.Content);
             }
         }
         return body;
@@ -260,7 +273,7 @@ public class RepeatCollector : IOneBotController
             if (heat.Heat >= HeatLimit)
             {
                 // Record
-                if (!heat.Repeated) 
+                if (!heat.Repeated && e.SourceGroup.Id == heat.Group) 
                 {
                     Console.WriteLine("Start recording...");
                     List<MessageHeat> heats = new List<MessageHeat>();
@@ -374,6 +387,11 @@ public class RepeatCollector : IOneBotController
                 heats = list;
                 break;
         }
+        if(heats.Count > 40)
+        {
+            heats.RemoveRange(40, heats.Count - 40);
+            Dump(null);
+        }
         foreach(MessageHeat message in heats)
         {
             string name = "";
@@ -387,6 +405,7 @@ public class RepeatCollector : IOneBotController
             }
             body += name + "：" + ToMessageBody(message.Message) + "\n";
         }
+        Console.WriteLine(body.ToString());
         e.Reply(body);
     }
     [Command("re <QQ> info")]
