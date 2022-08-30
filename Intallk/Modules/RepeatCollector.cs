@@ -64,6 +64,8 @@ public class RepeatCollector : IOneBotController
         public long group;
         public List<MessageHeat>? pond;
     }
+    // 设置屏蔽记录的语录
+    static Predicate<string> filter = x => x.ToLower().StartsWith("dy") || x.StartsWith(".");
     const float HeatLimit = 2f;
     List<MessageHeat> heats = new List<MessageHeat>();
     List<MessagePond> messagepond = new List<MessagePond>();
@@ -212,7 +214,7 @@ public class RepeatCollector : IOneBotController
     {
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
         List<MessageSegment> seg = GetMessageSegments(e.Message.MessageBody);
-        if (e.Message.RawText.StartsWith("dy") || e.Message.RawText.StartsWith(".")) return 0;
+        if (filter.Invoke(e.Message.raw)) return 0;
         int f = heats.FindIndex(m => (m.Group == e.SourceGroup.Id && CompareMessageSegment(m.Message,seg)));
         int g = messagepond.FindIndex(m => m.group == e.SourceGroup.Id);
         if (e.SourceGroup.Id == 1078432121) return 0;
@@ -275,36 +277,27 @@ public class RepeatCollector : IOneBotController
                 // Record
                 if (!heat.Repeated && e.SourceGroup.Id == heat.Group) 
                 {
-                    if (heat.Message.FindIndex(x => x.Content?.ToLower().StartsWith("dy") ?? false) != -1)
+                    Console.WriteLine("Start recording...");
+                    List<MessageHeat> heats = new List<MessageHeat>();
+                    foreach (MessageHeat he in messagepond[g].pond)
                     {
-                        e.Reply("我怀疑你想利用我作弊dy，但我没有证据。");
-                        heat.Repeated = true;
-                    }
-                    else
-                    {
-                        Console.WriteLine("Start recording...");
-                        List<MessageHeat> heats = new List<MessageHeat>();
-                        foreach (MessageHeat he in messagepond[g].pond)
-                        {
-                            MessageHeat heat2 = new MessageHeat { QQ = he.QQ, SendTime = he.SendTime, Message = CopyMsgSegments(he.Message) };
-                            heats.Add(heat2);
-                            foreach (MessageSegment se in heat2.Message)
-                            {
-                                if (se.isImage) DownloadMessageImage(se);
-                            }
-                        }
-                        heat.ForwardMessages = heats;
-                        foreach (MessageSegment se in heat.Message)
+                        MessageHeat heat2 = new MessageHeat { QQ = he.QQ, SendTime = he.SendTime, Message = CopyMsgSegments(he.Message) };
+                        heats.Add(heat2);
+                        foreach (MessageSegment se in heat2.Message)
                         {
                             if (se.isImage) DownloadMessageImage(se);
                         }
-                        heat.Index = collection.messages.Count;
-                        collection.messages.Add(heat);
-                        e.Reply(ToMessageBody(heat.Message));
-                        Console.WriteLine("Sent.");
-                        heat.Repeated = true;
                     }
-
+                    heat.ForwardMessages = heats;
+                    foreach (MessageSegment se in heat.Message)
+                    {
+                        if (se.isImage) DownloadMessageImage(se);
+                    }
+                    heat.Index = collection.messages.Count;
+                    collection.messages.Add(heat);
+                    e.Reply(ToMessageBody(heat.Message));
+                    Console.WriteLine("Sent.");
+                    heat.Repeated = true;
                 }
             }
             if (!heat.Repeated && heat.Group == e.SourceGroup.Id) heat.Cool();
@@ -368,7 +361,9 @@ public class RepeatCollector : IOneBotController
         for(int i = 0; i < collection.messages.Count; i++)
         {
             if (i >= collection.messages.Count) break;
-            if(collection.messages[i].Message.FindIndex(y => y.Content?.ToLower().StartsWith("dy") ?? false) != -1)
+            string rawText = "";
+            foreach (MessageSegment ms in collection.messages[i].Message) rawText += ms.Content; 
+            if (filter.Invoke(rawText))
             {
                 collection.messages.RemoveAt(i);
                 i--; c++;
