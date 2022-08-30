@@ -49,6 +49,18 @@ class DYShooter : IOneBotController
     {
         _logger = logger;
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
+        commandService.Event.OnGroupCardUpdate += Event_OnGroupCardUpdate;
+    }
+
+    private int Event_OnGroupCardUpdate(OneBot.CommandRoute.Models.OneBotContext scope)
+    {
+        GroupCardUpdateEventArgs? e = scope.SoraEventArgs as GroupCardUpdateEventArgs;
+        if (e == null) return 0;
+        if (e.User.Id != 1361778219) return 0;
+        if (e.SourceGroup.Id != 665763261) return 0;
+        if (e.NewCard == "") return 0;
+        e.SourceGroup.SendGroupMessage($"乱改nm呢乱改");
+        return 0;
     }
 
     private int Event_OnGroupMessage(OneBot.CommandRoute.Models.OneBotContext scope)
@@ -58,12 +70,12 @@ class DYShooter : IOneBotController
         {
             if ((e.Message.RawText.Contains("404") || e.Message.RawText.Contains("4O4") || e.Message.RawText.Contains("4零4")
                 || e.Message.RawText.Contains("四零四")) &&
-            (e.Message.RawText.Contains("狗") || e.Message.RawText.Contains("🐶") || e.Message.RawText.ToLower().Replace(" ", "").Replace("\n", "").Contains("dog")
+            (e.Message.RawText.Contains("狗") || e.Message.RawText.Contains("🐶") || e.Message.RawText.Contains("🐕") || e.Message.RawText.ToLower().Replace(" ", "").Replace("\n", "").Contains("dog")
             || e.Message.RawText.Replace(" ", "").Contains("犭句")))
             {
                 e.Message.RecallMessage();
-                e.Reply(e.Sender.At() + "已自动踢出群聊（无慈悲）。");
-                e.SourceGroup.KickGroupMember(e.Sender.Id);
+                //e.Reply(e.Sender.At() + "已自动踢出群聊（无慈悲）。");
+                e.SourceGroup.EnableGroupMemberMute(e.Sender.Id, 600);
                 return 1;
             }
         }

@@ -17,7 +17,7 @@ namespace Intallk.Modules;
 
 public class TTS : IOneBotController
 {
-    public static string api = @"https://tts.baidu.com/text2audio?tex={0}cuid=baike&lan=ZH&ctp=1&pdt=301&vol=9&rate=32&pelJ";
+    public static string api = @"https://tts.baidu.com/text2audio?tex={0}&cuid=baike&lan=ZH&ctp=1&pdt=301&vol=9&rate=32&pelJ";
     [Command("speak <text>")]
     public async void Speak(GroupMessageEventArgs e, string text)
     {

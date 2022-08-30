@@ -33,27 +33,44 @@ public class MainModule : IOneBotController
     public static Dictionary<long, DateTime> replyTime = new Dictionary<long, DateTime>();
     readonly Random random = new(Guid.NewGuid().GetHashCode());
     readonly ILogger<MainModule> _logger;
+    public static Dictionary<long, string> nicks = new Dictionary<long, string>();
+    public static string GetCacheQQName(object? e, long qqid)
+    {
+        //Console.WriteLine("Cache fetching nick: " + qqid);
+        string ret = "";
+        if(nicks.ContainsKey(qqid)) return nicks[qqid];
+        ret = GetQQName(e, qqid);
+        nicks.Add(qqid, ret);
+        return ret;
+    }
     public static string GetQQName(object? e, long qqid)
     {
         Console.WriteLine("Fetching nick: " + qqid);
         string ret = "";
-        switch (e)
+        try
         {
-            case GroupMessageEventArgs group:
-                GroupMemberInfo info = group.SourceGroup.GetGroupMemberInfo(qqid).Result.memberInfo;
-                ret = info.Card;
-                if (ret == "" || ret == null) ret = info.Nick;
-                if (ret == "" || ret == null)
-                {
-                    UserInfo userinfo = group.SoraApi.GetUserInfo(qqid).Result.userInfo;
-                    ret = userinfo.Nick;
-                }
-                if (ret == "" || ret == null) ret = qqid.ToString();
-                break;
-            case PrivateMessageEventArgs qq:
-                UserInfo user = qq.SoraApi.GetUserInfo(qqid).Result.userInfo;
-                ret = user.Nick;
-                break;
+            switch (e)
+            {
+                case GroupMessageEventArgs group:
+                    GroupMemberInfo info = group.SourceGroup.GetGroupMemberInfo(qqid).Result.memberInfo;
+                    ret = info.Card;
+                    if (ret == "" || ret == null) ret = info.Nick;
+                    if (ret == "" || ret == null)
+                    {
+                        UserInfo userinfo = group.SoraApi.GetUserInfo(qqid).Result.userInfo;
+                        ret = userinfo.Nick;
+                    }
+                    if (ret == "" || ret == null) ret = qqid.ToString();
+                    break;
+                case PrivateMessageEventArgs qq:
+                    UserInfo user = qq.SoraApi.GetUserInfo(qqid).Result.userInfo;
+                    ret = user.Nick;
+                    break;
+            }
+        }
+        catch
+        {
+            ret = qqid.ToString() + "(异常账号)";
         }
         return ret;
     }

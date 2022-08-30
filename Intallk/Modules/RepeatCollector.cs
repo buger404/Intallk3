@@ -275,27 +275,36 @@ public class RepeatCollector : IOneBotController
                 // Record
                 if (!heat.Repeated && e.SourceGroup.Id == heat.Group) 
                 {
-                    Console.WriteLine("Start recording...");
-                    List<MessageHeat> heats = new List<MessageHeat>();
-                    foreach (MessageHeat he in messagepond[g].pond)
+                    if (heat.Message.FindIndex(x => x.Content?.ToLower().StartsWith("dy") ?? false) != -1)
                     {
-                        MessageHeat heat2 = new MessageHeat { QQ = he.QQ, SendTime = he.SendTime, Message = CopyMsgSegments(he.Message) };
-                        heats.Add(heat2);
-                        foreach(MessageSegment se in heat2.Message)
+                        e.Reply("我怀疑你想利用我作弊dy，但我没有证据。");
+                        heat.Repeated = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Start recording...");
+                        List<MessageHeat> heats = new List<MessageHeat>();
+                        foreach (MessageHeat he in messagepond[g].pond)
+                        {
+                            MessageHeat heat2 = new MessageHeat { QQ = he.QQ, SendTime = he.SendTime, Message = CopyMsgSegments(he.Message) };
+                            heats.Add(heat2);
+                            foreach (MessageSegment se in heat2.Message)
+                            {
+                                if (se.isImage) DownloadMessageImage(se);
+                            }
+                        }
+                        heat.ForwardMessages = heats;
+                        foreach (MessageSegment se in heat.Message)
                         {
                             if (se.isImage) DownloadMessageImage(se);
                         }
+                        heat.Index = collection.messages.Count;
+                        collection.messages.Add(heat);
+                        e.Reply(ToMessageBody(heat.Message));
+                        Console.WriteLine("Sent.");
+                        heat.Repeated = true;
                     }
-                    heat.ForwardMessages = heats;
-                    foreach (MessageSegment se in heat.Message)
-                    {
-                        if (se.isImage) DownloadMessageImage(se);
-                    }
-                    heat.Index = collection.messages.Count;
-                    collection.messages.Add(heat);
-                    e.Reply(ToMessageBody(heat.Message));
-                    Console.WriteLine("Sent.");
-                    heat.Repeated = true;
+
                 }
             }
             if (!heat.Repeated && heat.Group == e.SourceGroup.Id) heat.Cool();
@@ -349,6 +358,132 @@ public class RepeatCollector : IOneBotController
         e.Reply("好的，已经帮您移除语录" + id + "\n" + ToMessageBody(collection.messages[id].Message));
         collection.messages.RemoveAt(id);
         Dump(null);
+    }
+    [Command("re clean")]
+    public void RepeatClean(GroupMessageEventArgs e)
+    {
+        if (e.Sender.Id != 1361778219) return;
+        e.Reply("正在清理语录库...");
+        int c = 0;
+        for(int i = 0; i < collection.messages.Count; i++)
+        {
+            if (i >= collection.messages.Count) break;
+            if(collection.messages[i].Message.FindIndex(y => y.Content?.ToLower().StartsWith("dy") ?? false) != -1)
+            {
+                collection.messages.RemoveAt(i);
+                i--; c++;
+            }
+        }
+        Dump(null);
+        e.Reply("已成功清理" + c + "条语录！");
+    }
+    [Command("re dy_cheat_report")]
+    public void RepeatSearchAll(GroupMessageEventArgs e)
+    {
+        if (e.Sender.Id != 1361778219) return;
+        e.Reply("正在执行滥用报告和分析，请稍后...");
+        List<MessageHeat> c = collection.messages.FindAll(x => x.Message.FindIndex(y => y.Content?.ToLower().StartsWith("dy") ?? false) != -1);
+        StringBuilder report = new StringBuilder();
+        Dictionary<string, List<MessageHeat>> op = new Dictionary<string, List<MessageHeat>>();
+        Dictionary<long, List<MessageHeat>> target = new Dictionary<long, List<MessageHeat>>();
+        foreach (MessageHeat mh in c)
+        {
+            string text = "";
+            foreach (MessageSegment ms in mh.Message) text += ms.Content;
+            string[] t = text.Split(' ');
+            if (!op.ContainsKey(t[1].ToLower()))
+            {
+                op.Add(t[1].ToLower(), new List<MessageHeat>());
+            }
+            op[t[1].ToLower()].Add(mh);
+        }
+        report.AppendLine("滥用黑嘴执行OP指令报告(黑嘴机器人自动生成)：");
+        int cnt = 0;
+        foreach(string cmd in op.Keys)
+        {
+            cnt++;
+            Console.WriteLine("1/2 " + cnt + "/" + op.Keys.Count);
+            report.AppendLine("指令'" + cmd + "'的滥用情况(总计" + op[cmd].Count + "次)：");
+            for(int i = 0; i < op[cmd].Count; i++)
+            {
+                MessageHeat mh = op[cmd][i];
+                string text = "";
+                foreach (MessageSegment ms in mh.Message) text += ms.Content;
+                string[] t = text.Split(' ');
+                if(t.Length >= 2)
+                {
+                    long qq = 0;
+                    if (t.Length >= 3) long.TryParse(t[2], out qq);
+                    report.Append((i + 1) + "." + text);
+                    if (qq == 0)
+                    {
+                        report.AppendLine(" - 执行对象:未知");
+                    }
+                    else
+                    {
+                        report.AppendLine(" - 执行对象:" + MainModule.GetCacheQQName(e, qq) + "(" + qq + ")");
+                        if (!target.ContainsKey(qq))
+                        {
+                            target.Add(qq, new List<MessageHeat>());
+                        }
+                        target[qq].Add(mh);
+                    }
+                    string repeat = "";
+                    foreach (long q in mh.Repeaters)
+                        repeat += MainModule.GetCacheQQName(e, q) + "(" + q + ")，";
+                    report.AppendLine("  参与执行的所有人：" + repeat);
+                    report.AppendLine("  发自群：" + mh.Group + "，时间：" + mh.SendTime.ToString("yy.MM.dd HH:mm:ss"));
+                }
+            }
+            report.AppendLine("-----------以上为按指令分类的滥用报告情况。-------------");
+        }
+        report.AppendLine("总计滥用指令目标人数：" + target.Count);
+        cnt = 0;
+        List<long> back = new List<long>();
+        foreach (long q in target.Keys)
+        {
+            cnt++;
+            Console.WriteLine("2/2 " + cnt + "/" + target.Keys.Count);
+            report.AppendLine("玩家'" + MainModule.GetCacheQQName(e, q) + "(" + q + ")" + "'的滥用情况(总计" + target[q].Count + "次)：");
+            for (int i = 0; i < target[q].Count; i++)
+            {
+                MessageHeat mh = target[q][i];
+                string text = "";
+                foreach (MessageSegment ms in mh.Message) text += ms.Content;
+                string[] t = text.Split(' ');
+                if(t.Length >= 2)
+                {
+                    if (t[1].ToLower() == "/addeqi" || t[1].ToLower() == "/addvip" || t[1].ToLower() == "/addcoin" || t[1].ToLower() == "/checktradecd"
+                        || t[1].ToLower() == "/addpet" || t[1].ToLower() == "/addtoptitle")
+                    {
+                        if(!back.Contains(q))
+                            back.Add(q);
+                    }
+                    long qq = 0;
+                    if (t.Length >= 3) long.TryParse(t[2], out qq);
+                    report.Append((i + 1) + "." + text);
+                    if (qq == 0)
+                    {
+                        report.AppendLine(" - 执行对象:未知");
+                    }
+                    else
+                    {
+                        report.AppendLine(" - 执行对象:" + MainModule.GetCacheQQName(e, qq) + "(" + qq + ")");
+                    }
+                    string repeat = "";
+                    foreach (long sq in mh.Repeaters)
+                        repeat += MainModule.GetCacheQQName(e, sq) + "(" + sq + ")，";
+                    report.AppendLine("  参与执行的所有人：" + repeat);
+                    report.AppendLine("  发自群：" + mh.Group + "，时间：" + mh.SendTime.ToString("yy.MM.dd HH:mm:ss"));
+                }
+            }
+            report.AppendLine("-----------以上为按玩家分类的滥用报告情况。-------------");
+        }
+        string qqstr = string.Join(",", target.Keys.ToList());
+        report.AppendLine("报告生成完毕，滥用总次数：" + c.Count + "次，涉及的所有玩家QQ(" + target.Count + "个)：\n" + qqstr + "\n" + 
+            "涉及敏感操作的所有玩家QQ(" + back.Count + "个)：\n" + String.Join(",", back));
+        File.WriteAllText("黑嘴滥用报告.txt", report.ToString());
+        e.Reply("滥用报告已分析并生成，请查阅。");
     }
     [Command("re byid <id>")]
     public void Repeat(GroupMessageEventArgs e, int id) => GeneralRepeat(e, null!, id.ToString(), false);
