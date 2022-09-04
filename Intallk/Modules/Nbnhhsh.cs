@@ -49,7 +49,7 @@ class Nbnhhsh : IOneBotController
             bool hasResult = false;
             for (int i = 0; i < response.Data.Count; i++)
             {
-                if (response.Data.Count > 1) trans.Append("结果{i + 1}：");
+                if (response.Data.Count > 1) trans.Append($"结果{i + 1}：");
                 if (response.Data[i].Trans != null)
                 {
                     foreach (string s in response.Data[i]!.Trans!) trans.Append($"\"{s}\"，");
@@ -59,7 +59,7 @@ class Nbnhhsh : IOneBotController
             }
             if (hasResult)
             {
-                await e.Reply(e.Sender.At() + trans.ToString());
+                await e.Reply(e.Sender.At() + trans.ToString().Remove(trans.ToString().Length - 1, 1));
             }
             else
             {

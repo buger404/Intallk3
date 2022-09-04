@@ -15,6 +15,7 @@ using Sora.Entities.Segment.DataModel;
 using Sora.Enumeration;
 using Sora.EventArgs.SoraEvent;
 using Sora.Util;
+using System.Reflection;
 using System.Text;
 
 class Painting : IOneBotController
@@ -146,7 +147,9 @@ class Painting : IOneBotController
         }
         paints[pi].MsgSender = e;
         await paints[pi].Paint(outfile, e, qq!, args);
-        await e.Reply(SoraSegment.Image(outfile, false));
+        string? info = paints[pi].Source.AdditionalInfo;
+        if (info != null || info != "") info = "\n" + info;
+        await e.Reply(SoraSegment.Image(outfile, false) + info);
     }
     [Command("draw <template> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public void Draw(GroupMessageEventArgs e, string template, [ParsedArguments] object[] args) => Draw(e, template, null!, args);
@@ -177,7 +180,9 @@ class Painting : IOneBotController
             string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
             PaintingProcessing painter = paints.Find(m => m.Source.Name == giud.template)!;
             await painter.Paint(outfile, e, giud.qq, giud.args!);
-            await e.Reply(SoraSegment.Image(outfile, false));
+            string? info = painter.Source.AdditionalInfo;
+            if (info != null || info != "") info = "\n" + info;
+            await e.Reply(SoraSegment.Image(outfile, false) + info);
             return true;
         }
         return false;
@@ -256,6 +261,30 @@ class Painting : IOneBotController
         }
         paints.RemoveAt(pi);
         e.Reply("删掉啦~");
+    }
+    [Command("draw setinfo <template> <info>", EventType = EventType.PrivateMessage)]
+    public void DrawInfo(PrivateMessageEventArgs e, string template, string info)
+    {
+        int pi = -1;
+        if (!int.TryParse(template, out pi)) pi = paints.FindIndex(m => m.Source.Name == template); else pi--;
+        if (pi < 0 || pi >= paints.Count)
+        {
+            e.Reply("这啥呀，找不到啊。");
+            e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+            return;
+        }
+        if (paints[pi].Source.Author != e.Sender.Id && e.Sender.Id != 1361778219)
+        {
+            e.Reply("不行，这是别人的模板，不能修改...");
+            e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\no.png"));
+            return;
+        }
+        paints[pi].Source.AdditionalInfo = info;
+        JsonSerializer serializer = new();
+        StringBuilder code = new StringBuilder();
+        serializer.Serialize(new StringWriter(code), paints[pi].Source);
+        File.WriteAllText(IntallkConfig.DataPath + "\\DrawingScript\\" + template + ".json", code.ToString());
+        e.Reply("已设定生成图片的额外信息：" + info);
     }
     [Command("draw edit <name> <code>", EventType = EventType.PrivateMessage)]
     public void DrawEdit(PrivateMessageEventArgs e, string name, string code) => DrawBuild(e, name, code, true);

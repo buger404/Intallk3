@@ -4,6 +4,7 @@
 public class PaintFile
 {
     public long Author { get; set; }
+    public string? AdditionalInfo { get; set; }
     public string? Name { get; set; }
     public string? ParameterDescription { get; set; }
     public List<PaintCommands>? Commands { get; set; }

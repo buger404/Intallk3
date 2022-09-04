@@ -31,7 +31,7 @@ public class MainModule : IOneBotController
     public static List<PrivateMessageHook> hooks2 = new();
     public static int ExceptionCount = 0;
     public static Dictionary<long, DateTime> replyTime = new Dictionary<long, DateTime>();
-    readonly Random random = new(Guid.NewGuid().GetHashCode());
+    readonly System.Random random = new(Guid.NewGuid().GetHashCode());
     readonly ILogger<MainModule> _logger;
     public static Dictionary<long, string> nicks = new Dictionary<long, string>();
     public static string GetCacheQQName(object? e, long qqid)
@@ -283,19 +283,14 @@ public class MainModule : IOneBotController
                 ".test <次数>：让我骂我自己神经病...欸？（我要把404杀掉）\n" + 
                 ".sx <中文缩写>：让黑嘴帮你搜一下这个缩写的意思\n" + 
                 ".bug <内容>：欸？这是什么我也不知道呢。\n" +
-                ".gifextract：请黑嘴帮你展开GIF。\n" +
+                ".gifextract：请黑嘴帮你把一张动态图片拆成好几张静态图片。\n" +
                 ".draw：查看制图相关指定说明。\n" +
-                ".re <内容>：查看包含指定内容的语录\n" +
-                ".re bycontext <内容>：查看上文包含指定内容的语录\n" +
-                ".re byqq <QQ>：随机抽一条黑嘴收集过的某人的复读语录\n" +
-                ".re <QQ> info：看看黑嘴收集某个人的复读语录的情况\n" +
-                ".re <QQ> <id/内容>：看看某个人指定序号的语录/包含这个内容的语录\n" +
-                ".re <QQ> <id/内容> info：看看某个人指定序号的语录/包含这个内容的语录的情况\n" +
-                ".re context <id>：查看复读语录的上文\n" +
-                ".re byid <id>：查看指定序号对应的复读语录\n" +
-                ".re：随机抽一条语录\n" +
+                ".re help：查看语录库的使用帮助。\n" +
+                ".random <最小数> <最大数>：随机抽取一个数。\n" +
+                ".random <数量>：随机抽取群内几位成员。\n" +
                 ".keyword [列出项数]：查看你群今日截至现在的词云\n" +
-                ".t：回溯最近的10条消息");
+                ".keyword switch on/off：开启或关闭你群词云统计（开启后才能使用词云）。\n" +
+                ".t：回溯最近的10条消息。（防撤回）");
 
     [Command("status")]
     public void Status(GroupMessageEventArgs e) =>

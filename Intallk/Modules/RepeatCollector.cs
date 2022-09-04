@@ -214,7 +214,7 @@ public class RepeatCollector : IOneBotController
     {
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
         List<MessageSegment> seg = GetMessageSegments(e.Message.MessageBody);
-        if (filter.Invoke(e.Message.raw)) return 0;
+        if (filter.Invoke(e.Message.RawText)) return 0;
         int f = heats.FindIndex(m => (m.Group == e.SourceGroup.Id && CompareMessageSegment(m.Message,seg)));
         int g = messagepond.FindIndex(m => m.group == e.SourceGroup.Id);
         if (e.SourceGroup.Id == 1078432121) return 0;

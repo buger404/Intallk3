@@ -58,21 +58,28 @@ public class UrlPreview : IOneBotController
     {
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
         string url = e!.Message.RawText;
-        if (!url.StartsWith("http")) return 0;
+        if (!url.ToLower().StartsWith("http") && !url.ToLower().StartsWith("bv")) return 0;
         try
         {
             #region Bilibili
             Match match = biliReg.Match(url);
-            if (match.Success)
+            if (match.Success || url.ToLower().StartsWith("bv"))
             {
                 string id = "", idname = "";
-                if (match.Groups["bvid"].Value != "")
+                if (url.ToLower().StartsWith("bv"))
                 {
-                    idname = "bvid"; id = match.Groups["bvid"].Value.Substring(2); 
+                    idname = "bvid"; id = url.Substring(2);
                 }
-                if (match.Groups["aid"].Value != "")
+                else
                 {
-                    idname = "aid"; id = match.Groups["aid"].Value.Substring(2);
+                    if (match.Groups["bvid"].Value != "")
+                    {
+                        idname = "bvid"; id = match.Groups["bvid"].Value.Substring(2);
+                    }
+                    if (match.Groups["aid"].Value != "")
+                    {
+                        idname = "aid"; id = match.Groups["aid"].Value.Substring(2);
+                    }
                 }
                 if (idname == "") return 0;
                 RestResponse response = new RestClient("https://api.bilibili.com").Execute(
