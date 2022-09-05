@@ -11,6 +11,7 @@ using Sora.Entities.Base;
 using Sora.Entities.Segment;
 using Sora.Entities.Segment.DataModel;
 using Sora.Enumeration;
+using Sora.Enumeration.EventParamsType;
 using Sora.EventArgs.SoraEvent;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -77,6 +78,11 @@ class Keyword : IOneBotController
     [Command("keyword switch off")]
     public void KeywordOff(GroupMessageEventArgs e)
     {
+        if (e.SenderInfo.Role != MemberRoleType.Admin && e.SenderInfo.Role != MemberRoleType.Owner && e.Sender.Id != 1361778219)
+        {
+            e.Reply("不可以哦，请让管理员或群主发送此指令~");
+            return;
+        }
         if (!switches.ContainsKey(e.SourceGroup.Id))
         {
             switches.Add(e.SourceGroup.Id, false);
@@ -91,6 +97,11 @@ class Keyword : IOneBotController
     [Command("keyword switch on")]
     public void KeywordOn(GroupMessageEventArgs e)
     {
+        if (e.SenderInfo.Role != MemberRoleType.Admin && e.SenderInfo.Role != MemberRoleType.Owner && e.Sender.Id != 1361778219)
+        {
+            e.Reply("不可以哦，请让管理员或群主发送此指令~");
+            return;
+        }
         if (!switches.ContainsKey(e.SourceGroup.Id))
         {
             switches.Add(e.SourceGroup.Id, true);
@@ -129,7 +140,7 @@ class Keyword : IOneBotController
         int i = messages.FindIndex(m => m.group == e.SourceGroup);
         if (i == -1)
         {
-            e.Reply("你群暂无记录。");
+            e.Reply("你群暂无记录哦。若要开启，请联系管理员或者群主，发送：\n.keyword switch on");
             return;
         }
         MessageRecord r = messages[i];

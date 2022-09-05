@@ -94,12 +94,18 @@ public class UrlPreview : IOneBotController
                         if (j == null) return 0;
                         TimeSpan duration = TimeSpan.FromSeconds(double.Parse(j["duration"]?.ToString() ?? "0"));
                         string description = (j["desc"]?.ToString() ?? "无简介");
+                        string[] t = description.Split("\n");
+                        if (t.Length > 3)
+                        {
+                            description = t[0] + "\n" + t[1] + "\n" + t[2] + "...";
+                        }
                         if (description.Length > 200) description = description.Substring(0, 200) + "...";
+                        if (!url.ToLower().StartsWith("http")) url = @"https://www.bilibili.com/video/" + (idname == "bvid" ? "BV" : "av") + id;
                         e.Reply(SoraSegment.Reply(e.Message.MessageId) + ((SoraSegment.Image(j["pic"]?.ToString()) + "\n") ?? "") +
                                 (j["owner"]?["name"]!.ToString() ?? "未知") + "：" +
                                 (j["title"]?.ToString() ?? "未知") + "\n" +
-                                description + "\n" +
-                                $"时长：{duration.Minutes}:{duration.Seconds.ToString("00")}\n" +
+                                (description == "" || description == null ? "" : description + "\n") +
+                                $"时长：{duration.Minutes}:{duration.Seconds.ToString("00")}   {idname}：{(idname == "bvid" ? "BV" : "av") + id}\n" +
                                 $"链接：{url}");
                     }
                 }

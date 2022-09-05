@@ -148,8 +148,8 @@ class Painting : IOneBotController
         paints[pi].MsgSender = e;
         await paints[pi].Paint(outfile, e, qq!, args);
         string? info = paints[pi].Source.AdditionalInfo;
-        if (info != null || info != "") info = "\n" + info;
-        await e.Reply(SoraSegment.Image(outfile, false) + info);
+        await e.Reply(SoraSegment.Image(outfile, false));
+        if (info != null || info != "") await e.Reply(info);
     }
     [Command("draw <template> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public void Draw(GroupMessageEventArgs e, string template, [ParsedArguments] object[] args) => Draw(e, template, null!, args);
@@ -181,8 +181,8 @@ class Painting : IOneBotController
             PaintingProcessing painter = paints.Find(m => m.Source.Name == giud.template)!;
             await painter.Paint(outfile, e, giud.qq, giud.args!);
             string? info = painter.Source.AdditionalInfo;
-            if (info != null || info != "") info = "\n" + info;
-            await e.Reply(SoraSegment.Image(outfile, false) + info);
+            await e.Reply(SoraSegment.Image(outfile, false));
+            if (info != null || info != "") await e.Reply(info);
             return true;
         }
         return false;
