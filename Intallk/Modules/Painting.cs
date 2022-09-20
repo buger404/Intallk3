@@ -149,7 +149,7 @@ class Painting : IOneBotController
         await paints[pi].Paint(outfile, e, qq!, args);
         string? info = paints[pi].Source.AdditionalInfo;
         await e.Reply(SoraSegment.Image(outfile, false));
-        if (info != null || info != "") await e.Reply(info);
+        if (info != null && info != "") await e.Reply(info);
     }
     [Command("draw <template> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public void Draw(GroupMessageEventArgs e, string template, [ParsedArguments] object[] args) => Draw(e, template, null!, args);
@@ -182,12 +182,12 @@ class Painting : IOneBotController
             await painter.Paint(outfile, e, giud.qq, giud.args!);
             string? info = painter.Source.AdditionalInfo;
             await e.Reply(SoraSegment.Image(outfile, false));
-            if (info != null || info != "") await e.Reply(info);
+            if (info != null && info != "") await e.Reply(info);
             return true;
         }
         return false;
     }
-    [Command("draw")]
+    [Command("draw help")]
     public void DrawHelp(GroupMessageEventArgs e)
     {
         e.Reply(e.Sender.At() + "黑嘴制图功能\n" +
@@ -204,17 +204,19 @@ class Painting : IOneBotController
         return;
     }
     [Command("draw help <template>")]
-    public void DrawHelp(GroupMessageEventArgs e, string template)
+    public async void DrawHelp(GroupMessageEventArgs e, string template)
     {
         int pi = -1;
         if (!int.TryParse(template, out pi)) pi = paints.FindIndex(m => m.Source.Name == template); else pi--;
         if (pi < 0 || pi >= paints.Count)
         {
-            e.Reply(e.Sender.At() + "未找到指定模板。");
-            e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+            await e.Reply(e.Sender.At() + "未找到指定模板。");
+            await e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
             return;
         }
-        e.Reply(e.Sender.At() + "作者：" + MainModule.GetQQName(e, paints[pi].Source.Author) + "\n"
+        string outfile = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
+        await paints[pi].Paint(outfile, null!, null!, null!);
+        await e.Reply(SoraSegment.Image(outfile) + "作者：" + MainModule.GetQQName(e, paints[pi].Source.Author) + "\n"
                                     + "绘制步骤：共" + paints[pi].Source.Commands!.Count.ToString() + "步\n"
                                     + "使用方法：.draw " + (pi+1).ToString() + "/" + paints[pi].Source.Name + " " + paints[pi].Source.ParameterDescription);
         return;

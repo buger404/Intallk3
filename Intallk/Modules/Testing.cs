@@ -10,14 +10,20 @@ namespace Intallk.Modules;
 
 class Testing : IOneBotController
 {
-    [Command("repeat")]
-    public static void Repeat(GroupMessageEventArgs e)
+    [Command("repeats")]
+    public static void Repeats(GroupMessageEventArgs e)
     {
         string content = e.Message.RawText, send = "";
         for (int i = 0; i < content.Length; i++) send += content[i] + " ";
         e.Reply(send);
     }
-
+    [Command("repeat")]
+    public static void Repeat(GroupMessageEventArgs e)
+    {
+        string content = e.Message.RawText.Substring(".repeat ".Length);
+        if (e.Sender.Id != 1361778219 && e.Sender.Id != 2487411076 && content.ToLower().StartsWith("dy")) return;
+        e.Reply(content);
+    }
     [Command("test <count>")]
     public static void TestIll(int count, GroupMessageEventArgs e)
     {

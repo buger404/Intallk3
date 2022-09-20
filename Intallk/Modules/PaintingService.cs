@@ -697,7 +697,7 @@ public class PaintingProcessing
                     if(args != null)
                     {
                         int k;
-                        string rep = "";
+                        string rep;
                         for (int j = 0; j < Source.Parameters!.Count; j++)
                         {
                             rep = "";
@@ -735,7 +735,7 @@ public class PaintingProcessing
                     }
                     s = s.Replace("\\n", "\n");
                     PaintAdjustWriteMode adjust = (PaintAdjustWriteMode)PfO<int>(cmd[i].Args[8]);
-                    if (adjust != PaintAdjustWriteMode.None)
+                    if (adjust != PaintAdjustWriteMode.None && s != "" && s != null)
                     {
                         Font ffont = new(font, fsize, fstyle);
                         SizeF size = g.MeasureString(s, ffont); 
