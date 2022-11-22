@@ -7,6 +7,8 @@ using Sora.EventArgs.SoraEvent;
 
 namespace Intallk.Modules;
 
+// 404私用功能
+
 // BugLanguage
 // 这个功能纯属娱乐，是我小学时期想的一套替换拼音的暗号（？）
 // 这个功能的实现完全摆烂，不会优化，不会优化，不会优化（逃）

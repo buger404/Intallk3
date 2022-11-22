@@ -17,6 +17,7 @@ using OneBot.CommandRoute.Models;
 
 namespace Intallk.Modules;
 
+// 404私用功能
 class AutoHorse : IOneBotController
 {
     readonly Random random = new(Guid.NewGuid().GetHashCode());

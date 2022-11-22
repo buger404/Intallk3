@@ -16,6 +16,8 @@ using System.Drawing.Imaging;
 
 namespace Intallk.Modules;
 
+// 404私用功能
+
 class DYShooter : IOneBotController
 {
     private Timer? signupTimer, beatTimer;
@@ -50,18 +52,6 @@ class DYShooter : IOneBotController
     {
         _logger = logger;
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
-        commandService.Event.OnGroupCardUpdate += Event_OnGroupCardUpdate;
-    }
-
-    private int Event_OnGroupCardUpdate(OneBot.CommandRoute.Models.OneBotContext scope)
-    {
-        GroupCardUpdateEventArgs? e = scope.SoraEventArgs as GroupCardUpdateEventArgs;
-        if (e == null) return 0;
-        if (e.User.Id != 1361778219) return 0;
-        if (e.SourceGroup.Id != 665763261) return 0;
-        if (e.NewCard == "") return 0;
-        e.SourceGroup.SendGroupMessage($"乱改nm呢乱改");
-        return 0;
     }
 
     private int Event_OnGroupMessage(OneBot.CommandRoute.Models.OneBotContext scope)
