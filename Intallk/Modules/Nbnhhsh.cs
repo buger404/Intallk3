@@ -32,7 +32,7 @@ class Nbnhhsh : IOneBotController
     public async Task SXSearchAsync(string content, GroupMessageEventArgs e)
     {
         var client = new RestClient("https://lab.magiconch.com/api/nbnhhsh");
-        var request = new RestRequest("/guess", Method.Post).AddJsonBody(new SXRequest { Text = content });
+        var request = new RestRequest("/guess", Method.Post).AddJsonBody(new SXRequest { Text = content }).AddHeader("content-type", "application/json");
         var response = await client.ExecuteAsync<List<SXRespond>>(request);
         if (!response.IsSuccessful)
         {

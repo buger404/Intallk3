@@ -164,7 +164,7 @@ class Painting : IOneBotController
                 var img = (ImageSegment)msg.Data;
                 string file = IntallkConfig.DataPath + "\\DrawingScript\\" + giud.template + "\\img;" + giud.imgs![0];
                 if (File.Exists(file)) File.Delete(file);
-                File.WriteAllBytes(file, await new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)));
+                File.WriteAllBytes(file, (await new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)))!);
                 giud.imgs!.RemoveAt(0);
                 hasImg = true;
                 if (giud.imgs!.Count == 0) break;

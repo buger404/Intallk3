@@ -31,6 +31,7 @@ builder.ConfigureServices((context, services) =>
         .AddSingleton<IOneBotController, DYShooter>()
         .AddSingleton<IOneBotController, UrlPreview>()
         .AddSingleton<IOneBotController, IntallkRandom>()
+        .AddSingleton<IOneBotController, AutoHorse>()
         .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
 
     foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs", "\\FileDetection" })

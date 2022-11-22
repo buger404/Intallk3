@@ -18,9 +18,9 @@ namespace Intallk.Modules;
 
 public static class DownloadString
 {
-    public static void DownLoad(this string url, string path)
+    public static async void DownLoad(this string url, string path)
     {
-        byte[]? data = new RestClient().DownloadDataAsync(new RestRequest(url, Method.Get)).Result;
+        byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(url, Method.Get));
         if (data != null) File.WriteAllBytes(path, data!); else throw new Exception("下载失败。");
     }
 }
@@ -275,7 +275,7 @@ public class RepeatCollector : IOneBotController
             if (heat.Heat >= HeatLimit)
             {
                 // Record
-                if (!heat.Repeated && e.SourceGroup.Id == heat.Group) 
+                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && e.SourceGroup.Id == 554272507) 
                 {
                     Console.WriteLine("Start recording...");
                     List<MessageHeat> heats = new List<MessageHeat>();
@@ -342,6 +342,14 @@ public class RepeatCollector : IOneBotController
         if (e.Sender.Id != 1361778219) return;
         e.Reply("好的，移除语录总数：" + collection.messages.FindAll(m => m.Group == id).Count);
         collection.messages.RemoveAll(m => m.Group == id);
+        Dump(null);
+    }
+    [Command("re remove reservegroup <id>")]
+    public void RepeatReserveGroup(GroupMessageEventArgs e, int id)
+    {
+        if (e.Sender.Id != 1361778219) return;
+        e.Reply("好的，移除语录总数：" + collection.messages.FindAll(m => m.Group != id).Count);
+        collection.messages.RemoveAll(m => m.Group != id);
         Dump(null);
     }
     [Command("re remove <id>")]
@@ -493,7 +501,7 @@ public class RepeatCollector : IOneBotController
     [Command("re context <id>")]
     public void RepeatContext(GroupMessageEventArgs e, User QQ, int id)
     {
-        if (e.SourceGroup.Id == 1078432121)
+        if (e.SourceGroup.Id != 554272507 && e.SourceGroup.Id != 490623220)
         {
             e.Reply("很抱歉，复读语录功能在本群不可用。");
             return;

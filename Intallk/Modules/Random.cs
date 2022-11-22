@@ -58,7 +58,7 @@ public class IntallkRandom : IOneBotController
             return;
         }
         MessageBody body = new MessageBody();
-        body.Add("本群一共有" + members.Count + "人(不包含本机器人)在近" + day + "天内发送过消息，设定只抽取该范围的成员。\n" + "🎉🎉恭喜以下成员被抽中！\n");
+        body.Add(e.Sender.At().ToString() + "发起了抽奖！\n" + "本群一共有" + members.Count + "人(不包含本机器人)在近" + day + "天内发送过消息，设定只抽取该范围的成员。\n" + "🎉🎉恭喜以下成员被抽中！\n");
         for (int i = 1; i <= count; i++)
         {
             int j = ran.Next(0, members.Count);
@@ -102,7 +102,7 @@ public class IntallkRandom : IOneBotController
             return;
         }
         MessageBody body = new MessageBody();
-        body.Add("🎉🎉恭喜以下成员被抽中！\n");
+        body.Add(e.Sender.At().ToString() + "发起了抽奖！\n" + "🎉🎉恭喜以下成员被抽中！\n");
         for (int i = 1; i <= count; i++)
         {
             int j = ran.Next(0, members.Count);
