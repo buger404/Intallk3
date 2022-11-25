@@ -4,6 +4,7 @@ using JiebaNet.Analyser;
 using Newtonsoft.Json;
 using OneBot.CommandRoute.Attributes;
 using OneBot.CommandRoute.Services;
+using Sora.Entities;
 using Sora.EventArgs.SoraEvent;
 using System.Text;
 using static Intallk.Models.DictionaryReplyModel;
@@ -20,7 +21,7 @@ public class DictionaryReply : IOneBotController
         => OpenGroup.Contains(e.SourceGroup.Id) || OpenUsers.Contains(e.Sender.Id);
     public static string DictionaryPath {
         get {
-            return Path.Combine(IntallkConfig.DataPath + "dictionary.json");
+            return Path.Combine(IntallkConfig.DataPath, "dictionary.json");
         }
     }
     public static void Dump(int failCount = 0)
@@ -31,6 +32,7 @@ public class DictionaryReply : IOneBotController
             var sb = new StringBuilder();
             serializer.Serialize(new StringWriter(sb), Dictionary);
             File.WriteAllText(DictionaryPath, sb.ToString());
+            _logger?.LogInformation("消息字典文件已保存：{file}。", DictionaryPath);
         }
         catch(Exception err)
         {
@@ -51,6 +53,11 @@ public class DictionaryReply : IOneBotController
         {
             JsonSerializer serializer = new();
             Dictionary = (MsgDictionary)serializer.Deserialize(new StringReader(File.ReadAllText(DictionaryPath)), typeof(MsgDictionary))!;
+            _logger?.LogInformation("消息字典文件已读取：{file}。", DictionaryPath);
+        }
+        else
+        {
+            _logger?.LogWarning("未发现消息字典文件：{file}。", DictionaryPath);
         }
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
     }
@@ -63,43 +70,43 @@ public class DictionaryReply : IOneBotController
         if (!Dictionary.Data.ContainsKey(e.SourceGroup.Id))
             return 0;
         if (Dictionary.Data[e.SourceGroup.Id].ContainsKey(e.Message.RawText))
-            e.Reply(Dictionary.Data[e.SourceGroup.Id][e.Message.RawText].Item2);
+            e.Reply(Dictionary.Data[e.SourceGroup.Id][e.Message.RawText].Item2.ToMessageBody());
         return 0;
     }
 
     [Command("dict add <key> <value>")]
-    public void DictionaryAdd(GroupMessageEventArgs e, string key, string value)
+    public void DictionaryAdd(GroupMessageEventArgs e, string key, MessageBody value)
     {
         if (!JudgePermission(e))
             return;
         if (!Dictionary.Data.ContainsKey(e.SourceGroup.Id))
-            Dictionary.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, string)>());
+            Dictionary.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
         if (Dictionary.Data[e.SourceGroup.Id].ContainsKey(key))
         {
-            (long, string) val = Dictionary.Data[e.SourceGroup.Id][key];
-            e.Reply($"键'{key}'的值已被'{MainModule.GetQQName(e, val.Item1)}'设定为：\n{val.Item2}\n*请使用.dict update <key> <value>覆盖字典。");
+            (long, List<Message>) val = Dictionary.Data[e.SourceGroup.Id][key];
+            e.Reply($"键'{key}'的值已被'{MainModule.GetQQName(e, val.Item1)}'设定为：\n" + val.Item2.ToMessageBody() + "\n*请使用.dict update <key> <value>覆盖字典。");
             return;
         }
-        Dictionary.Data[e.SourceGroup.Id].Add(key, (e.Sender.Id, value));
-        e.Reply($"已添加新的键'{key}'：\n{value}");
+        Dictionary.Data[e.SourceGroup.Id].Add(key, (e.Sender.Id, value.ToMessageList()));
+        e.Reply($"已添加新的键'{key}'：\n" + value);
         Dump();
     }
 
     [Command("dict update <key> <value>")]
-    public void DictionaryUpdate(GroupMessageEventArgs e, string key, string value)
+    public void DictionaryUpdate(GroupMessageEventArgs e, string key, MessageBody value)
     {
         if (!JudgePermission(e))
             return;
         if (!Dictionary.Data.ContainsKey(e.SourceGroup.Id))
-            Dictionary.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, string)>());
+            Dictionary.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
         if (!Dictionary.Data[e.SourceGroup.Id].ContainsKey(key))
         {
             e.Reply($"键'{key}'尚未录入字典，无需使用update覆盖。");
             return;
         }
-        (long, string) val = Dictionary.Data[e.SourceGroup.Id][key];
-        Dictionary.Data[e.SourceGroup.Id][key] = (e.Sender.Id, value);
-        e.Reply($"键'{key}' by '{MainModule.GetQQName(e, val.Item1)}'：\n{val.Item2}\n*已被覆盖为：\n{value}");
+        (long, List<Message>) val = Dictionary.Data[e.SourceGroup.Id][key];
+        Dictionary.Data[e.SourceGroup.Id][key] = (e.Sender.Id, value.ToMessageList());
+        e.Reply($"键'{key}' by '{MainModule.GetQQName(e, val.Item1)}'：\n" + val.Item2.ToMessageBody() + "\n*已被覆盖为：\n" + value);
         Dump();
     }
 
@@ -109,14 +116,14 @@ public class DictionaryReply : IOneBotController
         if (!JudgePermission(e))
             return;
         if (!Dictionary.Data.ContainsKey(e.SourceGroup.Id))
-            Dictionary.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, string)>());
+            Dictionary.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
         if (!Dictionary.Data[e.SourceGroup.Id].ContainsKey(key))
         {
             e.Reply($"键'{key}'尚未录入字典");
             return;
         }
-        (long, string) val = Dictionary.Data[e.SourceGroup.Id][key];
-        e.Reply($"键'{key}' by '{MainModule.GetQQName(e, val.Item1)}'：\n{val.Item2}");
+        (long, List<Message>) val = Dictionary.Data[e.SourceGroup.Id][key];
+        e.Reply($"键'{key}' by '{MainModule.GetQQName(e, val.Item1)}'：\n" + val.Item2.ToMessageBody());
     }
 
     [Command("dict remove <key>")]
@@ -125,15 +132,15 @@ public class DictionaryReply : IOneBotController
         if (!JudgePermission(e))
             return;
         if (!Dictionary.Data.ContainsKey(e.SourceGroup.Id))
-            Dictionary.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, string)>());
+            Dictionary.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
         if (!Dictionary.Data[e.SourceGroup.Id].ContainsKey(key))
         {
             e.Reply($"键'{key}'尚未录入字典。");
             return;
         }
-        (long, string) val = Dictionary.Data[e.SourceGroup.Id][key];
+        (long, List<Message>) val = Dictionary.Data[e.SourceGroup.Id][key];
         Dictionary.Data[e.SourceGroup.Id].Remove(key);
-        e.Reply($"键'{key}' by '{MainModule.GetQQName(e, val.Item1)}'：\n{val.Item2}\n*已被删除。");
+        e.Reply($"键'{key}' by '{MainModule.GetQQName(e, val.Item1)}'：\n" + val.Item2.ToMessageBody() + "\n*已被删除。");
         Dump();
     }
 }
