@@ -213,6 +213,10 @@ public class RepeatCollector : IOneBotController
     private int Event_OnGroupMessage(OneBotContext scope)
     {
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
+        if (e.SourceGroup.Id != 554272507 && e.SourceGroup.Id != 490623220)
+        {
+            return 0;
+        }
         List<MessageSegment> seg = GetMessageSegments(e.Message.MessageBody);
         if (filter.Invoke(e.Message.RawText)) return 0;
         int f = heats.FindIndex(m => (m.Group == e.SourceGroup.Id && CompareMessageSegment(m.Message,seg)));
@@ -334,7 +338,7 @@ public class RepeatCollector : IOneBotController
                                 ".re <QQ> <id/内容> info：看看某个人指定序号的语录/包含这个内容的语录的情况\n" +
                                 ".re context <id>：查看复读语录的上文\n" +
                                 ".re byid <id>：查看指定序号对应的复读语录\n" +
-                                ".re：随机抽一条语录");
+                                ".re：随机抽一条语录\n\n*此为Inter.Net私用功能");
     }
     [Command("re remove bygroup <id>")]
     public void RepeatRemoveGroup(GroupMessageEventArgs e, int id)
@@ -503,7 +507,7 @@ public class RepeatCollector : IOneBotController
     {
         if (e.SourceGroup.Id != 554272507 && e.SourceGroup.Id != 490623220)
         {
-            e.Reply("很抱歉，复读语录功能在本群不可用。");
+            e.Reply("很抱歉，复读语录功能为Inter.Net群专用，此群不可用。");
             return;
         }
         if (id < 0 || id >= collection.messages.Count)
@@ -554,9 +558,9 @@ public class RepeatCollector : IOneBotController
     public void RepeatI(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, true);
     private void GeneralRepeat(GroupMessageEventArgs e, Predicate<MessageHeat> p, string key, bool infoOnly)
     {
-        if (e.SourceGroup.Id == 1078432121)
+        if (e.SourceGroup.Id != 554272507 && e.SourceGroup.Id != 490623220)
         {
-            e.Reply("很抱歉，复读语录功能在本群不可用。");
+            e.Reply("很抱歉，复读语录功能为Inter.Net群专用，此群不可用。");
             return;
         }
         List<MessageHeat> c = collection.messages;

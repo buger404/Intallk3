@@ -31,7 +31,7 @@ public class IntallkRandom : IOneBotController
         }
         e.Reply("在" + min + "~" + max + "之间抽中了：" + ran.Next(min, max + 1).ToString());
     }
-    [Command("random <count> in previous <day> days [at]")]
+    [Command("random <count> in <day> d [at]")]
     public void random(GroupMessageEventArgs e, int count, long day, string at = "")
     {
         if (e.SenderInfo.Role != MemberRoleType.Admin && e.SenderInfo.Role != MemberRoleType.Owner && e.Sender.Id != 1361778219)
@@ -58,7 +58,8 @@ public class IntallkRandom : IOneBotController
             return;
         }
         MessageBody body = new MessageBody();
-        body.Add(e.Sender.At().ToString() + "发起了抽奖！\n" + "本群一共有" + members.Count + "人(不包含本机器人)在近" + day + "天内发送过消息，设定只抽取该范围的成员。\n" + "🎉🎉恭喜以下成员被抽中！\n");
+        body.Add(e.Sender.At());
+        body.Add("发起了抽奖！\n" + "本群一共有" + members.Count + "人(不包含本机器人)在近" + day + "天内发送过消息，设定只抽取该范围的成员。\n" + "🎉🎉恭喜以下成员被抽中！\n");
         for (int i = 1; i <= count; i++)
         {
             int j = ran.Next(0, members.Count);
@@ -102,7 +103,8 @@ public class IntallkRandom : IOneBotController
             return;
         }
         MessageBody body = new MessageBody();
-        body.Add(e.Sender.At().ToString() + "发起了抽奖！\n" + "🎉🎉恭喜以下成员被抽中！\n");
+        body.Add(e.Sender.At());
+        body.Add("发起了抽奖！\n" + "🎉🎉恭喜以下成员被抽中！\n");
         for (int i = 1; i <= count; i++)
         {
             int j = ran.Next(0, members.Count);
