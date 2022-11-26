@@ -31,6 +31,11 @@ class Nbnhhsh : IOneBotController
     [Command("sx <content>")]
     public async Task SXSearchAsync(string content, GroupMessageEventArgs e)
     {
+        if (!Permission.JudgeGroup(e, "SX_USE", Permission.Policy.RequireAccepted))
+        {
+            await e.Reply("此群无此功能的权限，请联系权限授权人。");
+            return;
+        }
         var client = new RestClient("https://lab.magiconch.com/api/nbnhhsh");
         var request = new RestRequest("/guess", Method.Post).AddJsonBody(new SXRequest { Text = content }).AddHeader("content-type", "application/json");
         var response = await client.ExecuteAsync<List<SXRespond>>(request);

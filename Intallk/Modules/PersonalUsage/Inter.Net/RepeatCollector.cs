@@ -213,7 +213,7 @@ public class RepeatCollector : IOneBotController
     private int Event_OnGroupMessage(OneBotContext scope)
     {
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
-        if (e.SourceGroup.Id != 554272507 && e.SourceGroup.Id != 490623220)
+        if (!Permission.JudgeGroup(e, "REPEATCOLLECTOR_RECORD", Permission.Policy.RequireAccepted))
         {
             return 0;
         }
@@ -279,7 +279,7 @@ public class RepeatCollector : IOneBotController
             if (heat.Heat >= HeatLimit)
             {
                 // Record
-                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && e.SourceGroup.Id == 554272507) 
+                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && Permission.JudgeGroup(e, "REPEATCOLLECTOR_COLLECT", Permission.Policy.RequireAccepted)) 
                 {
                     Console.WriteLine("Start recording...");
                     List<MessageHeat> heats = new List<MessageHeat>();
@@ -312,6 +312,18 @@ public class RepeatCollector : IOneBotController
     [Command("t")]
     public void ForwardMessages(GroupMessageEventArgs e)
     {
+        if (!Permission.JudgeGroup(e, "REPEATCOLLECTOR_RECORD", Permission.Policy.RequireAccepted))
+        {
+            e.Reply("此群无此功能的权限，请联系权限授权人。");
+            return;
+        }
+        if (!Permission.JudgeGroup(e, "REPEATCOLLECTOR_VIEWFORWARDMSG", Permission.Policy.RequireAccepted))
+        {
+            e.Reply("此群无此功能的权限，请联系权限授权人。");
+            return;
+        }
+        if (!Permission.Judge(e, "REPEATCOLLECTOR_VIEWFORWARDMSG"))
+            return;
         int g = messagepond.FindIndex(m => m.group == e.SourceGroup.Id);
         if (g == -1)
         {
@@ -343,7 +355,8 @@ public class RepeatCollector : IOneBotController
     [Command("re remove bygroup <id>")]
     public void RepeatRemoveGroup(GroupMessageEventArgs e, int id)
     {
-        if (e.Sender.Id != 1361778219) return;
+        if (!Permission.Judge(e, "REPEATCOLLECTOR_EDIT"))
+            return;
         e.Reply("好的，移除语录总数：" + collection.messages.FindAll(m => m.Group == id).Count);
         collection.messages.RemoveAll(m => m.Group == id);
         Dump(null);
@@ -351,7 +364,8 @@ public class RepeatCollector : IOneBotController
     [Command("re remove reservegroup <id>")]
     public void RepeatReserveGroup(GroupMessageEventArgs e, int id)
     {
-        if (e.Sender.Id != 1361778219) return;
+        if (!Permission.Judge(e, "REPEATCOLLECTOR_EDIT"))
+            return;
         e.Reply("好的，移除语录总数：" + collection.messages.FindAll(m => m.Group != id).Count);
         collection.messages.RemoveAll(m => m.Group != id);
         Dump(null);
@@ -359,7 +373,8 @@ public class RepeatCollector : IOneBotController
     [Command("re remove <id>")]
     public void RepeatRemove(GroupMessageEventArgs e, int id)
     {
-        if (e.Sender.Id != 1361778219) return;
+        if (!Permission.Judge(e, "REPEATCOLLECTOR_EDIT"))
+            return;
         e.Reply("好的，已经帮您移除语录" + id + "\n" + ToMessageBody(collection.messages[id].Message));
         collection.messages.RemoveAt(id);
         Dump(null);
@@ -367,7 +382,8 @@ public class RepeatCollector : IOneBotController
     [Command("re clean")]
     public void RepeatClean(GroupMessageEventArgs e)
     {
-        if (e.Sender.Id != 1361778219) return;
+        if (!Permission.Judge(e, "REPEATCOLLECTOR_EDIT"))
+            return;
         e.Reply("正在清理语录库...");
         int c = 0;
         for(int i = 0; i < collection.messages.Count; i++)
@@ -387,7 +403,8 @@ public class RepeatCollector : IOneBotController
     [Command("re dy_cheat_report")]
     public void RepeatSearchAll(GroupMessageEventArgs e)
     {
-        if (e.Sender.Id != 1361778219) return;
+        if (!Permission.Judge(e, "REPEATCOLLECTOR_DYANALYZE"))
+            return;
         e.Reply("正在执行滥用报告和分析，请稍后...");
         List<MessageHeat> c = collection.messages.FindAll(x => x.Message.FindIndex(y => y.Content?.ToLower().StartsWith("dy") ?? false) != -1);
         StringBuilder report = new StringBuilder();
@@ -505,9 +522,9 @@ public class RepeatCollector : IOneBotController
     [Command("re context <id>")]
     public void RepeatContext(GroupMessageEventArgs e, User QQ, int id)
     {
-        if (e.SourceGroup.Id != 554272507 && e.SourceGroup.Id != 490623220)
+        if (!Permission.JudgeGroup(e, "REPEATCOLLECTOR_RECORD", Permission.Policy.RequireAccepted))
         {
-            e.Reply("很抱歉，复读语录功能为Inter.Net群专用，此群不可用。");
+            e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
         }
         if (id < 0 || id >= collection.messages.Count)
@@ -558,9 +575,9 @@ public class RepeatCollector : IOneBotController
     public void RepeatI(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, true);
     private void GeneralRepeat(GroupMessageEventArgs e, Predicate<MessageHeat> p, string key, bool infoOnly)
     {
-        if (e.SourceGroup.Id != 554272507 && e.SourceGroup.Id != 490623220)
+        if (!Permission.JudgeGroup(e, "REPEATCOLLECTOR_RECORD", Permission.Policy.RequireAccepted))
         {
-            e.Reply("很抱歉，复读语录功能为Inter.Net群专用，此群不可用。");
+            e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
         }
         List<MessageHeat> c = collection.messages;

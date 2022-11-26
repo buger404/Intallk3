@@ -21,6 +21,8 @@ public class TTS : IOneBotController
     [Command("speak <text>")]
     public async void Speak(GroupMessageEventArgs e, string text)
     {
+        if (!Permission.Judge(e, "TTS_USE"))
+            return;
         byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(string.Format(api, Uri.EscapeDataString(text))));
         if (data == null)
         {

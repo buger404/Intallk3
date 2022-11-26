@@ -1,10 +1,12 @@
 using Intallk.Config;
+using Intallk.Models;
 using Intallk.Modules;
 
 using OneBot.CommandRoute.Configuration;
 using OneBot.CommandRoute.Mixin;
 using OneBot.CommandRoute.Models.VO;
 using OneBot.CommandRoute.Services;
+using static Intallk.Models.DictionaryReplyModel;
 
 var builder = Host.CreateDefaultBuilder(args);
 builder.ConfigureOneBotHost();
@@ -32,7 +34,9 @@ builder.ConfigureServices((context, services) =>
         .AddSingleton<IOneBotController, UrlPreview>()
         .AddSingleton<IOneBotController, IntallkRandom>()
         .AddSingleton<IOneBotController, AutoHorse>()
+        .AddSingleton<IOneBotController, TTS>()
         .AddSingleton<IOneBotController, DictionaryReply>()
+        .AddSingleton<IOneBotController, Permission>()
         .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
 
     foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs", "\\FileDetection" })

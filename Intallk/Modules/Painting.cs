@@ -55,6 +55,11 @@ class Painting : IOneBotController
     [Command("draw <template> <qq> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public async void Draw(GroupMessageEventArgs e, string template, User qq, [ParsedArguments] object[] args)
     {
+        if (!Permission.JudgeGroup(e, "DRAW_USE", Permission.Policy.RequireAccepted))
+        {
+            await e.Reply("此群无此功能的权限，请联系权限授权人。");
+            return;
+        }
         int pi = -1;
         if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id))
         {
