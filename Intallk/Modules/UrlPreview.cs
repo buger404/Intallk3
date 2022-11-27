@@ -42,6 +42,8 @@ public class UrlPreview : SimpleOneBotController
     private int Event_OnGroupMessage(OneBot.CommandRoute.Models.OneBotContext scope)
     {
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
+        if (e == null)
+            return 0;
         if (!Permission.JudgeGroup(e, Info, "USE"))
             return 0;
 

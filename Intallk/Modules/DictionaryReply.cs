@@ -46,7 +46,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     [Command("dict add <key> <value>")]
     public void DictionaryAdd(GroupMessageEventArgs e, string key, MessageBody value)
     {
-        if (!Permission.Judge(e, Info, "EDIT", Permission.Policy.AcceptedIfGroupAccepted))
+        if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             Data.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
@@ -59,7 +59,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         List<Message> msg = value.ToMessageList();
         if (msg[0].Type == Sora.Enumeration.SegmentType.Text && (msg[0].Content?.ToLower().StartsWith("dy") ?? false))
         {
-            if (!Permission.Judge(e, Info, "DYCONTENT", Permission.Policy.RequireAccepted))
+            if (!Permission.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
                 return;
         }
         Data.Data[e.SourceGroup.Id].Add(key, (e.Sender.Id, msg));
@@ -70,7 +70,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     [Command("dict update <key> <value>")]
     public void DictionaryUpdate(GroupMessageEventArgs e, string key, MessageBody value)
     {
-        if (!Permission.Judge(e, Info, "EDIT", Permission.Policy.AcceptedIfGroupAccepted))
+        if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             Data.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
@@ -82,7 +82,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         List<Message> msg = value.ToMessageList();
         if (msg[0].Type == Sora.Enumeration.SegmentType.Text && (msg[0].Content?.ToLower().StartsWith("dy") ?? false))
         {
-            if (!Permission.Judge(e, Info, "DYCONTENT", Permission.Policy.RequireAccepted))
+            if (!Permission.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
                 return;
         }
         (long, List<Message>) val = Data.Data[e.SourceGroup.Id][key];
@@ -125,7 +125,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     [Command("dict remove <key>")]
     public void DictionaryRemove(GroupMessageEventArgs e, string key)
     {
-        if (!Permission.Judge(e, Info, "EDIT", Permission.Policy.AcceptedIfGroupAccepted))
+        if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             Data.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());

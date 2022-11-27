@@ -28,7 +28,7 @@ class GIFProcess : SimpleOneBotController
     [Command("gifextract")]
     public void GIFExtract(GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "EXTRACT", Permission.Policy.AcceptedIfGroupAccepted))
+        if (!Permission.Judge(e, Info, "EXTRACT", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id && m.Group == e.SourceGroup.Id))
         {

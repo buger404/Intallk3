@@ -29,7 +29,7 @@ public class TTS : SimpleOneBotController
     [Command("tts <text>")]
     public async void TTSRequest(GroupMessageEventArgs e, string text)
     {
-        if (!Permission.Judge(e, Info, "USE", Permission.Policy.AcceptedIfGroupAccepted))
+        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(string.Format(api, Uri.EscapeDataString(text))));
         if (data == null)

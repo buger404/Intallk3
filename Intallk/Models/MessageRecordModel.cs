@@ -3,7 +3,7 @@
 namespace Intallk.Models;
 
 [Serializable]
-struct MessageRecord
+class MessageRecord
 {
     public StringBuilder StrBuilder = new StringBuilder();
     public long GroupID;
@@ -13,7 +13,7 @@ struct MessageRecord
     }
 }
 [Serializable]
-struct MessageRecordFile
+class MessageRecordFile
 {
-    public List<MessageRecord> Msg;
+    public List<MessageRecord> Msg = new List<MessageRecord>();
 }

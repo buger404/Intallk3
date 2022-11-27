@@ -26,7 +26,7 @@ class Nbnhhsh : SimpleOneBotController
     [Command("hhsh <content>")]
     public async Task NbnhhshSearchAsync(string content, GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "USE", Permission.Policy.AcceptedIfGroupAccepted))
+        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         var client = new RestClient("https://lab.magiconch.com/api/nbnhhsh");
         var request = new RestRequest("/guess", Method.Post).AddJsonBody(new NbnhhshRequest { Text = content }).AddHeader("content-type", "application/json");

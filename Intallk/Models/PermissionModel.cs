@@ -15,3 +15,11 @@ public class PermissionName
     public const string Anything = "ANYTHING",
                         Grant = "GRANT";
 }
+public enum PermissionPolicy
+{
+    RequireAccepted, AcceptedAsDefault, AcceptedIfGroupAccepted, AcceptedAdminAsDefault
+}
+public enum GrantPolicy
+{
+    RequireGrantPermission, Admin
+}

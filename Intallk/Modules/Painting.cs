@@ -54,7 +54,7 @@ class Painting : SimpleOneBotController
     [Command("draw <template> <qq> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public async void Draw(GroupMessageEventArgs e, string template, User qq, [ParsedArguments] object[] args)
     {
-        if (!Permission.Judge(e, Info, "USE", Permission.Policy.AcceptedIfGroupAccepted))
+        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         int pi = -1;
         if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id))
@@ -295,7 +295,7 @@ class Painting : SimpleOneBotController
     public void DrawBuild(PrivateMessageEventArgs e, string name, string code) => DrawBuild(e, name, code, false);
     public async void DrawBuild(PrivateMessageEventArgs e, string name, string code, bool skipNameCheck)
     {
-        if (!Permission.Judge(null, e.Sender.Id, Info!.RootPermission + "_BUILD", Permission.Policy.AcceptedAsDefault))
+        if (!Permission.Judge(null, e.Sender.Id, Info!.RootPermission + "_BUILD", PermissionPolicy.AcceptedAsDefault))
         {
             await e.Reply("您的模板投稿权限已被禁止，请联系权限授权人。");
             return;

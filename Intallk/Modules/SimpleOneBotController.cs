@@ -7,9 +7,9 @@ namespace Intallk.Modules;
 
 public class SimpleOneBotController : IOneBotController
 {
-    public static ILogger<SimpleOneBotController>? Logger;
-    public static ICommandService? Service;
-    public static ModuleInformation? Info;
+    public ILogger<SimpleOneBotController>? Logger;
+    public ICommandService? Service;
+    public ModuleInformation? Info;
 
     public SimpleOneBotController(ICommandService commandService, ILogger<SimpleOneBotController> logger)
     {

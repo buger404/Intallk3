@@ -25,7 +25,7 @@ class BugLanguage : SimpleOneBotController
     [Command("bug <content>")]
     public void Bug(string content, GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "USE", Permission.Policy.RequireAccepted))
+        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.RequireAccepted))
             return;
         e.Reply(Convert(content));
     }

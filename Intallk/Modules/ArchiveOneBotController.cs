@@ -9,16 +9,16 @@ namespace Intallk.Modules;
 
 public class ArchiveOneBotController<T> : SimpleOneBotController
 {
-    public static T? Data;
-    public static string DataPath {
+    public T? Data;
+    public string DataPath {
         get {
             if (Info == null) 
                 throw new NotImplementedException();
-            return Path.Combine(IntallkConfig.DataPath, Info.DataFile + ".json");
+            return Path.Combine(IntallkConfig.DataPath, this.Info.DataFile + ".json");
         }
     }
 
-    public static void Dump(int failCount = 0)
+    public void Dump(int failCount = 0)
     {
         if (Info == null)
             throw new NotImplementedException();

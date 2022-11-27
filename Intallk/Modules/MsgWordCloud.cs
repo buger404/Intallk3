@@ -23,6 +23,8 @@ namespace Intallk.Modules;
 
 class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
 {
+    public static MsgWordCloud? Instance { get; private set; }
+
     public static DateTime DumpTime;
     public static SoraApi sora = null!;
 
@@ -41,12 +43,15 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
             Dump();
         }, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
+        Instance = this;
     }
+    public override void OnDataNull() =>
+        Data = new MessageRecordFile();
 
     [Command("wordcloud clear")]
     public void WordCloudClear(GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "EDIT", Permission.Policy.RequireAccepted)) 
+        if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.RequireAccepted)) 
             return;
         int i = Data.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
         if (i == -1) return;
@@ -56,7 +61,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
     [Command("wordcloud [count]")]
     public void WordCloudToday(GroupMessageEventArgs e,int count = 5)
     {
-        if (!Permission.Judge(e, Info, "RECORD", Permission.Policy.AcceptedIfGroupAccepted))
+        if (!Permission.Judge(e, Info, "RECORD", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         int i = Data.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
         if (i == -1)
@@ -71,7 +76,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
         if (e == null)
             return 0;
-        if (!Permission.JudgeGroup(e, Info, "RECORD", Permission.Policy.RequireAccepted))
+        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
             return 0;
         if (sora == null) sora = e.SoraApi;
         int i = Data.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
@@ -97,9 +102,9 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         if (!(DateTime.Now.Hour == 0 && DateTime.Now.Minute == 0 && (DateTime.Now - pushTime).TotalMinutes > 2)) return;
         if (sora == null) return;
         pushTime = DateTime.Now;
-        foreach(MessageRecord r in Data.Msg)
+        foreach(MessageRecord r in Instance!.Data.Msg)
         {
-            if (Permission.JudgeGroup(r.GroupID, "SUBSCRIBE", Permission.Policy.RequireAccepted))
+            if (Permission.JudgeGroup(r.GroupID, "SUBSCRIBE", PermissionPolicy.RequireAccepted))
             {
                 sora.GetGroup(r.GroupID).SendGroupMessage("今日群词云：\n" + SoraSegment.Image(GenerateWordCloud(r), false));
                 r.StrBuilder.Clear();
@@ -110,13 +115,18 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
     public static string GenerateWordCloud(MessageRecord record)
     {
         string text = record.StrBuilder.ToString();
-        if (text == "" || text == null) text = "今天群里什么也没有";
         TfidfExtractor tfidfExtractor = new TfidfExtractor();
         List<WordWeightPair> key = tfidfExtractor.ExtractTagsWithWeight(text, 100, null).ToList();
         WordCloud wc = new WordCloud(2560, 1440, fontname: "HarmonyOS Sans SC Medium", allowVerical: true);
         List<int> freqs = new List<int>();
         foreach (WordWeightPair wp in key) freqs.Add((int)(wp.Weight * 1000));
-        Image wi = wc.Draw(key.Select(it => it.Word).ToList(), freqs);
+        List<string> words = key.Select(it => it.Word).ToList();
+        if (words.Count == 0)
+        {
+            words.Add("今天群里什么也没有qwq");
+            freqs.Add(100);
+        }
+        Image wi = wc.Draw(words, freqs);
         string file = "\\Resources\\wordcloud" + record.GroupID + ".jpg";
         wi.Save(IntallkConfig.DataPath + file, ImageFormat.Jpeg);
         wi.Dispose();

@@ -19,6 +19,7 @@ namespace Intallk.Modules;
 public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
 {
     // 设置屏蔽记录的语录
+    public static RepeatCollector? Instance { get; private set; }
     readonly static Predicate<string> _filter = x => x.ToLower().StartsWith("dy") || x.StartsWith(".");
     readonly static Random _random = new(Guid.NewGuid().GetHashCode());
     public const float HeatLimit = 2f;
@@ -50,11 +51,12 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         DumpTimer = new Timer((_) =>
         {
             DumpTime = DateTime.Now;
-            string file = DataPath, file_backup = DataPath + ".bak";
+            string file = DataPath, file_backup = RepeatCollector.Instance!.DataPath + ".bak";
             if (File.Exists(file)) File.Copy(file, file_backup, true);
             Dump();
         }, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
+        Instance = this;    
     }
 
     public override void OnDataNull()
@@ -67,7 +69,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         if (Data == null)
             return 0;
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
-        if (!Permission.JudgeGroup(e, Info, "RECORD", Permission.Policy.RequireAccepted))
+        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
             return 0;
         List<MessageSegment> seg = MessageSegment.Parse(e.Message.MessageBody);
         if (_filter.Invoke(e.Message.RawText)) 
@@ -131,7 +133,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             if (heat.Heat >= HeatLimit)
             {
                 // Record
-                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && Permission.JudgeGroup(e, Info, "COLLECT", Permission.Policy.RequireAccepted)) 
+                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && Permission.JudgeGroup(e, Info, "COLLECT", PermissionPolicy.RequireAccepted)) 
                 {
                     //Console.WriteLine("Start recording...");
                     List<SingleRecordingMsg> heats = new List<SingleRecordingMsg>();
@@ -166,12 +168,12 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [Command("t")]
     public void ForwardMessages(GroupMessageEventArgs e)
     {
-        if (!Permission.JudgeGroup(e, Info, "RECORD", Permission.Policy.RequireAccepted))
+        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
         {
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
         }
-        if (!Permission.Judge(e, Info, "VIEWFORWARDMSG", Permission.Policy.AcceptedIfGroupAccepted))
+        if (!Permission.Judge(e, Info, "VIEWFORWARDMSG", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         int g = MsgBuffer.FindIndex(m => m.GroupID == e.SourceGroup.Id);
         if (g == -1)
@@ -271,7 +273,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [Command("re context <id>")]
     public void RepeatContext(GroupMessageEventArgs e, User QQ, int id)
     {
-        if (!Permission.JudgeGroup(e, Info, "RECORD", Permission.Policy.RequireAccepted))
+        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
         {
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
@@ -325,7 +327,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     public void RepeatI(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, true);
     private void GeneralRepeat(GroupMessageEventArgs e, Predicate<SingleRecordingMsg> p, string key, bool infoOnly)
     {
-        if (!Permission.JudgeGroup(e, Info, "RECORD", Permission.Policy.RequireAccepted))
+        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
         {
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
