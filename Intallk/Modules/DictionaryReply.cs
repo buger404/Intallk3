@@ -56,7 +56,13 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
             e.Reply($"键'{key}'的值已被'{MainModule.GetQQName(e, val.Item1)}'设定为：\n" + val.Item2.ToMessageBody() + "\n*请使用.dict update <key> <value>覆盖字典。");
             return;
         }
-        Data.Data[e.SourceGroup.Id].Add(key, (e.Sender.Id, value.ToMessageList()));
+        List<Message> msg = value.ToMessageList();
+        if (msg[0].Type == Sora.Enumeration.SegmentType.Text && (msg[0].Content?.ToLower().StartsWith("dy") ?? false))
+        {
+            if (!Permission.Judge(e, Info, "DYCONTENT", Permission.Policy.RequireAccepted))
+                return;
+        }
+        Data.Data[e.SourceGroup.Id].Add(key, (e.Sender.Id, msg));
         e.Reply($"已添加新的键'{key}'：\n" + value);
         Dump();
     }
@@ -73,8 +79,14 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
             e.Reply($"键'{key}'尚未录入字典，无需使用update覆盖。");
             return;
         }
+        List<Message> msg = value.ToMessageList();
+        if (msg[0].Type == Sora.Enumeration.SegmentType.Text && (msg[0].Content?.ToLower().StartsWith("dy") ?? false))
+        {
+            if (!Permission.Judge(e, Info, "DYCONTENT", Permission.Policy.RequireAccepted))
+                return;
+        }
         (long, List<Message>) val = Data.Data[e.SourceGroup.Id][key];
-        Data.Data[e.SourceGroup.Id][key] = (e.Sender.Id, value.ToMessageList());
+        Data.Data[e.SourceGroup.Id][key] = (e.Sender.Id, msg);
         e.Reply($"键'{key}' by '{MainModule.GetQQName(e, val.Item1)}'：\n" + val.Item2.ToMessageBody() + "\n*已被覆盖为：\n" + value);
         Dump();
     }

@@ -18,8 +18,6 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     {
         RequireAccepted, AcceptedAsDefault, AcceptedIfGroupAccepted
     }
-    public const string AnythingPermission = "ANYTHING";
-    public const string GrantPermission = "GRANT";
     public Permission(ICommandService commandService, ILogger<ArchiveOneBotController<PermissionModel>> logger) : base(commandService, logger)
     {
     }
@@ -29,7 +27,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     {
         Data = new();
         Data.User.Add(0, new PermissionData());
-        Data.User[0].Accepted.Add(AnythingPermission);
+        Data.User[0].Accepted.Add(PermissionName.Anything);
     }
 
     public static bool Judge(GroupMessageEventArgs e, ModuleInformation? info, string permission, Policy policy = Policy.AcceptedAsDefault, bool noInform = false)
@@ -40,32 +38,27 @@ public class Permission : ArchiveOneBotController<PermissionModel>
         if (Data == null) return false;
         bool ret = Judge(e, e.Sender.Id, permission, policy);
         if (!noInform && !ret)
-            e.Reply(e.Sender.At() + " 您尚无权限'" + permission + "'或权限受拒绝，请向模块权限授权人申请。");
+            e.Reply(e.Sender.At() + " ⚠️您尚无权限'" + permission + "'或权限受拒绝，请向模块权限授权人申请。");
         return ret;
     }
 
-    private static bool Judge(GroupMessageEventArgs e, long qq, string permission, Policy policy)
+    public static bool Judge(GroupMessageEventArgs? e, long qq, string permission, Policy policy)
     {
         if (Data == null) return false;
-        if (Data.User.ContainsKey(qq))
-        {
-            if (Data.User[qq].Denied.Contains(AnythingPermission))
-                return false;
-            if (Data.User[qq].Accepted.Contains(AnythingPermission))
-                return true;
-            if (Data.User[qq].Denied.Contains(permission))
-                return false;
-            if (Data.User[qq].Accepted.Contains(permission) || policy == Policy.AcceptedAsDefault)
-                return true;
-            else if (policy == Policy.AcceptedIfGroupAccepted)
-                return JudgeGroup(e, permission, Policy.RequireAccepted);
-            else
-                return false;
-        }
-        else
-        {
+        if (!Data.User.ContainsKey(qq))
+            Data.User.Add(qq, new PermissionData());
+        if (Data.User[qq].Denied.Contains(PermissionName.Anything))
             return false;
-        }
+        if (Data.User[qq].Accepted.Contains(PermissionName.Anything))
+            return true;
+        if (Data.User[qq].Denied.Contains(permission))
+            return false;
+        if (Data.User[qq].Accepted.Contains(permission) || policy == Policy.AcceptedAsDefault)
+            return true;
+        else if (policy == Policy.AcceptedIfGroupAccepted && e != null)
+            return JudgeGroup(e, permission, Policy.RequireAccepted);
+        else
+            return false;
     }
 
     public static bool JudgeGroup(GroupMessageEventArgs e, ModuleInformation? info, string permission, Policy policy = Policy.AcceptedAsDefault)
@@ -74,23 +67,18 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     public static bool JudgeGroup(GroupMessageEventArgs e, string permission, Policy policy = Policy.AcceptedAsDefault)
         => JudgeGroup(e.SourceGroup.Id, permission, policy);
 
-    private static bool JudgeGroup(long group, string permission, Policy policy)
+    public static bool JudgeGroup(long group, string permission, Policy policy)
     {
         if (Data == null) return false;
-        if (Data.Group.ContainsKey(group))
-        {
-            if (Data.Group[group].Denied.Contains(AnythingPermission))
-                return false;
-            if (Data.Group[group].Accepted.Contains(AnythingPermission))
-                return true;
-            if (Data.Group[group].Denied.Contains(permission))
-                return false;
-            return Data.Group[group].Accepted.Contains(permission) || policy == Policy.AcceptedAsDefault;
-        }
-        else
-        {
+        if (!Data.Group.ContainsKey(group))
+            Data.Group.Add(group, new PermissionData());
+        if (Data.Group[group].Denied.Contains(PermissionName.Anything))
             return false;
-        }
+        if (Data.Group[group].Accepted.Contains(PermissionName.Anything))
+            return true;
+        if (Data.Group[group].Denied.Contains(permission))
+            return false;
+        return Data.Group[group].Accepted.Contains(permission) || policy == Policy.AcceptedAsDefault;
     }
 
     public void PermissionOperation(GroupMessageEventArgs e, User target, string permission, out (string, string) ret, Action<string> operation)
@@ -107,7 +95,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             string[] t = c.Split('_');
             if (t.Length < 2)
             {
-                if (!Judge(e, GrantPermission, Policy.RequireAccepted, true))
+                if (!Judge(e, PermissionName.Grant, Policy.RequireAccepted, true))
                 {
                     fail += c + ",";
                     continue;
@@ -115,10 +103,18 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             }
             else
             {
-                if (!Judge(e, t[0] + "_" + GrantPermission, Policy.RequireAccepted, true))
+                if (!Judge(e, t[0] + "_" + PermissionName.Grant, Policy.RequireAccepted, true))
                 {
                     fail += c + ",";
                     continue;
+                }
+                if (t[1] == PermissionName.Grant)
+                {
+                    if (!Judge(e, t[0] + "_" + PermissionName.Anything, Policy.RequireAccepted, true))
+                    {
+                        fail += c + ",";
+                        continue;
+                    }
                 }
             }
             if (!Data.User.ContainsKey(target.Id))
@@ -139,7 +135,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             if (!Data!.User[qq.Id].Accepted.Contains(pms))
                 Data!.User[qq.Id].Accepted.Add(pms);
         });
-        e.Reply("已成功授予对象的Accepted权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
+        e.Reply("已成功授予对象的Accepted权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n⚠️以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
     }
 
     [Command("permission accept revoke <qq> <permission>")]
@@ -151,7 +147,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             if (Data!.User[qq.Id].Accepted.Contains(pms))
                 Data!.User[qq.Id].Accepted.Remove(pms);
         });
-        e.Reply("已成功移除对象的Accepted权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
+        e.Reply("已成功移除对象的Accepted权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n⚠️以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
     }
 
     [Command("permission deny <qq> <permission>")]
@@ -163,7 +159,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             if (!Data!.User[qq.Id].Denied.Contains(pms))
                 Data!.User[qq.Id].Denied.Add(pms);
         });
-        e.Reply("已成功授予对象的Denied权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
+        e.Reply("已成功授予对象的Denied权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n⚠️以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
     }
 
     [Command("permission deny revoke <qq> <permission>")]
@@ -175,7 +171,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             if (Data!.User[qq.Id].Denied.Contains(pms))
                 Data!.User[qq.Id].Denied.Remove(pms);
         });
-        e.Reply("已成功授移除对象的Denied权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
+        e.Reply("已成功授移除对象的Denied权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n⚠️以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
     }
 
     [Command("permission view <qq>")]
@@ -205,7 +201,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             string[] t = c.Split('_');
             if (t.Length < 2)
             {
-                if (!Judge(e, GrantPermission, Policy.RequireAccepted, true))
+                if (!Judge(e, PermissionName.Grant, Policy.RequireAccepted, true))
                 {
                     fail += c + ",";
                     continue;
@@ -213,10 +209,18 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             }
             else
             {
-                if (!Judge(e, t[0] + "_" + GrantPermission, Policy.RequireAccepted, true))
+                if (!Judge(e, t[0] + "_" + PermissionName.Grant, Policy.RequireAccepted, true))
                 {
                     fail += c + ",";
                     continue;
+                }
+                if (t[1] == PermissionName.Grant)
+                {
+                    if (!Judge(e, t[0] + "_" + PermissionName.Anything, Policy.RequireAccepted, true))
+                    {
+                        fail += c + ",";
+                        continue;
+                    }
                 }
             }
             if (!Data.Group.ContainsKey(target))
@@ -225,6 +229,8 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             succeed += c + ",";
         }
         Dump();
+        if (succeed.Length > 0) succeed = succeed.Remove(succeed.Length - 1);
+        if (fail.Length > 0) fail = fail.Remove(fail.Length - 1);
         ret = (succeed, fail);
     }
 
@@ -237,7 +243,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             if (!Data!.Group[group].Accepted.Contains(pms))
                 Data!.Group[group].Accepted.Add(pms);
         });
-        e.Reply("已成功授予群的Accepted权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
+        e.Reply("已成功授予群的Accepted权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n⚠️以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
     }
 
     [Command("permission group accept revoke <group> <permission>")]
@@ -249,7 +255,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             if (Data!.Group[group].Accepted.Contains(pms))
                 Data!.Group[group].Accepted.Remove(pms);
         });
-        e.Reply("已成功移除群的Accepted权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
+        e.Reply("已成功移除群的Accepted权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n⚠️以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
     }
 
     [Command("permission group deny <group> <permission>")]
@@ -261,7 +267,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             if (!Data!.Group[group].Denied.Contains(pms))
                 Data!.Group[group].Denied.Add(pms);
         });
-        e.Reply("已成功授予群的Denied权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
+        e.Reply("已成功授予群的Denied权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n⚠️以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
     }
 
     [Command("permission group deny revoke <group> <permission>")]
@@ -273,7 +279,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             if (Data!.Group[group].Denied.Contains(pms))
                 Data!.Group[group].Denied.Remove(pms);
         });
-        e.Reply("已成功授移除群的Denied权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
+        e.Reply("已成功授移除群的Denied权限：\n" + ret.Item1 + (ret.Item2 != "" ? "\n⚠️以下权限由于未持有相应模块的授权权限，操作失败：\n" + ret.Item2 : ""));
     }
 
     [Command("permission group view <group>")]

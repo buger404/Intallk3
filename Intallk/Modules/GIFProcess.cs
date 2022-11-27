@@ -1,5 +1,5 @@
 ﻿using Intallk.Config;
-
+using Intallk.Models;
 using OneBot.CommandRoute.Attributes;
 using OneBot.CommandRoute.Services;
 
@@ -12,14 +12,24 @@ using Sora.EventArgs.SoraEvent;
 
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Intallk.Modules;
 
-class GIFProcess : IOneBotController
+class GIFProcess : SimpleOneBotController
 {
+    public GIFProcess(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    {
+    }
+
+    public override ModuleInformation Initialize() =>
+        new ModuleInformation { ModuleName = "GIF图像处理", RootPermission = "GIF" };
+
     [Command("gifextract")]
     public void GIFExtract(GroupMessageEventArgs e)
     {
+        if (!Permission.Judge(e, Info, "EXTRACT", Permission.Policy.AcceptedIfGroupAccepted))
+            return;
         if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id && m.Group == e.SourceGroup.Id))
         {
             e.Reply(e.Sender.At() + "还有上一个操作未完成。");

@@ -10,3 +10,8 @@ public class PermissionModel
     public Dictionary<long, PermissionData> User = new ();
     public Dictionary<long, PermissionData> Group = new ();
 }
+public class PermissionName
+{
+    public const string Anything = "ANYTHING",
+                        Grant = "GRANT";
+}

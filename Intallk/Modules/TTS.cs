@@ -12,16 +12,24 @@ using Sora.EventArgs.SoraEvent;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Intallk.Models;
 
 namespace Intallk.Modules;
 
-public class TTS : IOneBotController
+public class TTS : SimpleOneBotController
 {
-    public static string api = @"https://tts.baidu.com/text2audio?tex={0}&cuid=baike&lan=ZH&ctp=1&pdt=301&vol=9&rate=32&pelJ";
-    [Command("speak <text>")]
-    public async void Speak(GroupMessageEventArgs e, string text)
+    public static readonly string api = @"https://tts.baidu.com/text2audio?tex={0}&cuid=baike&lan=ZH&ctp=1&pdt=301&vol=9&rate=32&pelJ";
+
+    public TTS(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
     {
-        if (!Permission.Judge(e, "TTS_USE"))
+    }
+    public override ModuleInformation Initialize() =>
+        new ModuleInformation { ModuleName = "文字转语音", RootPermission = "TTS" };
+
+    [Command("tts <text>")]
+    public async void TTSRequest(GroupMessageEventArgs e, string text)
+    {
+        if (!Permission.Judge(e, Info, "USE", Permission.Policy.AcceptedIfGroupAccepted))
             return;
         byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(string.Format(api, Uri.EscapeDataString(text))));
         if (data == null)

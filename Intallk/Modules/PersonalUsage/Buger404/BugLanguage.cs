@@ -1,4 +1,5 @@
-﻿using Microsoft.International.Converters.PinYinConverter;
+﻿using Intallk.Models;
+using Microsoft.International.Converters.PinYinConverter;
 
 using OneBot.CommandRoute.Attributes;
 using OneBot.CommandRoute.Services;
@@ -13,10 +14,21 @@ namespace Intallk.Modules;
 // 这个功能纯属娱乐，是我小学时期想的一套替换拼音的暗号（？）
 // 这个功能的实现完全摆烂，不会优化，不会优化，不会优化（逃）
 // 读下面的代码之前，请做好心理准备（指不要被气死）
-class BugLanguage : IOneBotController
+class BugLanguage : SimpleOneBotController
 {
+    public BugLanguage(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    {
+    }
+    public override ModuleInformation Initialize() =>
+        new ModuleInformation { ModuleName = "Bug语言", RootPermission = "BUGLAN" };
+
     [Command("bug <content>")]
-    public void Bug(string content, GroupMessageEventArgs e) => e.Reply(Convert(content));
+    public void Bug(string content, GroupMessageEventArgs e)
+    {
+        if (!Permission.Judge(e, Info, "USE", Permission.Policy.RequireAccepted))
+            return;
+        e.Reply(Convert(content));
+    }
 
     public static string GetPY(string src)
     {

@@ -18,45 +18,33 @@ using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using Svg;
 using System.Xml;
+using Intallk.Models;
 
 namespace Intallk.Modules;
 
-public static class SvgString
+public class UrlPreview : SimpleOneBotController
 {
-    public static void DrawAsSvg(this string svg, string path)
-    {
-        XmlDocument xml = new XmlDocument();
-        xml.Load(svg);
-        SvgDocument doc = SvgDocument.Open(xml);
-        doc.Width *= 2; doc.Height *= 2;
-        doc.Overflow = SvgOverflow.Inherit;
-        doc.FontFamily = "HarmonyOS Sans SC Medium";
-        Bitmap bitmap = new Bitmap((int)doc.Width.Value, (int)doc.Height.Value);
-        doc.Draw(bitmap);
-        bitmap.Save(path);
-        bitmap.Dispose();
-    }
-}
-
-public class UrlPreview : IOneBotController
-{
-    readonly ILogger<RepeatCollector> _logger;
-    private static Regex biliReg = new Regex(
+    private readonly static Regex biliReg = new Regex(
         @"^(((http(s)?:)?//)?((((www|m)\.)?bilibili\.com/(video/)?)|(acg\.tv/)))?(((av)?(?<aid>\d+))|(?<bvid>bv[fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF]{10}))(/.*)?(\?.*)?$"
                                              , RegexOptions.IgnoreCase);
     private static string githubImg = @"https://opengraph.githubassets.com/6d7553a62b54a4e1ce5ec6db91e70e2775a230d045a7a3097f4474228446247a/{0}";
     private static string zhihuFeed = @"/api/v4/questions/{0}/feeds";
     private static string zhihuAnswer = @"/answers/{0}?include=excerpt";
 
-    public UrlPreview(ICommandService commandService, ILogger<RepeatCollector> logger)
+    public UrlPreview(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
     {
-        _logger = logger;
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
     }
+
+    public override ModuleInformation Initialize() =>
+        new ModuleInformation { ModuleName = "网址预览", RootPermission = "URLPREVIEW" };
 
     private int Event_OnGroupMessage(OneBot.CommandRoute.Models.OneBotContext scope)
     {
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
+        if (!Permission.JudgeGroup(e, Info, "USE"))
+            return 0;
+
         string url = e!.Message.RawText;
         if (!url.ToLower().StartsWith("http") && !url.ToLower().StartsWith("bv")) return 0;
         try

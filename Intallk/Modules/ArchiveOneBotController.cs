@@ -7,17 +7,8 @@ using Newtonsoft.Json;
 
 namespace Intallk.Modules;
 
-public class ModuleInformation
+public class ArchiveOneBotController<T> : SimpleOneBotController
 {
-    public string? DataFile;
-    public string? RootPermission;
-    public string? ModuleName;
-}
-public class ArchiveOneBotController<T> : IOneBotController
-{
-    public static ILogger<ArchiveOneBotController<T>>? Logger;
-    public static ICommandService? Service;
-    public static ModuleInformation? Info;
     public static T? Data;
     public static string DataPath {
         get {
@@ -51,12 +42,10 @@ public class ArchiveOneBotController<T> : IOneBotController
         }
     }
 
-    public ArchiveOneBotController(ICommandService commandService, ILogger<ArchiveOneBotController<T>> logger)
+    public ArchiveOneBotController(ICommandService commandService, ILogger<ArchiveOneBotController<T>> logger) : base(commandService, logger)
     {
-        Service = commandService;
-        Logger = logger;
-        Info = Initialize();
-
+        if (Info == null) 
+            throw new NotImplementedException();
         if (File.Exists(DataPath))
         {
             JsonSerializer serializer = new();
@@ -73,10 +62,5 @@ public class ArchiveOneBotController<T> : IOneBotController
     public virtual void OnDataNull()
     {
 
-    }
-
-    public virtual ModuleInformation Initialize()
-    {
-        throw new NotImplementedException();
     }
 }

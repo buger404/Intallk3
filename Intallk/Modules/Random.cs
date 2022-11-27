@@ -1,5 +1,5 @@
 ﻿using Intallk.Config;
-
+using Intallk.Models;
 using OneBot.CommandRoute.Attributes;
 using OneBot.CommandRoute.Services;
 
@@ -18,9 +18,18 @@ using static Intallk.Modules.RepeatCollector;
 
 namespace Intallk.Modules;
 
-public class IntallkRandom : IOneBotController
+public class IntallkRandom : SimpleOneBotController
 {
-    readonly System.Random ran = new(Guid.NewGuid().GetHashCode());
+    readonly Random ran = new(Guid.NewGuid().GetHashCode());
+
+    public IntallkRandom(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    {
+    }
+
+    public override ModuleInformation Initialize() =>
+        new ModuleInformation { ModuleName = "抽奖", RootPermission = "RANDOM" };
+
+
     [Command("random <min> <max>")]
     public void random(GroupMessageEventArgs e, int min, int max)
     {

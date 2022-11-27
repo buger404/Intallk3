@@ -1,7 +1,6 @@
 ﻿using Intallk.Config;
 using Intallk.Models;
 using Intallk.Modules;
-
 using Newtonsoft.Json;
 
 using OneBot.CommandRoute.Attributes;
@@ -18,16 +17,16 @@ using Sora.Util;
 using System.Reflection;
 using System.Text;
 
-class Painting : IOneBotController
+class Painting : SimpleOneBotController
 {
-    public class GroupImageUploadData
-    {
-        public string? template;
-        public object[]? args;
-        public List<string>? imgs;
-        public User qq;
-    }
     public static List<PaintingProcessing> paints = new List<PaintingProcessing>();
+
+    public Painting(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    {
+    }
+    public override ModuleInformation Initialize() =>
+        new ModuleInformation { ModuleName = "表情包制图", RootPermission = "DRAW" };
+
     public static string GetSavePath()
     {
         return IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
@@ -55,11 +54,8 @@ class Painting : IOneBotController
     [Command("draw <template> <qq> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public async void Draw(GroupMessageEventArgs e, string template, User qq, [ParsedArguments] object[] args)
     {
-        if (!Permission.JudgeGroup(e, "DRAW_USE", Permission.Policy.RequireAccepted))
-        {
-            await e.Reply("此群无此功能的权限，请联系权限授权人。");
+        if (!Permission.Judge(e, Info, "USE", Permission.Policy.AcceptedIfGroupAccepted))
             return;
-        }
         int pi = -1;
         if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id))
         {
@@ -144,7 +140,7 @@ class Painting : IOneBotController
                 }
                 giud.template = paints[pi].Source.Name;
                 giud.args = args;
-                giud.qq = qq;
+                giud.qq = qq!;
                 await e.Reply("请按下面的顺序依次发出图片：\n" + picl);
                 MainModule.RegisterHook(e.Sender.Id, e.SourceGroup.Id, DrawGroupImageUploadCallBack, giud);
                 return;
@@ -299,6 +295,12 @@ class Painting : IOneBotController
     public void DrawBuild(PrivateMessageEventArgs e, string name, string code) => DrawBuild(e, name, code, false);
     public async void DrawBuild(PrivateMessageEventArgs e, string name, string code, bool skipNameCheck)
     {
+        if (!Permission.Judge(null, e.Sender.Id, Info!.RootPermission + "_BUILD", Permission.Policy.AcceptedAsDefault))
+        {
+            await e.Reply("您的模板投稿权限已被禁止，请联系权限授权人。");
+            return;
+        }
+            
         if (!PaintingCompiler.IsDirectoryNameValid(name))
         {
             await e.Reply("设定的模板名字里面不能有特殊符号的。");
@@ -399,7 +401,9 @@ class Painting : IOneBotController
                 var img = (ImageSegment)msg.Data;
                 string file = IntallkConfig.DataPath + "\\DrawingScript\\" + ((List<string>)hook.Data!)[^1] + "\\" + ((List<string>)hook.Data)[0];
                 if (File.Exists(file)) File.Delete(file);
-                File.WriteAllBytes(file, await new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get)));
+                byte[]? data = await new RestClient(img.Url).DownloadDataAsync(new RestRequest("#", Method.Get));
+                if (data != null)
+                    File.WriteAllBytes(file, data);
 
                 ((List<string>)hook.Data).RemoveAt(0);
                 if (((List<string>)hook.Data).Count == 1) break;

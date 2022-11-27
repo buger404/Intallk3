@@ -1,52 +1,44 @@
-﻿using OneBot.CommandRoute.Attributes;
+﻿using Intallk.Models;
+using OneBot.CommandRoute.Attributes;
 using OneBot.CommandRoute.Services;
 
 using RestSharp;
 
 using Sora.Entities.Segment;
 using Sora.EventArgs.SoraEvent;
-
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.Json.Serialization;
 
 namespace Intallk.Modules;
 
-public class SXRequest
-{
-    [JsonPropertyName("text")] public string? Text { get; set; }
-}
-
-public class SXRespond
-{
-    [JsonPropertyName("name")] public string? Name { get; set; }
-    [JsonPropertyName("trans")] public string[]? Trans { get; set; }
-    [JsonPropertyName("inputting")] public string[]? Inputting { get; set; }
-}
-
 // 能不能好好说话
 // 中文缩写查询
 // 感谢Repo（API来源）：'itorr/nbnhhsh'
-class Nbnhhsh : IOneBotController
+class Nbnhhsh : SimpleOneBotController
 {
-    [Command("sx <content>")]
-    public async Task SXSearchAsync(string content, GroupMessageEventArgs e)
+    public Nbnhhsh(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
     {
-        if (!Permission.JudgeGroup(e, "SX_USE", Permission.Policy.RequireAccepted))
-        {
-            await e.Reply("此群无此功能的权限，请联系权限授权人。");
+    }
+    public override ModuleInformation Initialize() =>
+        new ModuleInformation { ModuleName = "能不能好好说话", RootPermission = "NBNHHSH" };
+
+    [Command("hhsh <content>")]
+    public async Task NbnhhshSearchAsync(string content, GroupMessageEventArgs e)
+    {
+        if (!Permission.Judge(e, Info, "USE", Permission.Policy.AcceptedIfGroupAccepted))
             return;
-        }
         var client = new RestClient("https://lab.magiconch.com/api/nbnhhsh");
-        var request = new RestRequest("/guess", Method.Post).AddJsonBody(new SXRequest { Text = content }).AddHeader("content-type", "application/json");
-        var response = await client.ExecuteAsync<List<SXRespond>>(request);
+        var request = new RestRequest("/guess", Method.Post).AddJsonBody(new NbnhhshRequest { Text = content }).AddHeader("content-type", "application/json");
+        var response = await client.ExecuteAsync<List<NbnhhshRespond>>(request);
         if (!response.IsSuccessful)
         {
-            await e.Reply(e.Sender.At() + $"黑嘴试图气死你({response.ErrorMessage})。");
+            await e.Reply(e.Sender.At() + $"查询失败({response.ErrorMessage})。");
             return;
         }
         if (response.Data == null)
         {
-            await e.Reply(e.Sender.At() + "咦，这是什么的中文缩写呀，查不到呢。");
+            await e.Reply(e.Sender.At() + "查找不到结果。");
         }
         else
         {
@@ -68,7 +60,7 @@ class Nbnhhsh : IOneBotController
             }
             else
             {
-                await e.Reply(e.Sender.At() + "咦，这是什么的中文缩写呀，查不到呢。");
+                await e.Reply(e.Sender.At() + "查找不到结果。");
             }
 
         }
