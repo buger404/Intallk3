@@ -36,13 +36,14 @@ builder.ConfigureServices((context, services) =>
             .AddSingleton<IOneBotController, DictionaryReply>()
             .AddSingleton<IOneBotController, Permission>()
             .AddSingleton<IOneBotController, RhythmGameSong>()
+            .AddSingleton<IOneBotController, DailyProblemCmd>()
             .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>()
             .AddSingleton<PermissionService>()
             .AddHostedService<DailyProblem>()
             .AddHttpClient("leetcode", client =>
             {
                 client.BaseAddress = new("https://leetcode.cn/graphql");
-                client.DefaultRequestHeaders.Add(HeaderNames.ContentType, "application/json");
+                //client.DefaultRequestHeaders.Add(HeaderNames.ContentType, "application/json");
             });
 
     foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs", "\\FileDetection" })

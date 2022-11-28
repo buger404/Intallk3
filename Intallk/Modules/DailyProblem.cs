@@ -4,14 +4,15 @@ using Sora.EventArgs.SoraEvent;
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Intallk.Models;
-using Microsoft.Net.Http.Headers;
+using System.Net.Http.Headers;
+using Microsoft.Extensions.Logging;
 
 namespace Intallk.Modules;
 
 
-[ModuleInformation(HelpCmd = "dproblem", ModuleName = "力扣每日一问", ModuleUsage = "为群里推送每日力扣问题。（感谢TLMegalovania的贡献！！）")]
 public class DailyProblem : IHostedService
 {
+    public static DailyProblem? Instance { get; private set; }
     private readonly HttpClient client;
     private readonly ILogger<DailyProblem> logger;
     private readonly System.Timers.Timer timer;
@@ -43,6 +44,7 @@ public class DailyProblem : IHostedService
                 return 0;
             };
         this.PermissionService = permissionService;
+        Instance = this;
     }
     readonly static Dictionary<string, string> Mapper = new()
     {
@@ -65,38 +67,48 @@ public class DailyProblem : IHostedService
         ["<ol>"] = "",
         ["</ol>"] = ""
     };
-    async Task FetchDaily()
+    public async Task<string?> FetchDailyMessage()
     {
         var request = new HttpRequestMessage
         {
             Method = HttpMethod.Post,
             Content = new StringContent("{\"query\":\"query questionOfToday{todayRecord{question{questionTitleSlug}}}\",\"variables\":{}}")
         };
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         var response = await client.SendAsync(request);
+        logger.LogInformation(await response.Content.ReadAsStringAsync());
         string? title = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("todayRecord")[0].GetProperty("question").GetProperty("questionTitleSlug").GetString();
         if (title is null)
         {
             logger.LogWarning("daily problem service gets null title");
-            return;
+            return null;
         }
         request = new HttpRequestMessage
         {
             Method = HttpMethod.Post,
             Content = new StringContent($"{{\"query\":\"query{{question(titleSlug: \"{title}\"){{questionId translatedTitle translatedContent difficulty}}}}\",\"variables\":{{}}}}")
         };
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         response = await client.SendAsync(request);
+        logger.LogInformation(await response.Content.ReadAsStringAsync());
         var question = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("question");
         string? content = question.GetProperty("translatedContent").GetString();
         if (content is null)
         {
             logger.LogWarning("daily problem service gets null content");
-            return;
+            return null;
         }
         foreach (var pair in Mapper)
         {
             content = content.Replace(pair.Key, pair.Value);
         }
         string message = $"{question.GetProperty("questionId").GetString()}. {question.GetProperty("translatedTitle").GetString()}\r\n难度: {question.GetProperty("difficulty").GetString()}\r\n{content}";
+        return message;
+    }
+    async Task FetchDaily()
+    {
+        string? message = await FetchDailyMessage();
+        if (message == null) return;
         foreach (var api in apiManager.Values)
         {
             foreach (var group in (await api.GetGroupList()).groupList)
