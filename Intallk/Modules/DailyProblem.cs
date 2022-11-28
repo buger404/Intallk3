@@ -1,6 +1,7 @@
 using OneBot.CommandRoute.Services;
 using Sora.Entities.Base;
 using Sora.EventArgs.SoraEvent;
+using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace Intallk.Modules;
@@ -10,7 +11,7 @@ public class DailyProblem : IHostedService
     private readonly HttpClient client;
     private readonly ILogger<DailyProblem> logger;
     private readonly System.Timers.Timer timer;
-    private readonly Dictionary<long, SoraApi> apiManager;
+    private readonly ConcurrentDictionary<long, SoraApi> apiManager;
     public DailyProblem(IHttpClientFactory factory, ILogger<DailyProblem> logger, ICommandService commandService)
     {
         client = factory.CreateClient("leetcode");
@@ -20,7 +21,7 @@ public class DailyProblem : IHostedService
         commandService.Event.OnClientConnect += (context) =>
             {
                 var args = context.WrapSoraEventArgs<ConnectEventArgs>();
-                apiManager.Add(args.LoginUid, args.SoraApi);
+                apiManager.TryAdd(args.LoginUid, args.SoraApi);
                 return 0;
             };
         commandService.Event.OnClientStatusChangeEvent += (context) =>
@@ -28,11 +29,11 @@ public class DailyProblem : IHostedService
                 var args = context.WrapSoraEventArgs<ClientStatusChangeEventArgs>();
                 if (args.Online)
                 {
-                    apiManager.Add(args.LoginUid, args.SoraApi);
+                    apiManager.TryAdd(args.LoginUid, args.SoraApi);
                 }
                 else
                 {
-                    apiManager.Remove(args.LoginUid);
+                    apiManager.TryRemove(args.LoginUid, out _);
                 }
                 return 0;
             };
