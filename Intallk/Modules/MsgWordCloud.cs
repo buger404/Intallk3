@@ -108,7 +108,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         pushTime = DateTime.Now;
         foreach(MessageRecord r in Instance!.Data!.Msg)
         {
-            if (Permission.JudgeGroup(r.GroupID, Instance!.Info!.RootPermission + "_SUBSCRIBE", PermissionPolicy.RequireAccepted))
+            if (Permission.JudgeGroup(r.GroupID, Instance!.Info, "SUBSCRIBE", PermissionPolicy.RequireAccepted))
             {
                 sora.GetGroup(r.GroupID).SendGroupMessage("今日群词云：\n" + SoraSegment.Image(GenerateWordCloud(r), false));
                 r.StrBuilder.Clear();

@@ -48,6 +48,9 @@ public class Permission : ArchiveOneBotController<PermissionModel>
         return ret;
     }
 
+    public static bool Judge(GroupMessageEventArgs? e, long qq, ModuleInformation? info, string permission, PermissionPolicy policy)
+        => Judge(e, qq, (info?.RootPermission + "_" ?? "") + permission, policy);
+
     public static bool Judge(GroupMessageEventArgs? e, long qq, string permission, PermissionPolicy policy)
     {
         if (Instance!.Data == null) return false;
@@ -74,6 +77,9 @@ public class Permission : ArchiveOneBotController<PermissionModel>
 
     public static bool JudgeGroup(GroupMessageEventArgs e, string permission, PermissionPolicy policy = PermissionPolicy.AcceptedAsDefault)
         => JudgeGroup(e.SourceGroup.Id, permission, policy);
+
+    public static bool JudgeGroup(long group, ModuleInformation? info, string permission, PermissionPolicy policy)
+        => JudgeGroup(group, (info?.RootPermission + "_" ?? "") + permission, policy);
 
     public static bool JudgeGroup(long group, string permission, PermissionPolicy policy)
     {

@@ -47,11 +47,8 @@ public class IntallkRandom : SimpleOneBotController
     [CmdHelp("人数 天数 艾特", "抽取群内在指定天数内发言过的几个人，当艾特=at时，抽奖结果将艾特被抽到的人")]
     public void random(GroupMessageEventArgs e, int count, long day, string at = "")
     {
-        if (e.SenderInfo.Role != MemberRoleType.Admin && e.SenderInfo.Role != MemberRoleType.Owner && e.Sender.Id != 1361778219)
-        {
-            e.Reply("不可以哦，请让管理员或群主发送此指令~");
+        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedAdminAsDefault))
             return;
-        }
         List<GroupMemberInfo> members = e.SourceGroup.GetGroupMemberList().Result.groupMemberList;
         members.RemoveAll(x => x.UserId == e.LoginUid);
         if (count > 19)
@@ -94,11 +91,8 @@ public class IntallkRandom : SimpleOneBotController
     [CmdHelp("人数", "抽取群内的几个人（将艾特被抽中者）")]
     public void random(GroupMessageEventArgs e, int count)
     {
-        if (e.SenderInfo.Role != MemberRoleType.Admin && e.SenderInfo.Role != MemberRoleType.Owner && e.Sender.Id != 1361778219)
-        {
-            e.Reply("不可以哦，请让管理员或群主发送此指令~");
+        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedAdminAsDefault))
             return;
-        }
         List<GroupMemberInfo> members = e.SourceGroup.GetGroupMemberList().Result.groupMemberList;
         members.RemoveAll(x => x.UserId == e.LoginUid);
         if (count > 19)

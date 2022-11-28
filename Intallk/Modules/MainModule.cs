@@ -349,6 +349,7 @@ public class MainModule : IOneBotController
                                             {
                                                 cmdDes += des[i] + cmd.Pattern[j];
                                                 flag = false;
+                                                j++;
                                                 break;
                                             }
                                             if (!flag) cmdDes += cmd.Pattern[j];

@@ -16,10 +16,10 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
 {
     public DictionaryReply(ICommandService commandService, ILogger<ArchiveOneBotController<MsgDictionary>> logger) : base(commandService, logger)
     {
+        commandService.Event.OnGroupMessage += Event_OnGroupMessage;
     }
     public override ModuleInformation Initialize()
     {
-        Service!.Event.OnGroupMessage += Event_OnGroupMessage;
         return new ModuleInformation { DataFile = "dictionary", ModuleName = "消息字典", RootPermission = "MSGDICT",
                                        HelpCmd = "dict", ModuleUsage = "根据字典中记录的键，在合适的时机发送对应的值。\n" +
                                                                        "例如，当字典存在键值'早上好-早上好'，则当群内发送的消息包含'你好'时，机器人将自动回应'你好'\n" +
@@ -45,11 +45,11 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
             {
                 if (c.StartsWith("<except>"))
                 {
-                    condiction &= !msg.Contains(c);
+                    condiction &= !msg.Contains(c.Substring("<except>".Length));
                 }
                 else if (c.StartsWith("<fullmatch>"))
                 {
-                    condiction &= (msg == c);
+                    condiction &= (msg == c.Substring("<fullmatch>".Length));
                 }
                 else
                 {
