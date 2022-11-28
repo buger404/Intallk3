@@ -117,10 +117,6 @@ public class MainModule : IOneBotController
                 e.Reply("非常抱歉，现在黑嘴正在被404调整改造中，暂时无法使用呢qwq");
                 return 1;
             }**/
-            if(e.Message.RawText.ToLower() == "let's get higher!")
-            {
-                e.Reply(SoraSegment.Record(IntallkConfig.DataPath + "\\Resources\\letsgethigher.mp3"));
-            }
             bool needClear = false;
             foreach (var hook in hooks)
             {

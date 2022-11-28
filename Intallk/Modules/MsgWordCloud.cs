@@ -53,7 +53,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
     {
         if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.RequireAccepted)) 
             return;
-        int i = Data.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
+        int i = Data!.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
         if (i == -1) return;
         Data.Msg[i].StrBuilder.Clear();
         e.Reply("清除成功。");
@@ -63,7 +63,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
     {
         if (!Permission.Judge(e, Info, "RECORD", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
-        int i = Data.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
+        int i = Data!.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
         if (i == -1)
         {
             e.Reply("今日截至现在暂无记录。");
@@ -79,7 +79,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
             return 0;
         if (sora == null) sora = e.SoraApi;
-        int i = Data.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
+        int i = Data!.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
         if (i == -1)
         {
             Data.Msg.Add(new MessageRecord(e!.SourceGroup));
@@ -102,9 +102,9 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         if (!(DateTime.Now.Hour == 0 && DateTime.Now.Minute == 0 && (DateTime.Now - pushTime).TotalMinutes > 2)) return;
         if (sora == null) return;
         pushTime = DateTime.Now;
-        foreach(MessageRecord r in Instance!.Data.Msg)
+        foreach(MessageRecord r in Instance!.Data!.Msg)
         {
-            if (Permission.JudgeGroup(r.GroupID, "SUBSCRIBE", PermissionPolicy.RequireAccepted))
+            if (Permission.JudgeGroup(r.GroupID, Instance!.Info!.RootPermission + "_SUBSCRIBE", PermissionPolicy.RequireAccepted))
             {
                 sora.GetGroup(r.GroupID).SendGroupMessage("今日群词云：\n" + SoraSegment.Image(GenerateWordCloud(r), false));
                 r.StrBuilder.Clear();

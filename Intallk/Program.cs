@@ -35,6 +35,7 @@ builder.ConfigureServices((context, services) =>
         .AddSingleton<IOneBotController, TTS>()
         .AddSingleton<IOneBotController, DictionaryReply>()
         .AddSingleton<IOneBotController, Permission>()
+        .AddSingleton<IOneBotController, RhythmGameSong>()
         .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
 
     foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs", "\\FileDetection" })
