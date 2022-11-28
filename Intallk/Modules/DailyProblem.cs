@@ -103,7 +103,7 @@ public class DailyProblem : IHostedService
                 if (PermissionService.JudgeGroup(group.GroupId, "LEETCODETODAY_PUSH", Models.PermissionPolicy.RequireAccepted))
                 {
                     await api.SendGroupMessage(group.GroupId, message);
-                    Thread.Sleep(1000);
+                    await Task.Delay(1000);
                 }
             }
         }
