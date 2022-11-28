@@ -10,6 +10,7 @@ namespace Intallk.Modules;
 
 public class DailyProblem : IHostedService
 {
+    public static DailyProblem? Instance { get; private set; }
     private readonly IHttpClientFactory factory;
     private readonly ILogger<DailyProblem> logger;
     private readonly System.Timers.Timer timer;
