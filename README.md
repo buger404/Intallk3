@@ -38,11 +38,11 @@
 
 一个权限名由两部分组成：**根权限名_子权限名**，根权限名以功能为单位划分，持有**根权限名_GRANT**的用户可对其他用户授予该根权限下的其他权限。
 
-持有**跟权限名_ANYTHING**的用户可授予其他用户**根权限名_GRANT**权限。
+持有**根权限名_ANYTHING**的用户可授予其他用户**根权限名_GRANT**权限。
 
 权限分为群权限和用户权限。
 
-权限的判定可使用'PermissionService.Judge()'或'PermissionService.JudgeGroup()'
+权限的判定可使用'PermissionService.Judge()'或'PermissionService.JudgeGroup()'，若使用含**ModuleInformation**类型参数的函数重载，则**PermissionName**只应包含**子权限名**。
 
 例如：
 
