@@ -1,7 +1,7 @@
 using Intallk.Config;
 using Intallk.Models;
 using Intallk.Modules;
-
+using Microsoft.Net.Http.Headers;
 using OneBot.CommandRoute.Configuration;
 using OneBot.CommandRoute.Mixin;
 using OneBot.CommandRoute.Models.VO;
@@ -15,13 +15,13 @@ builder.ConfigureServices((context, services) =>
 {
     IConfiguration configuration = context.Configuration;
 
-    // ÅäÖÃ»úÆ÷ÈËºËĞÄ
-    // ÉèÖÃ OneBot ÅäÖÃ
+    // é…ç½®æœºå™¨äººæ ¸å¿ƒ
+    // è®¾ç½® OneBot é…ç½®
     services.Configure<CQHttpServerConfigModel>(configuration.GetSection("CQHttpConfig"));
     services.ConfigureOneBot();
 
-    // Ìí¼ÓÖ¸Áî / ÊÂ¼ş
-    // ÍÆ¼öÊ¹ÓÃµ¥ÀıÄ£Ê½£¨¶øÊµ¼ÊÉÏ¿ò¼Ü´úÂëÒ²ÊÇµ±µ¥ÀıÄ£Ê½Ê¹ÓÃµÄ£©
+    // æ·»åŠ æŒ‡ä»¤ / äº‹ä»¶
+    // æ¨èä½¿ç”¨å•ä¾‹æ¨¡å¼ï¼ˆè€Œå®é™…ä¸Šæ¡†æ¶ä»£ç ä¹Ÿæ˜¯å½“å•ä¾‹æ¨¡å¼ä½¿ç”¨çš„ï¼‰
     services.AddSingleton<IOneBotController, MainModule>()
         .AddSingleton<IOneBotController, GIFProcess>()
         .AddSingleton<IOneBotController, Testing>()
@@ -36,7 +36,13 @@ builder.ConfigureServices((context, services) =>
         .AddSingleton<IOneBotController, DictionaryReply>()
         .AddSingleton<IOneBotController, Permission>()
         .AddSingleton<IOneBotController, RhythmGameSong>()
-        .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>();
+        .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>()
+        .AddHostedService<DailyProblem>()
+        .AddHttpClient("leetcode", client =>
+        {
+            client.BaseAddress = new("https://leetcode.cn/graphql");
+            client.DefaultRequestHeaders.Add(HeaderNames.ContentType, "application/json");
+        });
 
     foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs", "\\FileDetection" })
     {
