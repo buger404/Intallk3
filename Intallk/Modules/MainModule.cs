@@ -2,16 +2,23 @@ using Intallk.Config;
 using Intallk.Models;
 using Newtonsoft.Json;
 using OneBot.CommandRoute.Attributes;
+using OneBot.CommandRoute.Configuration;
 using OneBot.CommandRoute.Services;
+using OneBot.CommandRoute.Services.Implements;
 using Sora.Entities;
 using Sora.Entities.Info;
 using Sora.Entities.Segment;
 using Sora.EventArgs.SoraEvent;
+using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace Intallk.Modules;
 
 public class MainModule : IOneBotController
 {
+    public static IServiceProvider? Services { get; set; }
+    public static IntallkConfig? Config { get; set; }
     public delegate Task<bool> PrivateMessageHookCallback(PrivateMessageEventArgs e, PrivateMessageHook hook);
     public class PrivateMessageHook
     {
@@ -33,6 +40,7 @@ public class MainModule : IOneBotController
     public static Dictionary<long, DateTime> replyTime = new Dictionary<long, DateTime>();
     readonly System.Random random = new(Guid.NewGuid().GetHashCode());
     readonly ILogger<MainModule> _logger;
+    readonly ICommandService _commandService;
     public static Dictionary<long, string> nicks = new Dictionary<long, string>();
     public static string GetCacheQQName(object? e, long qqid)
     {
@@ -81,6 +89,7 @@ public class MainModule : IOneBotController
     public MainModule(ICommandService commandService, ILogger<MainModule> logger)
     {
         _logger = logger;
+        _commandService = commandService;
         foreach (string file in Directory.GetFiles(IntallkConfig.DataPath + "\\DrawingScript"))
         {
             string code = File.ReadAllText(file);
@@ -272,21 +281,109 @@ public class MainModule : IOneBotController
     }
 
     [Command("help")]
-    public void Help(GroupMessageEventArgs e) => 
-        e.Reply("欢迎查看黑嘴使用说明\n" +
-                "黑嘴：不要叫我，黑嘴超级忙，我不在！！！听见没！！\n" +
-                "<>表示必填，[]表示可不填，/表示前后两个皆可，填写的时候不必抄写括号。\n" +
-                ".test <次数>：测试\n" + 
-                ".sx <中文缩写>：让黑嘴帮你搜一下这个缩写的意思\n" + 
-                ".bug <内容>：欸？这是什么我也不知道呢。\n" +
-                ".gifextract：请黑嘴帮你把一张动态图片拆成好几张静态图片。\n" +
-                ".draw help：查看制图相关指定说明。\n" +
-                ".re help：查看语录库的使用帮助。\n" +
-                ".random <最小数> <最大数>：随机抽取一个数。\n" +
-                ".random <数量>：随机抽取群内几位成员。\n" +
-                ".keyword [列出项数]：查看你群今日截至现在的词云\n" +
-                ".keyword switch on/off：开启或关闭你群词云统计（开启后才能使用词云）。\n" +
-                ".t：回溯最近的10条消息。（防撤回）");
+    public void Help(GroupMessageEventArgs e)
+    {
+        string prefix = String.Join("", Config!.CommandPrefix);
+        StringBuilder sb = new StringBuilder();
+        foreach (IOneBotController controller in Services!.GetServices<IOneBotController>())
+        {
+            if (controller is SimpleOneBotController module)
+            {
+                ModuleInformation? info = module.Info;
+                if (info != null)
+                {
+                    if (info.HelpCmd != null)
+                    {
+                        sb.AppendLine(prefix + "help " + info.HelpCmd + " ：" + info.ModuleName + " 使用指南");
+                    }
+                }
+            }
+        }
+        e.Reply("🌈欢迎查看黑嘴使用说明！\n" +
+                "目前支持的功能：\n" + sb.ToString());
+    }
+        
+
+    [Command("help <moduleName>")]
+    public void ModuleHelp(GroupMessageEventArgs e, string moduleName)
+    {
+        string prefix = String.Join("", Config!.CommandPrefix);
+        foreach (IOneBotController controller in Services!.GetServices<IOneBotController>())
+        {
+            if (controller is SimpleOneBotController module)
+            {
+                ModuleInformation? info = module.Info;
+                if (info != null)
+                {
+                    if (info.HelpCmd == moduleName)
+                    {
+                        StringBuilder sb = new StringBuilder(), pub = new StringBuilder(), pri = new StringBuilder();
+                        sb.AppendLine("欢迎使用功能'" + info.ModuleName + "'！\n" + info.ModuleUsage);
+                        foreach(MethodInfo minfo in module.GetType().GetMethods())
+                        {
+                            CmdHelpAttribute? help = minfo.GetCustomAttribute<CmdHelpAttribute>();
+                            if (help != null)
+                            {
+                                CommandAttribute? cmd = minfo.GetCustomAttribute<CommandAttribute>();
+                                if (cmd == null) 
+                                    continue;
+                                string cmdDes = prefix;
+                                if (help.ArgDescription == "")
+                                {
+                                    cmdDes += cmd.Pattern;
+                                }
+                                else
+                                {
+                                    string[] des = help.ArgDescription.Split(' ');
+                                    int j = 0; bool flag = false;
+                                    for(int i = 0;i < des.Length; i++)
+                                    {
+                                        for(;j < cmd.Pattern.Length; j++)
+                                        {
+                                            if (cmd.Pattern[j] == '<' || cmd.Pattern[j] == '[')
+                                            {
+                                                cmdDes += cmd.Pattern[j];
+                                                flag = true;
+                                            }
+                                            else if (cmd.Pattern[j] == '>' || cmd.Pattern[j] == ']')
+                                            {
+                                                cmdDes += des[i] + cmd.Pattern[j];
+                                                flag = false;
+                                                break;
+                                            }
+                                            if (!flag) cmdDes += cmd.Pattern[j];
+                                        }
+                                    }
+                                }
+                                cmdDes += "：" + help.UsageDescription;
+                                if (cmd.EventType == OneBot.CommandRoute.Models.Enumeration.EventType.GroupMessage)
+                                {
+                                    pub.AppendLine(cmdDes);
+                                }
+                                else
+                                {
+                                    pri.AppendLine(cmdDes);
+                                }
+                            }
+                        }
+                        if (pub.Length > 0)
+                        {
+                            sb.AppendLine("🌈群指令指南：");
+                            sb.Append(pub);
+                        }
+                        if (pri.Length > 0)
+                        {
+                            sb.AppendLine("🌈私聊指令指南：");
+                            sb.Append(pri);
+                        }
+                        sb.AppendLine("💡<>内的表示必须填写，[]内的表示可不填写。");
+                        e.Reply(sb.ToString());
+                        return;
+                    }
+                }
+            }
+        }
+    }
 
     [Command("status")]
     public void Status(GroupMessageEventArgs e) =>

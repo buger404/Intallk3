@@ -2,7 +2,7 @@
 
 namespace Intallk.Config;
 
-class IntallkConfig : IOneBotCommandRouteConfiguration
+public class IntallkConfig : IOneBotCommandRouteConfiguration
 {
     public string[] CommandPrefix => new[] { "." };
 

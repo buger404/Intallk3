@@ -27,10 +27,13 @@ public class IntallkRandom : SimpleOneBotController
     }
 
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "抽奖", RootPermission = "RANDOM" };
+        new ModuleInformation { ModuleName = "抽奖", RootPermission = "RANDOM",
+                                HelpCmd = "random", ModuleUsage = "抽奖功能，由机器人随机生成数字。"
+        };
 
 
     [Command("random <min> <max>")]
+    [CmdHelp("最小数 最大数", "在区间[最小数,最大数]中随机抽取一个整数")]
     public void random(GroupMessageEventArgs e, int min, int max)
     {
         if (min >= max)
@@ -41,6 +44,7 @@ public class IntallkRandom : SimpleOneBotController
         e.Reply("在" + min + "~" + max + "之间抽中了：" + ran.Next(min, max + 1).ToString());
     }
     [Command("random <count> in <day> d [at]")]
+    [CmdHelp("人数 天数 艾特", "抽取群内在指定天数内发言过的几个人，当艾特=at时，抽奖结果将艾特被抽到的人")]
     public void random(GroupMessageEventArgs e, int count, long day, string at = "")
     {
         if (e.SenderInfo.Role != MemberRoleType.Admin && e.SenderInfo.Role != MemberRoleType.Owner && e.Sender.Id != 1361778219)
@@ -87,6 +91,7 @@ public class IntallkRandom : SimpleOneBotController
         e.Reply(body);
     }
     [Command("random <count>")]
+    [CmdHelp("人数", "抽取群内的几个人（将艾特被抽中者）")]
     public void random(GroupMessageEventArgs e, int count)
     {
         if (e.SenderInfo.Role != MemberRoleType.Admin && e.SenderInfo.Role != MemberRoleType.Owner && e.Sender.Id != 1361778219)

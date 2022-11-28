@@ -32,7 +32,9 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
     static DateTime pushTime = DateTime.MinValue;
 
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { DataFile = "wordcloud", ModuleName = "消息词云", RootPermission = "WORDCLOUD" };
+        new ModuleInformation { DataFile = "wordcloud", ModuleName = "消息词云", RootPermission = "WORDCLOUD",
+                                HelpCmd = "wordcloud", ModuleUsage = "机器人自动记录群内消息，并借助Jieba.NET及WordCloud#分析生成群消息词云。"
+        };
 
     public MsgWordCloud(ICommandService commandService, ILogger<ArchiveOneBotController<MessageRecordFile>> logger) : base(commandService, logger)
     {
@@ -49,6 +51,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         Data = new MessageRecordFile();
 
     [Command("wordcloud clear")]
+    [CmdHelp("清除本群今日内记录的消息")]
     public void WordCloudClear(GroupMessageEventArgs e)
     {
         if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.RequireAccepted)) 
@@ -58,8 +61,9 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         Data.Msg[i].StrBuilder.Clear();
         e.Reply("清除成功。");
     }
-    [Command("wordcloud [count]")]
-    public void WordCloudToday(GroupMessageEventArgs e,int count = 5)
+    [Command("wordcloud")]
+    [CmdHelp("立即展示群消息词云")]
+    public void WordCloudToday(GroupMessageEventArgs e)
     {
         if (!Permission.Judge(e, Info, "RECORD", PermissionPolicy.AcceptedIfGroupAccepted))
             return;

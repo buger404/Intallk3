@@ -25,13 +25,19 @@ class Painting : SimpleOneBotController
     {
     }
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "表情包制图", RootPermission = "DRAW" };
+        new ModuleInformation { ModuleName = "表情包制图", RootPermission = "DRAW",
+                                HelpCmd = "draw", ModuleUsage = "表情包生成功能，根据已记录的表情包模板制图。\n" +
+                                                                "您也可以投稿自定义的表情包模板，详见：\n" +
+                                                                "绘图脚本说明：https://github.com/buger404/Intallk3/blob/main/PaintScript.md\n" +
+                                                                "制图辅助工具下载：https://github.com/buger404/Intallk3/releases/tag/tool"
+        };
 
     public static string GetSavePath()
     {
         return IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
     }
     [Command("draw showcode <template>")]
+    [CmdHelp("模板名称", "查看指定模板的绘图脚本源码")]
     public async void ShowCode(GroupMessageEventArgs e, string template)
     {
         int pi = -1;
@@ -153,6 +159,7 @@ class Painting : SimpleOneBotController
         if (info != null && info != "") await e.Reply(info);
     }
     [Command("draw <template> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
+    [CmdHelp("模板名", "绘制指定的表情包（参数视模板情况而定）")]
     public void Draw(GroupMessageEventArgs e, string template, [ParsedArguments] object[] args) => Draw(e, template, null!, args);
     public async Task<bool> DrawGroupImageUploadCallBack(GroupMessageEventArgs e, MainModule.GroupMessageHook hook)
     {
@@ -188,23 +195,8 @@ class Painting : SimpleOneBotController
         }
         return false;
     }
-    [Command("draw help")]
-    public void DrawHelp(GroupMessageEventArgs e)
-    {
-        e.Reply(e.Sender.At() + "黑嘴制图功能\n" +
-            "绘图脚本说明：https://github.com/buger404/Intallk3/blob/main/PaintScript.md" + "\n" +
-            "制图辅助工具下载：https://github.com/buger404/Intallk3/releases/tag/tool\n" +
-            "绘图功能指令指南：\n" +
-            ".draw list：列出制图库的第一页。\n" +
-            ".draw list <页数>：导航到制图库的第几页。\n" +
-            ".draw help <模板>：查看指定模板的使用说明。\n" +
-            ".draw <模板> (因模板而异)：制图。\n" +
-            "（私聊）.draw build <模板> <模板脚本>：投稿新的模板。\n" +
-            "（私聊）.draw edit <模板> <模板脚本>：修改已有的模板。\n" +
-            "（私聊）.draw remove <模板>：删除已有的模板。");
-        return;
-    }
     [Command("draw help <template>")]
+    [CmdHelp("模板名", "查看指定绘图模板的使用说明")]
     public async void DrawHelp(GroupMessageEventArgs e, string template)
     {
         int pi = -1;
@@ -223,8 +215,10 @@ class Painting : SimpleOneBotController
         return;
     }
     [Command("draw list")]
+    [CmdHelp("列出目前收录的所有模板")]
     public void DrawList(GroupMessageEventArgs e) => DrawList(e, 1);
     [Command("draw list <index>")]
+    [CmdHelp("页数", "列出目前收录模板的第几页")]
     public void DrawList(GroupMessageEventArgs e, int index)
     {
         string ret = "";
@@ -238,6 +232,7 @@ class Painting : SimpleOneBotController
         e.Reply($"黑嘴现总计收录绘图模板{paints.Count}个\n{ret}第{index}/{pagetotal}页，使用指令“.draw list 页数”查看更多模板。");
     }
     [Command("draw remove <template>", EventType = EventType.PrivateMessage)]
+    [CmdHelp("模板名", "删除指定模板")]
     public void DrawRemove(PrivateMessageEventArgs e, string template)
     {
         int pi = -1;
@@ -266,6 +261,7 @@ class Painting : SimpleOneBotController
         e.Reply("删掉啦~");
     }
     [Command("draw setinfo <template> <info>", EventType = EventType.PrivateMessage)]
+    [CmdHelp("模板名 信息", "设置指定模板绘制后附加的信息")]
     public void DrawInfo(PrivateMessageEventArgs e, string template, string info)
     {
         int pi = -1;
@@ -290,8 +286,10 @@ class Painting : SimpleOneBotController
         e.Reply("已设定生成图片的额外信息：" + info);
     }
     [Command("draw edit <name> <code>", EventType = EventType.PrivateMessage)]
+    [CmdHelp("模板名 脚本源码", "修改指定模板的绘图脚本")]
     public void DrawEdit(PrivateMessageEventArgs e, string name, string code) => DrawBuild(e, name, code, true);
     [Command("draw build <name> <code>", EventType = EventType.PrivateMessage)]
+    [CmdHelp("模板名 脚本源码", "投稿新的绘图模板")]
     public void DrawBuild(PrivateMessageEventArgs e, string name, string code) => DrawBuild(e, name, code, false);
     public async void DrawBuild(PrivateMessageEventArgs e, string name, string code, bool skipNameCheck)
     {

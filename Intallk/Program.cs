@@ -49,4 +49,6 @@ builder.ConfigureServices((context, services) =>
 
 
 var app = builder.Build();
+MainModule.Services = app.Services;
+MainModule.Config = new IntallkConfig();
 app.Run();

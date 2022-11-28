@@ -29,7 +29,11 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     readonly Timer DumpTimer;
 
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { DataFile = "collection", ModuleName = "复读语录收集", RootPermission = "REPEATCOLLECTOR" };
+        new ModuleInformation { DataFile = "collection", ModuleName = "复读语录收集", RootPermission = "REPEATCOLLECTOR",
+                                HelpCmd = "re", ModuleUsage = "自动参与复读，并收集多人复读的语录。\n" +
+                                                              "例如，当群里不同的人发送相同的消息时，机器人将参与复读，同时记录该消息。\n" +
+                                                              "由于启用了消息记录，因此顺便支持了查看最近10条消息的功能。"
+        };
 
     public RepeatCollector(ICommandService commandService, ILogger<ArchiveOneBotController<RepeatCollection>> logger) : base(commandService, logger)
     {
@@ -166,6 +170,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         return 0;
     }
     [Command("t")]
+    [CmdHelp("查看最近的10条消息")]
     public void ForwardMessages(GroupMessageEventArgs e)
     {
         if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
@@ -188,22 +193,8 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         }
         e.Reply(body);
     }
-    [Command("re help")]
-    public void RepeatHelp(GroupMessageEventArgs e)
-    {
-        e.Reply(e.Sender.At() + "黑嘴珍藏的复读语录集~目前收集语录总条数：" + (Data?.messages.Count ?? 0).ToString() +
-                                "\n嗯，你想看的话，黑嘴也可以给你看哦~\n指令：\n" +
-                                ".re <内容>：查看包含指定内容的语录\n" +
-                                ".re bycontext <内容>：查看上文包含指定内容的语录\n" +
-                                ".re byqq <QQ>：随机抽一条黑嘴收集过的某人的复读语录\n" +
-                                ".re <QQ> info：看看黑嘴收集某个人的复读语录的情况\n" +
-                                ".re <QQ> <id/内容>：看看某个人指定序号的语录/包含这个内容的语录\n" +
-                                ".re <QQ> <id/内容> info：看看某个人指定序号的语录/包含这个内容的语录的情况\n" +
-                                ".re context <id>：查看复读语录的上文\n" +
-                                ".re byid <id>：查看指定序号对应的复读语录\n" +
-                                ".re：随机抽一条语录\n\n*此为Inter.Net私用功能");
-    }
     [Command("re remove bygroup <id>")]
+    [CmdHelp("群号码","移除语录库中所有指定群的语录")]
     public void RepeatRemoveGroup(GroupMessageEventArgs e, int id)
     {
         if (!Permission.Judge(e, Info, "EDIT"))
@@ -215,6 +206,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         Dump();
     }
     [Command("re remain <id>")]
+    [CmdHelp("群号码", "保留语录库中指定群的语录，然后删除其余所有语录")]
     public void RepeatReserveGroup(GroupMessageEventArgs e, int id)
     {
         if (!Permission.Judge(e, Info, "EDIT"))
@@ -226,6 +218,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         Dump();
     }
     [Command("re remove <id>")]
+    [CmdHelp("语录ID", "删除指定语录")]
     public void RepeatRemove(GroupMessageEventArgs e, int id)
     {
         if (!Permission.Judge(e, Info, "EDIT"))
@@ -237,6 +230,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         Dump();
     }
     [Command("re clean")]
+    [CmdHelp("清理语录库中与过滤器匹配的语录")]
     public void RepeatClean(GroupMessageEventArgs e)
     {
         if (!Permission.Judge(e, Info, "EDIT"))
@@ -261,16 +255,22 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         e.Reply("已成功清理" + c + "条语录！");
     }
     [Command("re byid <id>")]
+    [CmdHelp("语录ID", "查看指定语录")]
     public void Repeat(GroupMessageEventArgs e, int id) => GeneralRepeat(e, null!, id.ToString(), false);
     [Command("re")]
+    [CmdHelp("随机抽取一条语录")]
     public void Repeat(GroupMessageEventArgs e) => GeneralRepeat(e, null!, "", false);
     [Command("re bycontext <content>")]
+    [CmdHelp("内容", "查看上下文消息中包含指定内容的语录")]
     public void RepeatContext(GroupMessageEventArgs e, string content) => GeneralRepeat(e, m => ((List<SingleRecordingMsg>)m.ForwardMessages!).FindIndex(n => n.Message.FindIndex(o => o.Content!.Contains(content)) != -1) != -1, "", false);
     [Command("re <content>")]
+    [CmdHelp("内容", "查看包含指定内容的语录")]
     public void Repeat(GroupMessageEventArgs e, string content) => GeneralRepeat(e, m => m.Message.FindIndex(n => n.Content!.Contains(content)) != -1, "", false);
     [Command("re byqq <QQ>")]
+    [CmdHelp("QQ号", "随机抽取一条指定用户被收集的语录")]
     public void Repeat(GroupMessageEventArgs e, User QQ) => GeneralRepeat(e, m => m.QQ == QQ.Id, "", false);
     [Command("re context <id>")]
+    [CmdHelp("语录ID", "查看指定语录的上下文")]
     public void RepeatContext(GroupMessageEventArgs e, User QQ, int id)
     {
         if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
@@ -320,10 +320,13 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         e.Reply(body);
     }
     [Command("re <QQ> info")]
+    [CmdHelp("QQ号", "查看对指定用户的语录的收集情况")]
     public void RepeatI(GroupMessageEventArgs e, User QQ) => GeneralRepeat(e, m => m.QQ == QQ.Id, "", true);
     [Command("re <QQ> <key>")]
+    [CmdHelp("内容", "查看指定用户中包含指定内容的语录")]
     public void Repeat(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, false);
     [Command("re <QQ> <key> info")]
+    [CmdHelp("内容", "查看指定用户中包含指定内容的语录的条数")]
     public void RepeatI(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, true);
     private void GeneralRepeat(GroupMessageEventArgs e, Predicate<SingleRecordingMsg> p, string key, bool infoOnly)
     {

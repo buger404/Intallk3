@@ -37,7 +37,12 @@ public class UrlPreview : SimpleOneBotController
     }
 
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "网址预览", RootPermission = "URLPREVIEW" };
+        new ModuleInformation 
+        {
+            ModuleName = "网址预览", RootPermission = "URLPREVIEW",
+            HelpCmd = "url", ModuleUsage = "当群内发送网址时，机器人将获取其包含内容，并展示在群内。\n" +
+                                           "目前支持：b站视频、知乎问答、Github页面"
+        };
 
     private int Event_OnGroupMessage(OneBot.CommandRoute.Models.OneBotContext scope)
     {

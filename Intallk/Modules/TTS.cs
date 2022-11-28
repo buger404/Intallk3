@@ -24,9 +24,14 @@ public class TTS : SimpleOneBotController
     {
     }
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "文字转语音", RootPermission = "TTS" };
+        new ModuleInformation 
+        { 
+            ModuleName = "文字转语音", RootPermission = "TTS",
+            HelpCmd = "tts", ModuleUsage = "利用百度TTS合成语音并发送。"
+        };
 
     [Command("tts <text>")]
+    [CmdHelp("文本", "合成语音")]
     public async void TTSRequest(GroupMessageEventArgs e, string text)
     {
         if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))

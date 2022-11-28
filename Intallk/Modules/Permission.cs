@@ -22,7 +22,13 @@ public class Permission : ArchiveOneBotController<PermissionModel>
         Instance = this;
     }
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { DataFile = "permission", ModuleName = "权限", RootPermission = "PERMISSION" };
+        new ModuleInformation { DataFile = "permission", ModuleName = "权限", RootPermission = "PERMISSION",
+                                HelpCmd = "permission", ModuleUsage = "机器人权限管理，其中较为特殊的权限：\n" +
+                                                                      "ANYTHING - 可等效任何权限\n" +
+                                                                      "GRANT - 分发授权权限\n" +
+                                                                      "具体功能的授权需要视情况而定，权限优先级：Denied权限>Accepted权限。\n" +
+                                                                      "使用以下指令时，若需要同时操作多个权限名，可使用符号','隔开。"
+        };
     public override void OnDataNull()
     {
         Data = new();
@@ -129,6 +135,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission accept <qq> <permission>")]
+    [CmdHelp("QQ号 权限名", "授予某人对应的Accepted权限")]
     public void PermissionAccept(GroupMessageEventArgs e, User qq, string permission)
     {
         (string, string) ret;
@@ -141,6 +148,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission accept revoke <qq> <permission>")]
+    [CmdHelp("QQ号 权限名", "撤销某人对应的Accepted权限")]
     public void PermissionAcceptRevoke(GroupMessageEventArgs e, User qq, string permission)
     {
         (string, string) ret;
@@ -153,6 +161,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission deny <qq> <permission>")]
+    [CmdHelp("QQ号 权限名", "授予某人对应的Denied权限")]
     public void PermissionDeny(GroupMessageEventArgs e, User qq, string permission)
     {
         (string, string) ret;
@@ -165,6 +174,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission deny revoke <qq> <permission>")]
+    [CmdHelp("QQ号 权限名", "撤销授予某人对应的Denied权限")]
     public void PermissionDenyRevoke(GroupMessageEventArgs e, User qq, string permission)
     {
         (string, string) ret;
@@ -177,6 +187,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission view <qq>")]
+    [CmdHelp("QQ号", "查看某人持有的权限情况")]
     public void PermissionView(GroupMessageEventArgs e, User qq)
     {
         if (Data == null)
@@ -237,6 +248,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission group accept <group> <permission>")]
+    [CmdHelp("群号 权限名", "授予某群指定的Accepted权限")]
     public void PermissionGroupAccept(GroupMessageEventArgs e, long group, string permission)
     {
         (string, string) ret;
@@ -249,6 +261,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission group accept revoke <group> <permission>")]
+    [CmdHelp("群号 权限名", "撤回某群指定的Accepted权限")]
     public void PermissionGroupAcceptRevoke(GroupMessageEventArgs e, long group, string permission)
     {
         (string, string) ret;
@@ -261,6 +274,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission group deny <group> <permission>")]
+    [CmdHelp("群号 权限名", "授予某群指定的Denied权限")]
     public void PermissionGroupDeny(GroupMessageEventArgs e, long group, string permission)
     {
         (string, string) ret;
@@ -273,6 +287,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission group deny revoke <group> <permission>")]
+    [CmdHelp("群号 权限名", "撤回某群指定的Denied权限")]
     public void PermissionGroupDenyRevoke(GroupMessageEventArgs e, long group, string permission)
     {
         (string, string) ret;
@@ -285,6 +300,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
     }
 
     [Command("permission group view <group>")]
+    [CmdHelp("群号", "查看某群持有的权限情况")]
     public void PermissionGroupView(GroupMessageEventArgs e, long group)
     {
         if (Data == null)

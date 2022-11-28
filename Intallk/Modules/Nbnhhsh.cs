@@ -21,9 +21,13 @@ class Nbnhhsh : SimpleOneBotController
     {
     }
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "能不能好好说话", RootPermission = "NBNHHSH" };
+        new ModuleInformation { ModuleName = "能不能好好说话", RootPermission = "NBNHHSH",
+                                HelpCmd = "hhsh", ModuleUsage = "感谢Repo（API来源）：'itorr/nbnhhsh'，可以帮助你搜索一些网络上的简写。\n" +
+                                                                "例如，'yyds'，可以查询得到'永远的神'。"
+        };
 
     [Command("hhsh <content>")]
+    [CmdHelp("内容", "查找指定简写的可能含义")]
     public async Task NbnhhshSearchAsync(string content, GroupMessageEventArgs e)
     {
         if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))

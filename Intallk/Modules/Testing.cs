@@ -1,5 +1,5 @@
 ﻿using Intallk.Config;
-
+using Intallk.Models;
 using OneBot.CommandRoute.Attributes;
 using OneBot.CommandRoute.Services;
 
@@ -8,24 +8,39 @@ using Sora.EventArgs.SoraEvent;
 
 namespace Intallk.Modules;
 
-class Testing : IOneBotController
+class Testing : SimpleOneBotController
 {
+    public Testing(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    {
+    }
+    public override ModuleInformation Initialize() =>
+        new ModuleInformation
+        {
+            ModuleName = "基本功能测试", RootPermission = "TESTING",
+            HelpCmd = "testing", ModuleUsage = "用于测试机器人的基本功能，无实际意义。"
+        };
+
     [Command("repeats")]
-    public static void Repeats(GroupMessageEventArgs e)
+    [CmdHelp("重复发言，但使用空格分隔")]
+    public void Repeats(GroupMessageEventArgs e)
     {
         string content = e.Message.RawText, send = "";
         for (int i = 0; i < content.Length; i++) send += content[i] + " ";
         e.Reply(send);
     }
     [Command("repeat")]
-    public static void Repeat(GroupMessageEventArgs e)
+    [CmdHelp("重复发言")]
+    public void Repeat(GroupMessageEventArgs e)
     {
         string content = e.Message.RawText.Substring(".repeat ".Length);
-        if (e.Sender.Id != 1361778219 && e.Sender.Id != 2487411076 && content.ToLower().StartsWith("dy")) return;
+        if (content.ToLower().StartsWith("dy")) 
+            if (!Permission.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
+                return;
         e.Reply(content);
     }
     [Command("test <count>")]
-    public static void TestIll(int count, GroupMessageEventArgs e)
+    [CmdHelp("次数", "测试用")]
+    public void TestIll(int count, GroupMessageEventArgs e)
     {
         if (count == 0)
         {
@@ -47,8 +62,11 @@ class Testing : IOneBotController
     }
 
     [Command("error")]
-    public static void MakeError(GroupMessageEventArgs e)
+    [CmdHelp("刻意抛出异常")]
+    public void MakeError(GroupMessageEventArgs e)
     {
+        if (!Permission.Judge(e, Info, "THROWEXCEPTION", PermissionPolicy.RequireAccepted))
+            return;
         int a = 0;
         e.Reply((1 / a).ToString());
     }
