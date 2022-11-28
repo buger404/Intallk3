@@ -43,7 +43,6 @@ builder.ConfigureServices((context, services) =>
             .AddHttpClient("leetcode", client =>
             {
                 client.BaseAddress = new("https://leetcode.cn/graphql");
-                //client.DefaultRequestHeaders.Add(HeaderNames.ContentType, "application/json");
             });
 
     foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs", "\\FileDetection" })
