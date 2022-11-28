@@ -13,6 +13,7 @@ using System.Text;
 using Sora.Util;
 using RestSharp;
 using Newtonsoft.Json.Linq;
+using System.Reflection;
 
 namespace Intallk.Modules;
 
@@ -35,7 +36,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
                                                               "由于启用了消息记录，因此顺便支持了查看最近10条消息的功能。"
         };
 
-    public RepeatCollector(ICommandService commandService, ILogger<ArchiveOneBotController<RepeatCollection>> logger) : base(commandService, logger)
+    public RepeatCollector(ICommandService commandService, ILogger<ArchiveOneBotController<RepeatCollection>> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
         if (Data != null)
         {
@@ -73,7 +74,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         if (Data == null)
             return 0;
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
-        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
             return 0;
         List<MessageSegment> seg = MessageSegment.Parse(e.Message.MessageBody);
         if (_filter.Invoke(e.Message.RawText)) 
@@ -137,7 +138,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             if (heat.Heat >= HeatLimit)
             {
                 // Record
-                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && Permission.JudgeGroup(e, Info, "COLLECT", PermissionPolicy.RequireAccepted)) 
+                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && PermissionService.JudgeGroup(e, Info, "COLLECT", PermissionPolicy.RequireAccepted)) 
                 {
                     //Console.WriteLine("Start recording...");
                     List<SingleRecordingMsg> heats = new List<SingleRecordingMsg>();
@@ -173,12 +174,12 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("查看最近的10条消息")]
     public void ForwardMessages(GroupMessageEventArgs e)
     {
-        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
         {
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
         }
-        if (!Permission.Judge(e, Info, "VIEWFORWARDMSG", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "VIEWFORWARDMSG", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         int g = MsgBuffer.FindIndex(m => m.GroupID == e.SourceGroup.Id);
         if (g == -1)
@@ -197,7 +198,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("群号码","移除语录库中所有指定群的语录")]
     public void RepeatRemoveGroup(GroupMessageEventArgs e, int id)
     {
-        if (!Permission.Judge(e, Info, "EDIT"))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         if (Data == null)
             return;
@@ -209,7 +210,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("群号码", "保留语录库中指定群的语录，然后删除其余所有语录")]
     public void RepeatReserveGroup(GroupMessageEventArgs e, int id)
     {
-        if (!Permission.Judge(e, Info, "EDIT"))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         if (Data == null)
             return;
@@ -221,7 +222,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("语录ID", "删除指定语录")]
     public void RepeatRemove(GroupMessageEventArgs e, int id)
     {
-        if (!Permission.Judge(e, Info, "EDIT"))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         if (Data == null)
             return;
@@ -233,7 +234,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("清理语录库中与过滤器匹配的语录")]
     public void RepeatClean(GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "EDIT"))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         if (Data == null)
             return;
@@ -273,7 +274,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("语录ID", "查看指定语录的上下文")]
     public void RepeatContext(GroupMessageEventArgs e, User QQ, int id)
     {
-        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
         {
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
@@ -330,7 +331,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     public void RepeatI(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, true);
     private void GeneralRepeat(GroupMessageEventArgs e, Predicate<SingleRecordingMsg> p, string key, bool infoOnly)
     {
-        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
         {
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;

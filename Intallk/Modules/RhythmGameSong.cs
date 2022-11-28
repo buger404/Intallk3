@@ -12,7 +12,7 @@ namespace Intallk.Modules;
 
 public class RhythmGameSong : SimpleOneBotController
 {
-    public RhythmGameSong(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    public RhythmGameSong(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
         foreach(string file in Directory.GetFiles(SongPath))
         {
@@ -34,9 +34,9 @@ public class RhythmGameSong : SimpleOneBotController
     private int Event_OnGroupMessage(OneBotContext scope)
     {
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
-        if (!Permission.JudgeGroup(e, Info, "RESPOND"))
+        if (!PermissionService.JudgeGroup(e, Info, "RESPOND"))
             return 0;
-        if (!Permission.Judge(e, Info, "TRIGGER"))
+        if (!PermissionService.Judge(e, Info, "TRIGGER"))
             return 0;
         string msg = e.Message.RawText.ToLower();
         int index = Song.FindIndex(x => msg.StartsWith(x.ToLower()));
@@ -50,7 +50,7 @@ public class RhythmGameSong : SimpleOneBotController
     [CmdHelp("重新载入曲目库")]
     public void ReloadSongs(GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.RequireAccepted))
             return;
         Song.Clear();
         foreach (string file in Directory.GetFiles(SongPath))

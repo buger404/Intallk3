@@ -10,7 +10,7 @@ namespace Intallk.Modules;
 
 class Testing : SimpleOneBotController
 {
-    public Testing(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    public Testing(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
     }
     public override ModuleInformation Initialize() =>
@@ -34,7 +34,7 @@ class Testing : SimpleOneBotController
     {
         string content = e.Message.RawText.Substring(".repeat ".Length);
         if (content.ToLower().StartsWith("dy")) 
-            if (!Permission.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
+            if (!PermissionService.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
                 return;
         e.Reply(content);
     }
@@ -65,7 +65,7 @@ class Testing : SimpleOneBotController
     [CmdHelp("刻意抛出异常")]
     public void MakeError(GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "THROWEXCEPTION", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, Info, "THROWEXCEPTION", PermissionPolicy.RequireAccepted))
             return;
         int a = 0;
         e.Reply((1 / a).ToString());

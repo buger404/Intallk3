@@ -36,7 +36,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
                                 HelpCmd = "wordcloud", ModuleUsage = "机器人自动记录群内消息，并借助Jieba.NET及WordCloud#分析生成群消息词云。"
         };
 
-    public MsgWordCloud(ICommandService commandService, ILogger<ArchiveOneBotController<MessageRecordFile>> logger) : base(commandService, logger)
+    public MsgWordCloud(ICommandService commandService, ILogger<ArchiveOneBotController<MessageRecordFile>> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
         JiebaNet.Segmenter.ConfigManager.ConfigFileBaseDir = @"C:\jiebanet\config";
         pushTimer = new Timer(SubscribePush, null, new TimeSpan(0, 0, 5), new TimeSpan(0, 0, 5));
@@ -54,7 +54,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
     [CmdHelp("清除本群今日内记录的消息")]
     public void WordCloudClear(GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.RequireAccepted)) 
+        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.RequireAccepted)) 
             return;
         int i = Data!.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
         if (i == -1) return;
@@ -65,7 +65,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
     [CmdHelp("立即展示群消息词云")]
     public void WordCloudToday(GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "RECORD", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "RECORD", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         int i = Data!.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
         if (i == -1)
@@ -80,7 +80,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
         if (e == null)
             return 0;
-        if (!Permission.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
             return 0;
         if (sora == null) sora = e.SoraApi;
         int i = Data!.Msg.FindIndex(m => m.GroupID == e.SourceGroup);
@@ -108,7 +108,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         pushTime = DateTime.Now;
         foreach(MessageRecord r in Instance!.Data!.Msg)
         {
-            if (Permission.JudgeGroup(r.GroupID, Instance!.Info, "SUBSCRIBE", PermissionPolicy.RequireAccepted))
+            if (Instance.PermissionService.JudgeGroup(r.GroupID, Instance!.Info, "SUBSCRIBE", PermissionPolicy.RequireAccepted))
             {
                 sora.GetGroup(r.GroupID).SendGroupMessage("今日群词云：\n" + SoraSegment.Image(GenerateWordCloud(r), false));
                 r.StrBuilder.Clear();

@@ -42,7 +42,7 @@ public class ArchiveOneBotController<T> : SimpleOneBotController
         }
     }
 
-    public ArchiveOneBotController(ICommandService commandService, ILogger<ArchiveOneBotController<T>> logger) : base(commandService, logger)
+    public ArchiveOneBotController(ICommandService commandService, ILogger<ArchiveOneBotController<T>> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
         if (Info == null) 
             throw new NotImplementedException();

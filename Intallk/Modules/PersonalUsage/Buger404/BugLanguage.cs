@@ -16,7 +16,7 @@ namespace Intallk.Modules;
 // 读下面的代码之前，请做好心理准备（指不要被气死）
 class BugLanguage : SimpleOneBotController
 {
-    public BugLanguage(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    public BugLanguage(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
     }
     public override ModuleInformation Initialize() =>
@@ -25,7 +25,7 @@ class BugLanguage : SimpleOneBotController
     [Command("bug <content>")]
     public void Bug(string content, GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, Info, "USE", PermissionPolicy.RequireAccepted))
             return;
         e.Reply(Convert(content));
     }

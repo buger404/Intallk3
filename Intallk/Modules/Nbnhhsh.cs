@@ -17,7 +17,7 @@ namespace Intallk.Modules;
 // 感谢Repo（API来源）：'itorr/nbnhhsh'
 class Nbnhhsh : SimpleOneBotController
 {
-    public Nbnhhsh(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    public Nbnhhsh(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
     }
     public override ModuleInformation Initialize() =>
@@ -30,7 +30,7 @@ class Nbnhhsh : SimpleOneBotController
     [CmdHelp("内容", "查找指定简写的可能含义")]
     public async Task NbnhhshSearchAsync(string content, GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         var client = new RestClient("https://lab.magiconch.com/api/nbnhhsh");
         var request = new RestRequest("/guess", Method.Post).AddJsonBody(new NbnhhshRequest { Text = content }).AddHeader("content-type", "application/json");

@@ -14,7 +14,7 @@ namespace Intallk.Modules;
 
 public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
 {
-    public DictionaryReply(ICommandService commandService, ILogger<ArchiveOneBotController<MsgDictionary>> logger) : base(commandService, logger)
+    public DictionaryReply(ICommandService commandService, ILogger<ArchiveOneBotController<MsgDictionary>> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
     }
@@ -32,7 +32,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
         if (e == null)
             return 0;
-        if (!Permission.JudgeGroup(e, Info, "REPLY"))
+        if (!PermissionService.JudgeGroup(e, Info, "REPLY"))
             return 0;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             return 0;
@@ -69,7 +69,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     [CmdHelp("键 值", "追加新的消息字典项")]
     public void DictionaryAdd(GroupMessageEventArgs e, string key, MessageBody value)
     {
-        if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             Data.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
@@ -82,7 +82,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         List<Message> msg = value.ToMessageList();
         if (msg[0].Type == Sora.Enumeration.SegmentType.Text && (msg[0].Content?.ToLower().StartsWith("dy") ?? false))
         {
-            if (!Permission.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
+            if (!PermissionService.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
                 return;
         }
         Data.Data[e.SourceGroup.Id].Add(key, (e.Sender.Id, msg));
@@ -94,7 +94,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     [CmdHelp("键 值", "将已有的消息字典项的值覆盖为新的值")]
     public void DictionaryUpdate(GroupMessageEventArgs e, string key, MessageBody value)
     {
-        if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             Data.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
@@ -106,7 +106,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         List<Message> msg = value.ToMessageList();
         if (msg[0].Type == Sora.Enumeration.SegmentType.Text && (msg[0].Content?.ToLower().StartsWith("dy") ?? false))
         {
-            if (!Permission.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
+            if (!PermissionService.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
                 return;
         }
         (long, List<Message>) val = Data.Data[e.SourceGroup.Id][key];
@@ -152,7 +152,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     [CmdHelp("内容", "移除指定的消息字典的项")]
     public void DictionaryRemove(GroupMessageEventArgs e, string key)
     {
-        if (!Permission.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             Data.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());

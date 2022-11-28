@@ -17,7 +17,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
 {
     public static Permission? Instance { get; private set; }
 
-    public Permission(ICommandService commandService, ILogger<ArchiveOneBotController<PermissionModel>> logger) : base(commandService, logger)
+    public Permission(ICommandService commandService, ILogger<ArchiveOneBotController<PermissionModel>> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
         Instance = this;
     }
@@ -36,65 +36,6 @@ public class Permission : ArchiveOneBotController<PermissionModel>
         Data.User[0].Accepted.Add(PermissionName.Anything);
     }
 
-    public static bool Judge(GroupMessageEventArgs e, ModuleInformation? info, string permission, PermissionPolicy policy = PermissionPolicy.AcceptedAsDefault, bool noInform = false)
-        => Judge(e, (info?.RootPermission + "_" ?? "") + permission, policy, noInform);
-
-    public static bool Judge(GroupMessageEventArgs e, string permission, PermissionPolicy policy = PermissionPolicy.AcceptedAsDefault, bool noInform = false)
-    {
-        if (Instance!.Data == null) return false;
-        bool ret = Judge(e, e.Sender.Id, permission, policy);
-        if (!noInform && !ret)
-            e.Reply(e.Sender.At() + " ⚠️您尚无权限'" + permission + "'或权限受拒绝，请向模块权限授权人申请。");
-        return ret;
-    }
-
-    public static bool Judge(GroupMessageEventArgs? e, long qq, ModuleInformation? info, string permission, PermissionPolicy policy)
-        => Judge(e, qq, (info?.RootPermission + "_" ?? "") + permission, policy);
-
-    public static bool Judge(GroupMessageEventArgs? e, long qq, string permission, PermissionPolicy policy)
-    {
-        if (Instance!.Data == null) return false;
-        if (!Instance!.Data.User.ContainsKey(qq))
-            Instance!.Data.User.Add(qq, new PermissionData());
-        if (Instance!.Data.User[qq].Denied.Contains(PermissionName.Anything))
-            return false;
-        if (Instance!.Data.User[qq].Accepted.Contains(PermissionName.Anything))
-            return true;
-        if (Instance!.Data.User[qq].Denied.Contains(permission))
-            return false;
-        if (Instance!.Data.User[qq].Accepted.Contains(permission) || policy == PermissionPolicy.AcceptedAsDefault)
-            return true;
-        else if (policy == PermissionPolicy.AcceptedIfGroupAccepted && e != null)
-            return JudgeGroup(e, permission, PermissionPolicy.RequireAccepted);
-        else if (policy == PermissionPolicy.AcceptedAdminAsDefault && e != null)
-            return e.SenderInfo.Role == MemberRoleType.Admin || e.SenderInfo.Role == MemberRoleType.Owner;
-        else
-            return false;
-    }
-
-    public static bool JudgeGroup(GroupMessageEventArgs e, ModuleInformation? info, string permission, PermissionPolicy policy = PermissionPolicy.AcceptedAsDefault)
-        => JudgeGroup(e.SourceGroup.Id, (info?.RootPermission + "_" ?? "") + permission, policy);
-
-    public static bool JudgeGroup(GroupMessageEventArgs e, string permission, PermissionPolicy policy = PermissionPolicy.AcceptedAsDefault)
-        => JudgeGroup(e.SourceGroup.Id, permission, policy);
-
-    public static bool JudgeGroup(long group, ModuleInformation? info, string permission, PermissionPolicy policy)
-        => JudgeGroup(group, (info?.RootPermission + "_" ?? "") + permission, policy);
-
-    public static bool JudgeGroup(long group, string permission, PermissionPolicy policy)
-    {
-        if (Instance!.Data == null) return false;
-        if (!Instance!.Data.Group.ContainsKey(group))
-            Instance!.Data.Group.Add(group, new PermissionData());
-        if (Instance!.Data.Group[group].Denied.Contains(PermissionName.Anything))
-            return false;
-        if (Instance!.Data.Group[group].Accepted.Contains(PermissionName.Anything))
-            return true;
-        if (Instance!.Data.Group[group].Denied.Contains(permission))
-            return false;
-        return Instance!.Data.Group[group].Accepted.Contains(permission) || policy == PermissionPolicy.AcceptedAsDefault;
-    }
-
     public void PermissionOperation(GroupMessageEventArgs e, User target, string permission, out (string, string) ret, Action<string> operation)
     {
         if (Data == null)
@@ -109,7 +50,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             string[] t = c.Split('_');
             if (t.Length < 2)
             {
-                if (!Judge(e, PermissionName.Grant, PermissionPolicy.RequireAccepted, true))
+                if (!PermissionService.Judge(e, PermissionName.Grant, PermissionPolicy.RequireAccepted, true))
                 {
                     fail += c + ",";
                     continue;
@@ -117,14 +58,14 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             }
             else
             {
-                if (!Judge(e, t[0] + "_" + PermissionName.Grant, PermissionPolicy.RequireAccepted, true))
+                if (!PermissionService.Judge(e, t[0] + "_" + PermissionName.Grant, PermissionPolicy.RequireAccepted, true))
                 {
                     fail += c + ",";
                     continue;
                 }
                 if (t[1] == PermissionName.Grant)
                 {
-                    if (!Judge(e, t[0] + "_" + PermissionName.Anything, PermissionPolicy.RequireAccepted, true))
+                    if (!PermissionService.Judge(e, t[0] + "_" + PermissionName.Anything, PermissionPolicy.RequireAccepted, true))
                     {
                         fail += c + ",";
                         continue;
@@ -220,7 +161,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             string[] t = c.Split('_');
             if (t.Length < 2)
             {
-                if (!Judge(e, PermissionName.Grant, PermissionPolicy.RequireAccepted, true))
+                if (!PermissionService.Judge(e, PermissionName.Grant, PermissionPolicy.RequireAccepted, true))
                 {
                     fail += c + ",";
                     continue;
@@ -228,14 +169,14 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             }
             else
             {
-                if (!Judge(e, t[0] + "_" + PermissionName.Grant, PermissionPolicy.RequireAccepted, true))
+                if (!PermissionService.Judge(e, t[0] + "_" + PermissionName.Grant, PermissionPolicy.RequireAccepted, true))
                 {
                     fail += c + ",";
                     continue;
                 }
                 if (t[1] == PermissionName.Grant)
                 {
-                    if (!Judge(e, t[0] + "_" + PermissionName.Anything, PermissionPolicy.RequireAccepted, true))
+                    if (!PermissionService.Judge(e, t[0] + "_" + PermissionName.Anything, PermissionPolicy.RequireAccepted, true))
                     {
                         fail += c + ",";
                         continue;

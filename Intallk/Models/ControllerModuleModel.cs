@@ -2,7 +2,8 @@
 
 namespace Intallk.Models;
 
-public class ModuleInformation
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+public class ModuleInformation : Attribute
 {
     public string? DataFile;
     public string? RootPermission;

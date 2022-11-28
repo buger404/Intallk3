@@ -31,7 +31,7 @@ public class UrlPreview : SimpleOneBotController
     private static string zhihuFeed = @"/api/v4/questions/{0}/feeds";
     private static string zhihuAnswer = @"/answers/{0}?include=excerpt";
 
-    public UrlPreview(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    public UrlPreview(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
     }
@@ -49,7 +49,7 @@ public class UrlPreview : SimpleOneBotController
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
         if (e == null)
             return 0;
-        if (!Permission.JudgeGroup(e, Info, "USE"))
+        if (!PermissionService.JudgeGroup(e, Info, "USE"))
             return 0;
 
         string url = e!.Message.RawText;

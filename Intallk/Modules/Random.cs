@@ -22,7 +22,7 @@ public class IntallkRandom : SimpleOneBotController
 {
     readonly Random ran = new(Guid.NewGuid().GetHashCode());
 
-    public IntallkRandom(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    public IntallkRandom(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
     }
 
@@ -47,7 +47,7 @@ public class IntallkRandom : SimpleOneBotController
     [CmdHelp("人数 天数 艾特", "抽取群内在指定天数内发言过的几个人，当艾特=at时，抽奖结果将艾特被抽到的人")]
     public void random(GroupMessageEventArgs e, int count, long day, string at = "")
     {
-        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedAdminAsDefault))
+        if (!PermissionService.Judge(e, Info, "USE", PermissionPolicy.AcceptedAdminAsDefault))
             return;
         List<GroupMemberInfo> members = e.SourceGroup.GetGroupMemberList().Result.groupMemberList;
         members.RemoveAll(x => x.UserId == e.LoginUid);
@@ -91,7 +91,7 @@ public class IntallkRandom : SimpleOneBotController
     [CmdHelp("人数", "抽取群内的几个人（将艾特被抽中者）")]
     public void random(GroupMessageEventArgs e, int count)
     {
-        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedAdminAsDefault))
+        if (!PermissionService.Judge(e, Info, "USE", PermissionPolicy.AcceptedAdminAsDefault))
             return;
         List<GroupMemberInfo> members = e.SourceGroup.GetGroupMemberList().Result.groupMemberList;
         members.RemoveAll(x => x.UserId == e.LoginUid);

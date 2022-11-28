@@ -18,7 +18,7 @@ namespace Intallk.Modules;
 
 class GIFProcess : SimpleOneBotController
 {
-    public GIFProcess(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    public GIFProcess(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
     }
 
@@ -31,7 +31,7 @@ class GIFProcess : SimpleOneBotController
     [CmdHelp("将一张动态GIF图片逐帧展开，拼合成一张图片")]
     public void GIFExtract(GroupMessageEventArgs e)
     {
-        if (!Permission.Judge(e, Info, "EXTRACT", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "EXTRACT", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id && m.Group == e.SourceGroup.Id))
         {

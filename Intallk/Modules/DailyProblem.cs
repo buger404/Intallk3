@@ -3,16 +3,21 @@ using Sora.Entities.Base;
 using Sora.EventArgs.SoraEvent;
 using System.Collections.Concurrent;
 using System.Text.Json;
+using Intallk.Models;
+using Microsoft.Net.Http.Headers;
 
 namespace Intallk.Modules;
 
+
+[ModuleInformation(HelpCmd = "dproblem", ModuleName = "力扣每日一问", ModuleUsage = "为群里推送每日力扣问题。（感谢TLMegalovania的贡献！！）")]
 public class DailyProblem : IHostedService
 {
     private readonly HttpClient client;
     private readonly ILogger<DailyProblem> logger;
     private readonly System.Timers.Timer timer;
     private readonly ConcurrentDictionary<long, SoraApi> apiManager;
-    public DailyProblem(IHttpClientFactory factory, ILogger<DailyProblem> logger, ICommandService commandService)
+    public PermissionService PermissionService;
+    public DailyProblem(IHttpClientFactory factory, ILogger<DailyProblem> logger, ICommandService commandService, PermissionService permissionService)
     {
         client = factory.CreateClient("leetcode");
         this.logger = logger;
@@ -37,6 +42,7 @@ public class DailyProblem : IHostedService
                 }
                 return 0;
             };
+        this.PermissionService = permissionService;
     }
     readonly static Dictionary<string, string> Mapper = new()
     {
@@ -95,7 +101,11 @@ public class DailyProblem : IHostedService
         {
             foreach (var group in (await api.GetGroupList()).groupList)
             {
-                await api.SendGroupMessage(group.GroupId, message);
+                if (PermissionService.JudgeGroup(group.GroupId, "LEETCODETODAY_PUSH", Models.PermissionPolicy.RequireAccepted))
+                {
+                    await api.SendGroupMessage(group.GroupId, message);
+                    Thread.Sleep(1000);
+                }     
             }
         }
     }

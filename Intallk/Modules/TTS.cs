@@ -20,7 +20,7 @@ public class TTS : SimpleOneBotController
 {
     public static readonly string api = @"https://tts.baidu.com/text2audio?tex={0}&cuid=baike&lan=ZH&ctp=1&pdt=301&vol=9&rate=32&pelJ";
 
-    public TTS(ICommandService commandService, ILogger<SimpleOneBotController> logger) : base(commandService, logger)
+    public TTS(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
     }
     public override ModuleInformation Initialize() =>
@@ -34,7 +34,7 @@ public class TTS : SimpleOneBotController
     [CmdHelp("文本", "合成语音")]
     public async void TTSRequest(GroupMessageEventArgs e, string text)
     {
-        if (!Permission.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(string.Format(api, Uri.EscapeDataString(text))));
         if (data == null)

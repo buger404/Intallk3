@@ -23,26 +23,27 @@ builder.ConfigureServices((context, services) =>
     // 添加指令 / 事件
     // 推荐使用单例模式（而实际上框架代码也是当单例模式使用的）
     services.AddSingleton<IOneBotController, MainModule>()
-        .AddSingleton<IOneBotController, GIFProcess>()
-        .AddSingleton<IOneBotController, Testing>()
-        .AddSingleton<IOneBotController, BugLanguage>()
-        .AddSingleton<IOneBotController, Nbnhhsh>()
-        .AddSingleton<IOneBotController, RepeatCollector>()
-        .AddSingleton<IOneBotController, Painting>()
-        .AddSingleton<IOneBotController, MsgWordCloud>()
-        .AddSingleton<IOneBotController, UrlPreview>()
-        .AddSingleton<IOneBotController, IntallkRandom>()
-        .AddSingleton<IOneBotController, TTS>()
-        .AddSingleton<IOneBotController, DictionaryReply>()
-        .AddSingleton<IOneBotController, Permission>()
-        .AddSingleton<IOneBotController, RhythmGameSong>()
-        .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>()
-        .AddHostedService<DailyProblem>()
-        .AddHttpClient("leetcode", client =>
-        {
-            client.BaseAddress = new("https://leetcode.cn/graphql");
-            client.DefaultRequestHeaders.Add(HeaderNames.ContentType, "application/json");
-        });
+            .AddSingleton<IOneBotController, GIFProcess>()
+            .AddSingleton<IOneBotController, Testing>()
+            .AddSingleton<IOneBotController, BugLanguage>()
+            .AddSingleton<IOneBotController, Nbnhhsh>()
+            .AddSingleton<IOneBotController, RepeatCollector>()
+            .AddSingleton<IOneBotController, Painting>()
+            .AddSingleton<IOneBotController, MsgWordCloud>()
+            .AddSingleton<IOneBotController, UrlPreview>()
+            .AddSingleton<IOneBotController, IntallkRandom>()
+            .AddSingleton<IOneBotController, TTS>()
+            .AddSingleton<IOneBotController, DictionaryReply>()
+            .AddSingleton<IOneBotController, Permission>()
+            .AddSingleton<IOneBotController, RhythmGameSong>()
+            .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>()
+            .AddSingleton<PermissionService>()
+            .AddHostedService<DailyProblem>()
+            .AddHttpClient("leetcode", client =>
+            {
+                client.BaseAddress = new("https://leetcode.cn/graphql");
+                client.DefaultRequestHeaders.Add(HeaderNames.ContentType, "application/json");
+            });
 
     foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs", "\\FileDetection" })
     {
