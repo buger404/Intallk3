@@ -1,9 +1,9 @@
+using Microsoft.Net.Http.Headers;
 using OneBot.CommandRoute.Services;
 using Sora.Entities.Base;
 using Sora.EventArgs.SoraEvent;
 using System.Collections.Concurrent;
 using System.Text.Json;
-using Intallk.Models;
 
 namespace Intallk.Modules;
 
@@ -11,14 +11,14 @@ namespace Intallk.Modules;
 public class DailyProblem : IHostedService
 {
     public static DailyProblem? Instance { get; private set; }
-    private readonly IHttpClientFactory factory;
+    private readonly HttpClient client;
     private readonly ILogger<DailyProblem> logger;
     private readonly System.Timers.Timer timer;
     private readonly ConcurrentDictionary<long, SoraApi> apiManager;
     public PermissionService PermissionService;
     public DailyProblem(IHttpClientFactory factory, ILogger<DailyProblem> logger, ICommandService commandService, PermissionService permissionService)
     {
-        this.factory = factory;
+        client = factory.CreateClient("leetcode");
         this.logger = logger;
         timer = new(TimeSpan.FromDays(1).TotalMilliseconds);
         apiManager = new();
@@ -72,7 +72,7 @@ public class DailyProblem : IHostedService
             Method = HttpMethod.Post,
             Content = new StringContent("{\"query\":\"query questionOfToday{todayRecord{question{questionTitleSlug}}}\",\"variables\":{}}", System.Text.Encoding.UTF8, "application/json")
         };
-        var response = await factory.CreateClient("leetcode").SendAsync(request);
+        var response = await client.SendAsync(request);
         string? title = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("todayRecord")[0].GetProperty("question").GetProperty("questionTitleSlug").GetString();
         if (title is null)
         {
@@ -84,7 +84,9 @@ public class DailyProblem : IHostedService
             Method = HttpMethod.Post,
             Content = new StringContent($"{{\"query\":\"query{{question(titleSlug: \"{title}\"){{questionId translatedTitle translatedContent difficulty}}}}\",\"variables\":{{}}}}")
         };
-        response = await factory.CreateClient("leetcode").SendAsync(request);
+        string cookies = string.Join(';', response.Headers.GetValues(HeaderNames.SetCookie).Select(s => s.Substring(0, s.IndexOf(';'))));
+        request.Headers.Add(HeaderNames.Cookie, cookies);
+        response = await client.SendAsync(request);
         var question = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("question");
         string? content = question.GetProperty("translatedContent").GetString();
         if (content is null)
