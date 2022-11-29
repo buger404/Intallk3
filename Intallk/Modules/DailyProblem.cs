@@ -69,48 +69,40 @@ public class DailyProblem : IHostedService
     };
     public async Task<string?> FetchDailyMessage()
     {
-        try
+        var request = new HttpRequestMessage
         {
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                Content = new StringContent("{\"query\":\"query questionOfToday{todayRecord{question{questionTitleSlug}}}\",\"variables\":{}}", System.Text.Encoding.UTF8, "application/json")
-            };
-            var response = await client.SendAsync(request);
-            string? title = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("todayRecord")[0].GetProperty("question").GetProperty("questionTitleSlug").GetString();
-            if (title is null)
-            {
-                logger.LogWarning("daily problem service gets null title");
-                return null;
-            }
-            request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                Content = new StringContent($"{{\"query\":\"query{{question(titleSlug: \"{title}\"){{questionId translatedTitle translatedContent difficulty}}}}\",\"variables\":{{}}}}")
-            };
-            string cookies = string.Join("; ", response.Headers.GetValues(HeaderNames.SetCookie).Select(s => s.Substring(0, s.IndexOf(';'))));
-            request.Headers.Add(HeaderNames.Cookie, cookies);
-            request.Headers.Add(HeaderNames.Origin, "https://leetcode.cn/");
-            response = await client.SendAsync(request);
-            logger.LogInformation(await response.Content.ReadAsStringAsync());
-            var question = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("question");
-            string? content = question.GetProperty("translatedContent").GetString();
-            if (content is null)
-            {
-                logger.LogWarning("daily problem service gets null content");
-                return null;
-            }
-            foreach (var pair in Mapper)
-            {
-                content = content.Replace(pair.Key, pair.Value);
-            }
-            string message = $"{question.GetProperty("questionId").GetString()}. {question.GetProperty("translatedTitle").GetString()}\r\n难度: {question.GetProperty("difficulty").GetString()}\r\n{content}";
-            return message;
-        }catch(Exception err)
+            Method = HttpMethod.Post,
+            Content = new StringContent("{\"query\":\"query questionOfToday{todayRecord{question{questionTitleSlug}}}\",\"variables\":{}}", System.Text.Encoding.UTF8, "application/json")
+        };
+        var response = await client.SendAsync(request);
+        string? title = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("todayRecord")[0].GetProperty("question").GetProperty("questionTitleSlug").GetString();
+        if (title is null)
         {
-            logger.LogCritical(err.Message + "\n" + err.StackTrace);
-            return "";
+            logger.LogWarning("daily problem service gets null title");
+            return null;
         }
+        request = new HttpRequestMessage
+        {
+            Method = HttpMethod.Post,
+            Content = new StringContent($"{{\"query\":\"query{{question(titleSlug:\\\"{title}\\\"){{questionId translatedTitle translatedContent difficulty}}}}\",\"variables\":{{}}}}")
+        };
+        string cookies = string.Join(';', response.Headers.GetValues(HeaderNames.SetCookie).Select(s => s.Substring(0, s.IndexOf(';'))));
+        request.Headers.Add(HeaderNames.Cookie, cookies);
+        response = await client.SendAsync(request);
+        logger.LogInformation(await response.Content.ReadAsStringAsync());
+        var question = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("question");
+        string? content = question.GetProperty("translatedContent").GetString();
+        if (content is null)
+        {
+            logger.LogWarning("daily problem service gets null content");
+            return null;
+        }
+        foreach (var pair in Mapper)
+        {
+            content = content.Replace(pair.Key, pair.Value);
+        }
+        string message = $"{question.GetProperty("questionId").GetString()}. {question.GetProperty("translatedTitle").GetString()}\r\n难度: {question.GetProperty("difficulty").GetString()}\r\n{content}";
+        return message;
     }
     async Task FetchDaily()
     {
