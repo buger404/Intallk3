@@ -12,7 +12,6 @@ namespace Intallk.Modules;
 
 public class DailyProblem : IHostedService
 {
-    public static DailyProblem? Instance { get; private set; }
     private readonly HttpClient client;
     private readonly ILogger<DailyProblem> logger;
     private readonly System.Timers.Timer timer;
@@ -44,7 +43,6 @@ public class DailyProblem : IHostedService
                 return 0;
             };
         this.PermissionService = permissionService;
-        Instance = this;
     }
     readonly static Dictionary<string, string> Mapper = new()
     {
@@ -65,7 +63,9 @@ public class DailyProblem : IHostedService
         ["<sup>"] = "^",
         ["</sup>"] = "",
         ["<ol>"] = "",
-        ["</ol>"] = ""
+        ["</ol>"] = "",
+        ["&lt;"] = "<",
+        ["&rt;"] = ">"
     };
     public async Task<string?> FetchDailyMessage()
     {
@@ -102,7 +102,9 @@ public class DailyProblem : IHostedService
         {
             content = content.Replace(pair.Key, pair.Value);
         }
-        string message = $"{question.GetProperty("questionId").GetString()}. {question.GetProperty("translatedTitle").GetString()}\r\n难度: {question.GetProperty("difficulty").GetString()}\r\n{content}";
+        string message = $"{question.GetProperty("questionId").GetString()}. {question.GetProperty("translatedTitle").GetString()}\n难度: {question.GetProperty("difficulty").GetString()}\n{content}";
+        while(message.Contains("\n\n"))
+            message = message.Remove(message.IndexOf("\n\n"), 1);
         return message;
     }
     async Task FetchDaily()
