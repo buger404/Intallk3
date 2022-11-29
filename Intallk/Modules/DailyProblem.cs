@@ -89,6 +89,7 @@ public class DailyProblem : IHostedService
         string cookies = string.Join(';', response.Headers.GetValues(HeaderNames.SetCookie).Select(s => s.Substring(0, s.IndexOf(';'))));
         request.Headers.Add(HeaderNames.Cookie, cookies);
         response = await client.SendAsync(request);
+        logger.LogInformation(await request.Content.ReadAsStringAsync());
         logger.LogInformation(await response.Content.ReadAsStringAsync());
         var question = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("question");
         string? content = question.GetProperty("translatedContent").GetString();
