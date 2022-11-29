@@ -45,6 +45,7 @@ builder.ConfigureServices((context, services) =>
             {
                 client.BaseAddress = new("https://leetcode.cn/graphql");
                 client.DefaultRequestHeaders.Remove(HeaderNames.Cookie);
+                client.DefaultRequestHeaders.Add(HeaderNames.Origin, "https://leetcode.cn");
             });
 
     foreach (string childPath in new string[] { "", "\\Images", "\\Cache", "\\Resources", "\\Logs", "\\FileDetection" })
