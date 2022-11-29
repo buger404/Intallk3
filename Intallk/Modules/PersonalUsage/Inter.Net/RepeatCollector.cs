@@ -138,7 +138,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             if (heat.Heat >= HeatLimit)
             {
                 // Record
-                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && PermissionService.JudgeGroup(e, Info, "COLLECT", PermissionPolicy.RequireAccepted)) 
+                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && PermissionService.JudgeGroup(e, "INTER.NET_" + Info.RootPermission + "_COLLECT", PermissionPolicy.RequireAccepted)) 
                 {
                     //Console.WriteLine("Start recording...");
                     List<SingleRecordingMsg> heats = new List<SingleRecordingMsg>();
@@ -198,7 +198,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("群号码","移除语录库中所有指定群的语录")]
     public void RepeatRemoveGroup(GroupMessageEventArgs e, int id)
     {
-        if (!PermissionService.Judge(e, Info, "EDIT"))
+        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
             return;
         if (Data == null)
             return;
@@ -210,7 +210,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("群号码", "保留语录库中指定群的语录，然后删除其余所有语录")]
     public void RepeatReserveGroup(GroupMessageEventArgs e, int id)
     {
-        if (!PermissionService.Judge(e, Info, "EDIT"))
+        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
             return;
         if (Data == null)
             return;
@@ -222,7 +222,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("语录ID", "删除指定语录")]
     public void RepeatRemove(GroupMessageEventArgs e, int id)
     {
-        if (!PermissionService.Judge(e, Info, "EDIT"))
+        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
             return;
         if (Data == null)
             return;
@@ -234,7 +234,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("清理语录库中与过滤器匹配的语录")]
     public void RepeatClean(GroupMessageEventArgs e)
     {
-        if (!PermissionService.Judge(e, Info, "EDIT"))
+        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
             return;
         if (Data == null)
             return;
@@ -279,6 +279,8 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
         }
+        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_VIEW", PermissionPolicy.AcceptedIfGroupAccepted))
+            return;
         if (Data == null)
             return;
         if (id < 0 || id >= Data.messages.Count)
@@ -336,6 +338,8 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
         }
+        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_VIEW", PermissionPolicy.AcceptedIfGroupAccepted))
+            return;
         if (Data == null)
             return;
         List<SingleRecordingMsg> c = Data.messages;
