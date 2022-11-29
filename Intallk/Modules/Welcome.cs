@@ -61,13 +61,13 @@ public class Welcome : ArchiveOneBotController<WelcomeModel>
             e.Reply("该群暂无设定。");
             return;
         }
-        StringBuilder sb = new StringBuilder();
-        sb.AppendLine("该群设定的欢迎消息：");
+        MessageBody mb = new MessageBody();
+        mb.AddText("该群设定的欢迎消息：\n");
         for(int i = 0;i < Data!.WelcomeMsg[e.SourceGroup.Id].Count; i++)
         {
-            sb.AppendLine((i + 1) + ".“" + Data!.WelcomeMsg[e.SourceGroup.Id][i] + "”");
+            mb += ((i + 1) + ".“" + Data!.WelcomeMsg[e.SourceGroup.Id][i].ToMessageBody() + "”");
         }
-        e.Reply(sb.ToString());
+        e.Reply(mb);
     }
 
     [Command("welcome add <content>")]
