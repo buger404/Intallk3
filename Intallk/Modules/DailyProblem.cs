@@ -82,7 +82,7 @@ public class DailyProblem : IHostedService
         request = new HttpRequestMessage
         {
             Method = HttpMethod.Post,
-            Content = new StringContent($"{{\"query\":\"query{{question(titleSlug: \"{title}\"){{questionId translatedTitle translatedContent difficulty}}}}\",\"variables\":{{}}}}")
+            Content = new StringContent($"{{\"query\":\"query{{question(titleSlug:\\\"{title}\\\"){{questionId translatedTitle translatedContent difficulty}}}}\",\"variables\":{{}}}}")
         };
         string cookies = string.Join(';', response.Headers.GetValues(HeaderNames.SetCookie).Select(s => s.Substring(0, s.IndexOf(';'))));
         request.Headers.Add(HeaderNames.Cookie, cookies);
