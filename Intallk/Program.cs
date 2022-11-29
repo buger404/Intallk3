@@ -37,6 +37,7 @@ builder.ConfigureServices((context, services) =>
             .AddSingleton<IOneBotController, Permission>()
             .AddSingleton<IOneBotController, RhythmGameSong>()
             .AddSingleton<IOneBotController, DailyProblemCmd>()
+            .AddSingleton<IOneBotController, Welcome>()
             .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>()
             .AddSingleton<PermissionService>()
             .AddHostedService<DailyProblem>()
