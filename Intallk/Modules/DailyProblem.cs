@@ -84,7 +84,7 @@ public class DailyProblem : IHostedService
             Method = HttpMethod.Post,
             Content = new StringContent($"{{\"query\":\"query{{question(titleSlug: \"{title}\"){{questionId translatedTitle translatedContent difficulty}}}}\",\"variables\":{{}}}}")
         };
-        string cookies = string.Join(';', response.Headers.GetValues(HeaderNames.SetCookie).Select(s => s.Substring(s.IndexOf(';'))));
+        string cookies = string.Join(';', response.Headers.GetValues(HeaderNames.SetCookie).Select(s => s.Substring(0, s.IndexOf(';'))));
         request.Headers.Add(HeaderNames.Cookie, cookies);
         response = await client.SendAsync(request);
         var question = JsonDocument.Parse(response.Content.ReadAsStream()).RootElement.GetProperty("data").GetProperty("question");
