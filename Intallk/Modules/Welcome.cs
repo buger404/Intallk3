@@ -85,7 +85,7 @@ public class Welcome : ArchiveOneBotController<WelcomeModel>
             Data!.WelcomeMsg.Add(e.SourceGroup.Id, new List<List<DictionaryReplyModel.Message>>());
         Data!.WelcomeMsg[e.SourceGroup.Id].Add(content.ToMessageList());
         e.Reply("添加成功！");
-        Dump();
+        Save();
     }
 
     [Command("welcome remove <index>")]
@@ -109,6 +109,6 @@ public class Welcome : ArchiveOneBotController<WelcomeModel>
         }
         e.Reply("已删除：" + (index + 1) + ".“" + Data!.WelcomeMsg[e.SourceGroup.Id][index].ToMessageBody() + "”");
         Data!.WelcomeMsg[e.SourceGroup.Id].RemoveAt(index);
-        Dump();
+        Save();
     }
 }

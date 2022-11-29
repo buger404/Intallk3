@@ -87,7 +87,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         }
         Data.Data[e.SourceGroup.Id].Add(key, (e.Sender.Id, msg));
         e.Reply($"已添加新的键'{key}'：\n" + value);
-        Dump();
+        Save();
     }
 
     [Command("dict update <key> <value>")]
@@ -112,7 +112,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         (long, List<Message>) val = Data.Data[e.SourceGroup.Id][key];
         Data.Data[e.SourceGroup.Id][key] = (e.Sender.Id, msg);
         e.Reply($"键'{key}' by '{MainModule.GetQQName(e, val.Item1)}'：\n" + val.Item2.ToMessageBody() + "\n*已被覆盖为：\n" + value);
-        Dump();
+        Save();
     }
 
     [Command("dict view <key>")]
@@ -164,6 +164,6 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         (long, List<Message>) val = Data.Data[e.SourceGroup.Id][key];
         Data.Data[e.SourceGroup.Id].Remove(key);
         e.Reply($"键'{key}' by '{MainModule.GetQQName(e, val.Item1)}'：\n" + val.Item2.ToMessageBody() + "\n*已被删除。");
-        Dump();
+        Save();
     }
 }

@@ -18,7 +18,7 @@ public class ArchiveOneBotController<T> : SimpleOneBotController
         }
     }
 
-    public void Dump(int failCount = 0)
+    public void Save(int failCount = 0)
     {
         if (Info == null)
             throw new NotImplementedException();
@@ -38,7 +38,7 @@ public class ArchiveOneBotController<T> : SimpleOneBotController
                     Logger.LogCritical("无法储存{module}，重试次数已超过预定次数。\n诱因：{message}\n调用堆栈：\n{stacktrace}", Info.ModuleName, err.Message, err.StackTrace);
                 return;
             }
-            Dump(++failCount);
+            Save(++failCount);
         }
     }
 

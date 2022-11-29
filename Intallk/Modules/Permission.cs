@@ -77,7 +77,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             operation(c);
             succeed += c + ",";
         }
-        Dump();
+        Save();
         ret = (succeed, fail);
     }
 
@@ -188,7 +188,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
             operation(c);
             succeed += c + ",";
         }
-        Dump();
+        Save();
         if (succeed.Length > 0) succeed = succeed.Remove(succeed.Length - 1);
         if (fail.Length > 0) fail = fail.Remove(fail.Length - 1);
         ret = (succeed, fail);

@@ -387,12 +387,8 @@ public class MainModule : IOneBotController
     }
 
     [Command("status")]
-    public void Status(GroupMessageEventArgs e) =>
-        e.Reply("黑嘴黑嘴运转良好。\n" +
-                "语录库总收录：" + RepeatCollector.Instance!.Data?.messages.Count ?? 0 + "\n" +
-                "语录库备份时间：" + RepeatCollector.DumpTime.ToString() + "\n" +
-                "关键词备份时间：" + MsgWordCloud.DumpTime.ToString() + "\n" +
-                "绘图模板总收录：" + Painting.paints.Count + "\n" +
-                "总计异常抛出数量：" + ExceptionCount.ToString());
+    public void Status(GroupMessageEventArgs e)
+    {
 
+    }
 }

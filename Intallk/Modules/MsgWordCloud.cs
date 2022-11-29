@@ -42,7 +42,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
         pushTimer = new Timer(SubscribePush, null, new TimeSpan(0, 0, 5), new TimeSpan(0, 0, 5));
         dumpTimer = new Timer((_) =>
         {
-            Dump();
+            Save();
         }, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
         Instance = this;

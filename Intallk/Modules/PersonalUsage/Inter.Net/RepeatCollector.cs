@@ -30,8 +30,10 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     readonly Timer DumpTimer;
 
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { DataFile = "collection", ModuleName = "复读语录收集", RootPermission = "REPEATCOLLECTOR",
-                                HelpCmd = "re", ModuleUsage = "自动参与复读，并收集多人复读的语录。\n" +
+        new ModuleInformation
+        {
+            DataFile = "collection", ModuleName = "复读语录收集", RootPermission = "REPEATCOLLECTOR",
+            HelpCmd = "re", ModuleUsage = "自动参与复读，并收集多人复读的语录。\n" +
                                                               "例如，当群里不同的人发送相同的消息时，机器人将参与复读，同时记录该消息。\n" +
                                                               "由于启用了消息记录，因此顺便支持了查看最近10条消息的功能。"
         };
@@ -58,10 +60,10 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             DumpTime = DateTime.Now;
             string file = DataPath, file_backup = RepeatCollector.Instance!.DataPath + ".bak";
             if (File.Exists(file)) File.Copy(file, file_backup, true);
-            Dump();
+            Save();
         }, null, new TimeSpan(0, 5, 0), new TimeSpan(0, 5, 0));
         commandService.Event.OnGroupMessage += Event_OnGroupMessage;
-        Instance = this;    
+        Instance = this;
     }
 
     public override void OnDataNull()
@@ -77,7 +79,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
             return 0;
         List<MessageSegment> seg = MessageSegment.Parse(e.Message.MessageBody);
-        if (_filter.Invoke(e.Message.RawText)) 
+        if (_filter.Invoke(e.Message.RawText))
             return 0;
         int f = Data.messages.FindIndex(m => (m.Group == e.SourceGroup.Id && MessageSegment.Compare(m.Message, seg)));
         int g = MsgBuffer.FindIndex(m => m.GroupID == e.SourceGroup.Id);
@@ -138,7 +140,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             if (heat.Heat >= HeatLimit)
             {
                 // Record
-                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && PermissionService.JudgeGroup(e, "INTER.NET_" + Info.RootPermission + "_COLLECT", PermissionPolicy.RequireAccepted)) 
+                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && PermissionService.JudgeGroup(e, "INTER.NET_" + Info.RootPermission + "_COLLECT", PermissionPolicy.RequireAccepted))
                 {
                     //Console.WriteLine("Start recording...");
                     List<SingleRecordingMsg> heats = new List<SingleRecordingMsg>();
@@ -148,14 +150,14 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
                         heats.Add(heat2);
                         foreach (MessageSegment se in heat2.Message)
                         {
-                            if (se.isImage) 
+                            if (se.isImage)
                                 se.DownloadImage();
                         }
                     }
                     heat.ForwardMessages = heats;
                     foreach (MessageSegment se in heat.Message)
                     {
-                        if (se.isImage) 
+                        if (se.isImage)
                             se.DownloadImage();
                     }
                     heat.Index = Data.messages.Count;
@@ -164,7 +166,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
                     heat.Repeated = true;
                 }
             }
-            if (!heat.Repeated && heat.Group == e.SourceGroup.Id) 
+            if (!heat.Repeated && heat.Group == e.SourceGroup.Id)
                 heat.Cool();
         }
         Data.messages.RemoveAll(m => m.Heat <= -2);
@@ -195,7 +197,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         e.Reply(body);
     }
     [Command("re remove bygroup <id>")]
-    [CmdHelp("群号码","移除语录库中所有指定群的语录")]
+    [CmdHelp("群号码", "移除语录库中所有指定群的语录")]
     public void RepeatRemoveGroup(GroupMessageEventArgs e, int id)
     {
         if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
@@ -204,7 +206,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             return;
         e.Reply("好的，移除语录总数：" + Data.messages.FindAll(m => m.Group == id).Count);
         Data.messages.RemoveAll(m => m.Group == id);
-        Dump();
+        Save();
     }
     [Command("re remain <id>")]
     [CmdHelp("群号码", "保留语录库中指定群的语录，然后删除其余所有语录")]
@@ -216,7 +218,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             return;
         e.Reply("好的，移除语录总数：" + Data.messages.FindAll(m => m.Group != id).Count);
         Data.messages.RemoveAll(m => m.Group != id);
-        Dump();
+        Save();
     }
     [Command("re remove <id>")]
     [CmdHelp("语录ID", "删除指定语录")]
@@ -228,7 +230,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             return;
         e.Reply("好的，已经帮您移除语录" + id + "\n" + Data.messages[id].Message.ToMessageBody());
         Data.messages.RemoveAt(id);
-        Dump();
+        Save();
     }
     [Command("re clean")]
     [CmdHelp("清理语录库中与过滤器匹配的语录")]
@@ -240,19 +242,19 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             return;
         e.Reply("正在清理语录库...");
         int c = 0;
-        for(int i = 0; i < Data.messages.Count; i++)
+        for (int i = 0; i < Data.messages.Count; i++)
         {
             if (i >= Data.messages.Count) break;
             string rawText = "";
-            foreach (MessageSegment ms in Data.messages[i].Message) 
-                rawText += ms.Content; 
+            foreach (MessageSegment ms in Data.messages[i].Message)
+                rawText += ms.Content;
             if (_filter.Invoke(rawText))
             {
                 Data.messages.RemoveAt(i);
                 i--; c++;
             }
         }
-        Dump();
+        Save();
         e.Reply("已成功清理" + c + "条语录！");
     }
     [Command("re byid <id>")]
@@ -302,15 +304,15 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
                 heats = list;
                 break;
         }
-        if(heats.Count > 40)
+        if (heats.Count > 40)
         {
             heats.RemoveRange(40, heats.Count - 40);
-            Dump();
+            Save();
         }
-        foreach(SingleRecordingMsg message in heats)
+        foreach (SingleRecordingMsg message in heats)
         {
             string name = "";
-            if(message.Repeaters.Count > 0)
+            if (message.Repeaters.Count > 0)
             {
                 name = MainModule.GetQQName(e, message.QQ) + "等共" + (message.Repeaters.Count + 1) + "人";
             }
@@ -349,17 +351,17 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         {
             i = _random.Next(0, c.Count);
         }
-        else 
+        else
         {
             if (!int.TryParse(key, out i))
             {
                 List<int> si = new List<int>();
-                for(int j = 0;j < c.Count; j++)
+                for (int j = 0; j < c.Count; j++)
                 {
                     if (c[j].Message.FindIndex(n => n.Content!.Contains(key)) != -1)
                         si.Add(j);
                 }
-                if(si.Count == 0)
+                if (si.Count == 0)
                 {
                     e.Reply(e.Sender.At() + "找不到这样的语录捏。");
                     return;

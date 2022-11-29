@@ -36,11 +36,12 @@ builder.ConfigureServices((context, services) =>
             .AddSingleton<IOneBotController, DictionaryReply>()
             .AddSingleton<IOneBotController, Permission>()
             .AddSingleton<IOneBotController, RhythmGameSong>()
-            .AddSingleton<IOneBotController, DailyProblemCmd>()
+            .AddSingleton<IOneBotController, DailyProblemController>()
             .AddSingleton<IOneBotController, Welcome>()
             .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>()
             .AddSingleton<PermissionService>()
-            .AddHostedService<DailyProblem>()
+            .AddSingleton<DailyProblemService>()
+            .AddHostedService<DailyProblemPushService>()
             .AddHttpClient("leetcode", client =>
             {
                 client.BaseAddress = new("https://leetcode.cn/graphql");

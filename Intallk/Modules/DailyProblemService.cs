@@ -10,39 +10,15 @@ using System.Text.Json;
 namespace Intallk.Modules;
 
 
-public class DailyProblem : IHostedService
+public class DailyProblemService
 {
     private readonly HttpClient client;
-    private readonly ILogger<DailyProblem> logger;
-    private readonly System.Timers.Timer timer;
-    private readonly ConcurrentDictionary<long, SoraApi> apiManager;
-    public PermissionService PermissionService;
-    public DailyProblem(IHttpClientFactory factory, ILogger<DailyProblem> logger, ICommandService commandService, PermissionService permissionService)
+    private readonly ILogger<DailyProblemService> logger;
+
+    public DailyProblemService(IHttpClientFactory factory, ILogger<DailyProblemService> logger, ICommandService commandService)
     {
         client = factory.CreateClient("leetcode");
         this.logger = logger;
-        timer = new(TimeSpan.FromDays(1).TotalMilliseconds);
-        apiManager = new();
-        commandService.Event.OnClientConnect += (context) =>
-            {
-                var args = context.WrapSoraEventArgs<ConnectEventArgs>();
-                apiManager.TryAdd(args.LoginUid, args.SoraApi);
-                return 0;
-            };
-        commandService.Event.OnClientStatusChangeEvent += (context) =>
-            {
-                var args = context.WrapSoraEventArgs<ClientStatusChangeEventArgs>();
-                if (args.Online)
-                {
-                    apiManager.TryAdd(args.LoginUid, args.SoraApi);
-                }
-                else
-                {
-                    apiManager.TryRemove(args.LoginUid, out _);
-                }
-                return 0;
-            };
-        this.PermissionService = permissionService;
     }
     readonly static Dictionary<string, string> Mapper = new()
     {
@@ -65,7 +41,7 @@ public class DailyProblem : IHostedService
         ["<ol>"] = "",
         ["</ol>"] = "",
         ["&lt;"] = "<",
-        ["&rt;"] = ">"
+        ["&gt;"] = ">"
     };
     public async Task<string?> FetchDailyMessage()
     {
@@ -102,38 +78,9 @@ public class DailyProblem : IHostedService
         {
             content = content.Replace(pair.Key, pair.Value);
         }
-        string message = $"{question.GetProperty("questionId").GetString()}. {question.GetProperty("translatedTitle").GetString()}\n难度: {question.GetProperty("difficulty").GetString()}\n{content}";
+        string message = $"✨力扣每日一题推送~\n{question.GetProperty("questionId").GetString()}. {question.GetProperty("translatedTitle").GetString()}\n难度: {question.GetProperty("difficulty").GetString()}\n{content}";
         while(message.Contains("\n\n"))
             message = message.Remove(message.IndexOf("\n\n"), 1);
         return message;
-    }
-    async Task FetchDaily()
-    {
-        string? message = await FetchDailyMessage();
-        if (message == null) return;
-        foreach (var api in apiManager.Values)
-        {
-            foreach (var group in (await api.GetGroupList()).groupList)
-            {
-                if (PermissionService.JudgeGroup(group.GroupId, "LEETCODETODAY_PUSH", Models.PermissionPolicy.RequireAccepted))
-                {
-                    await api.SendGroupMessage(group.GroupId, message);
-                    await Task.Delay(1000);
-                }
-            }
-        }
-    }
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        logger.LogInformation("leetcode daily problem service started");
-        timer.Elapsed += (_, _) => _ = FetchDaily();
-        timer.Enabled = true;
-        _ = FetchDaily();
-        return Task.CompletedTask;
-    }
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        logger.LogInformation("leetcode daily problem service stopped");
-        return Task.CompletedTask;
     }
 }

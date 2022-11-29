@@ -5,12 +5,12 @@ using Sora.EventArgs.SoraEvent;
 
 namespace Intallk.Modules;
 
-public class DailyProblemCmd : SimpleOneBotController
+public class DailyProblemController : SimpleOneBotController
 {
-    private readonly DailyProblem DailyProblemService;
-    public DailyProblemCmd(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService permissionService, IHostedService dailyProblemService) : base(commandService, logger, permissionService)
+    private readonly DailyProblemService DailyProblemService;
+    public DailyProblemController(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService permissionService, DailyProblemService dailyProblemService) : base(commandService, logger, permissionService)
     {
-        DailyProblemService = (DailyProblem)dailyProblemService;
+        DailyProblemService = dailyProblemService;
     }
     public override ModuleInformation Initialize() =>
         new ModuleInformation { HelpCmd = "leetcode", ModuleName = "力扣每日一问", ModuleUsage = "为群里推送每日力扣问题。（感谢TLMegalovania的贡献！！）",
