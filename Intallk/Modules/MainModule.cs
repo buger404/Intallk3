@@ -283,7 +283,7 @@ public class MainModule : IOneBotController
     [Command("help")]
     public void Help(GroupMessageEventArgs e)
     {
-        string prefix = String.Join("", Config!.CommandPrefix);
+        string prefix = Config!.CommandPrefix[0];
         StringBuilder sb = new StringBuilder();
         foreach (IOneBotController controller in Services!.GetServices<IOneBotController>())
         {
@@ -307,7 +307,7 @@ public class MainModule : IOneBotController
     [Command("help <moduleName>")]
     public void ModuleHelp(GroupMessageEventArgs e, string moduleName)
     {
-        string prefix = String.Join("", Config!.CommandPrefix);
+        string prefix = Config!.CommandPrefix[0];
         foreach (IOneBotController controller in Services!.GetServices<IOneBotController>())
         {
             if (controller is SimpleOneBotController module)

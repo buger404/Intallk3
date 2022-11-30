@@ -41,7 +41,9 @@ public class DailyProblemService
         ["<ol>"] = "",
         ["</ol>"] = "",
         ["&lt;"] = "<",
-        ["&gt;"] = ">"
+        ["&gt;"] = ">",
+        ["<meta charset=\"UTF-8\" />"] = "",
+        ["&nbsp;"] = " "
     };
     public async Task<string?> FetchDailyMessage()
     {

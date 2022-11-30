@@ -328,10 +328,10 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("QQ号", "查看对指定用户的语录的收集情况")]
     public void RepeatI(GroupMessageEventArgs e, User QQ) => GeneralRepeat(e, m => m.QQ == QQ.Id, "", true);
     [Command("re <QQ> <key>")]
-    [CmdHelp("内容", "查看指定用户中包含指定内容的语录")]
+    [CmdHelp("QQ号 内容", "查看指定用户中包含指定内容的语录")]
     public void Repeat(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, false);
     [Command("re <QQ> <key> info")]
-    [CmdHelp("内容", "查看指定用户中包含指定内容的语录的条数")]
+    [CmdHelp("QQ号 内容", "查看指定用户中包含指定内容的语录的条数")]
     public void RepeatI(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, true);
     private void GeneralRepeat(GroupMessageEventArgs e, Predicate<SingleRecordingMsg> p, string key, bool infoOnly)
     {

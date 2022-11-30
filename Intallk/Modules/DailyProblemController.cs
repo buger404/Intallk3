@@ -21,7 +21,7 @@ public class DailyProblemController : SimpleOneBotController
     [CmdHelp("立即获取今日力扣问题")]
     public async void FetchImmidiate(GroupMessageEventArgs e)
     {
-        if (!PermissionService.Judge(e, Info, "PUSH", Models.PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "FETCH"))
             return;
         string? msg = await DailyProblemService.FetchDailyMessage();
         if (msg == null)

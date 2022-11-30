@@ -33,7 +33,7 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
 
     public override ModuleInformation Initialize() =>
         new ModuleInformation { DataFile = "wordcloud", ModuleName = "消息词云", RootPermission = "WORDCLOUD",
-                                HelpCmd = "wordcloud", ModuleUsage = "机器人自动记录群内消息，并借助Jieba.NET及WordCloud#分析生成群消息词云。"
+                                HelpCmd = "wordcloud", ModuleUsage = "机器人自动记录群内消息，并借助Jieba.NET及WordCloudSharp分析生成群消息词云。"
         };
 
     public MsgWordCloud(ICommandService commandService, ILogger<ArchiveOneBotController<MessageRecordFile>> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
