@@ -24,7 +24,11 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
     new ModuleInformation
     {
         DataFile = "cd", ModuleName = "指令冷却", RootPermission = "CD",
-        HelpCmd = "cd", ModuleUsage = "机器人指令的使用冷却，防止部分指令被滥用于刷屏的情况。"
+        HelpCmd = "cd", ModuleUsage = "机器人指令的使用冷却，防止部分指令被滥用于刷屏的情况。",
+        RegisteredPermission = new()
+        {
+            ["SET"] = ("设置指令CD", PermissionPolicy.AcceptedIfGroupAccepted)
+        }
     };
 
     public CommandCD(ICommandService commandService, ILogger<ArchiveOneBotController<CmdCDModel>> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
@@ -49,7 +53,7 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
             {
                 if (e.Message.RawText.ToLower().StartsWith(prefix + cd.CmdHead!))
                 {
-                    if (!PermissionService.Judge(e, Info, "NOCD", PermissionPolicy.AcceptedAdminAsDefault, true))
+                    if (!PermissionService.Judge(e, Info.RootPermission + "_NOCD", PermissionPolicy.AcceptedAdminAsDefault , true))
                     {
                         (long, string) pair = (e.Sender.Id, cd.CmdHead!);
                         if (!useTime.ContainsKey(pair))
@@ -101,7 +105,7 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
     [CmdHelp("内容 时长", "设置以'内容'开头的指令的冷却时长，时长表示方法：2s、1m5s等")]
     public void CDSet(GroupMessageEventArgs e, string cmdhead, Duration duration)
     {
-        if (!PermissionService.Judge(e, Info, "SET", PermissionPolicy.AcceptedAdminAsDefault))
+        if (!PermissionService.Judge(e, Info, "SET"))
             return;
         if (Data == null)
             return;
@@ -130,7 +134,7 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
                 ModuleInformation? info = SeekInfoByCmdHead(cmdhead.ToLower());
                 if (info == null)
                 {
-                    e.Reply("黑嘴似乎并没有这样的指令，无法设定冷却。");
+                    e.Reply("机器人似乎并没有这样的指令，无法设定冷却。");
                     return;
                 }
                 Data.CD[e.SourceGroup.Id].Add(new CDInfo

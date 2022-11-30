@@ -12,8 +12,14 @@ public class PermissionService
         }
     }
 
-    public bool Judge(GroupMessageEventArgs e, ModuleInformation? info, string permission, PermissionPolicy policy = PermissionPolicy.AcceptedAsDefault, bool noInform = false)
-     => Judge(e, (info?.RootPermission + "_" ?? "") + permission, policy, noInform);
+    public bool Judge(GroupMessageEventArgs e, ModuleInformation? info, string permission, bool noInform = false)
+    {
+        PermissionPolicy policy;
+        if (!info!.RegisteredPermission!.ContainsKey(permission))
+            throw new ArgumentException("指定的权限未注册！");
+        policy = info!.RegisteredPermission![permission].Item2;
+        return Judge(e, (info?.RootPermission + "_" ?? "") + permission, policy, noInform);
+    }
 
     public bool Judge(GroupMessageEventArgs e, string permission, PermissionPolicy policy = PermissionPolicy.AcceptedAsDefault, bool noInform = false)
     {
@@ -48,14 +54,20 @@ public class PermissionService
             return false;
     }
 
-    public bool JudgeGroup(GroupMessageEventArgs e, ModuleInformation? info, string permission, PermissionPolicy policy = PermissionPolicy.AcceptedAsDefault)
-        => JudgeGroup(e.SourceGroup.Id, (info?.RootPermission + "_" ?? "") + permission, policy);
+    public bool JudgeGroup(GroupMessageEventArgs e, ModuleInformation? info, string permission)
+        => JudgeGroup(e.SourceGroup.Id, info, permission);
 
     public bool JudgeGroup(GroupMessageEventArgs e, string permission, PermissionPolicy policy = PermissionPolicy.AcceptedAsDefault)
         => JudgeGroup(e.SourceGroup.Id, permission, policy);
 
-    public bool JudgeGroup(long group, ModuleInformation? info, string permission, PermissionPolicy policy)
-        => JudgeGroup(group, (info?.RootPermission + "_" ?? "") + permission, policy);
+    public bool JudgeGroup(long group, ModuleInformation? info, string permission)
+    {
+        PermissionPolicy policy;
+        if (!info!.RegisteredPermission!.ContainsKey(permission))
+            throw new ArgumentException("指定的权限未注册！");
+        policy = info!.RegisteredPermission![permission].Item2;
+        return JudgeGroup(group, (info?.RootPermission + "_" ?? "") + permission, policy);
+    }
 
     public bool JudgeGroup(long group, string permission, PermissionPolicy policy)
     {

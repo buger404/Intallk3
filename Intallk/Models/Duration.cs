@@ -103,7 +103,7 @@ public class Duration
     /// <returns></returns>
     public static bool CanParse(string s)
     {
-        return s != null && Regex.IsMatch(s, @"^(\d*d)?(\d*h)?(\d*m)?(\d*s)?$");
+        return (s != null && Regex.IsMatch(s, @"^(\d*d)?(\d*h)?(\d*m)?(\d*s)?$")) || long.TryParse(s, out _);
     }
 
     /// <summary>

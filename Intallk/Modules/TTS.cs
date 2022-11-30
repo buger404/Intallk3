@@ -27,14 +27,18 @@ public class TTS : SimpleOneBotController
         new ModuleInformation 
         { 
             ModuleName = "文字转语音", RootPermission = "TTS",
-            HelpCmd = "tts", ModuleUsage = "利用百度TTS合成语音并发送。"
+            HelpCmd = "tts", ModuleUsage = "利用百度TTS合成语音并发送。",
+            RegisteredPermission = new()
+            {
+                ["USE"] = ("文本转语音功能使用权限", PermissionPolicy.AcceptedIfGroupAccepted)
+            }
         };
 
     [Command("tts <text>")]
     [CmdHelp("文本", "合成语音")]
     public async void TTSRequest(GroupMessageEventArgs e, string text)
     {
-        if (!PermissionService.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "USE"))
             return;
         byte[]? data = await new RestClient().DownloadDataAsync(new RestRequest(string.Format(api, Uri.EscapeDataString(text))));
         if (data == null)

@@ -23,13 +23,24 @@ public class RhythmGameSong : SimpleOneBotController
     }
 
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "音游曲回应", RootPermission = "RHYTHMGAMESONG",
-                                HelpCmd = "rgs", ModuleUsage = "当消息里包含已记录的人声采样时，将发送对应的曲目片段。\n" +
-                                                               "曲目库暂时无法开放修改。"
+        new ModuleInformation 
+        { 
+            ModuleName = "音游曲回应", RootPermission = "RHYTHMGAMESONG",
+            HelpCmd = "rgs", ModuleUsage = "当消息里包含已记录的人声采样时，将发送对应的曲目片段。\n" +
+                                           "曲目库暂时无法开放修改。",
+            RegisteredPermission = new()
+            {
+                ["RESPOND"] = ("群回应曲目权限（群权限）", PermissionPolicy.AcceptedAsDefault),
+                ["TRIGGER"] = ("回应触发权限", PermissionPolicy.AcceptedAsDefault),
+                ["EDIT"] = ("曲库修改权限", PermissionPolicy.RequireAccepted)
+            }
         };
 
     public readonly static string SongPath = Path.Combine(IntallkConfig.DataPath, "RhythmGameSong");
     public static List<string> Song = new List<string>();
+
+    public override string? GetStatus() =>
+        $"载入曲目数量：{Song.Count}";
 
     private int Event_OnGroupMessage(OneBotContext scope)
     {
@@ -50,7 +61,7 @@ public class RhythmGameSong : SimpleOneBotController
     [CmdHelp("重新载入曲目库")]
     public void ReloadSongs(GroupMessageEventArgs e)
     {
-        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         Song.Clear();
         foreach (string file in Directory.GetFiles(SongPath))

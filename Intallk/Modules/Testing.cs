@@ -17,7 +17,12 @@ class Testing : SimpleOneBotController
         new ModuleInformation
         {
             ModuleName = "基本功能测试", RootPermission = "TESTING",
-            HelpCmd = "testing", ModuleUsage = "用于测试机器人的基本功能，无实际意义。"
+            HelpCmd = "testing", ModuleUsage = "用于测试机器人的基本功能，无实际意义。",
+            RegisteredPermission = new()
+            {
+                ["THROWEXCEPTION"] = ("抛出异常权限", PermissionPolicy.RequireAccepted),
+                ["DYCONTENT"] = ("诱导机器人发送dy指令权限", PermissionPolicy.RequireAccepted)
+            }
         };
 
     [Command("repeats")]
@@ -34,7 +39,7 @@ class Testing : SimpleOneBotController
     {
         string content = e.Message.RawText.Substring(".repeat ".Length);
         if (content.ToLower().StartsWith("dy")) 
-            if (!PermissionService.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
+            if (!PermissionService.Judge(e, Info, "DYCONTENT"))
                 return;
         e.Reply(content);
     }
@@ -65,7 +70,7 @@ class Testing : SimpleOneBotController
     [CmdHelp("刻意抛出异常")]
     public void MakeError(GroupMessageEventArgs e)
     {
-        if (!PermissionService.Judge(e, Info, "THROWEXCEPTION", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, Info, "THROWEXCEPTION"))
             return;
         int a = 0;
         e.Reply((1 / a).ToString());

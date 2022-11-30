@@ -15,7 +15,8 @@ using System.Text;
 
 namespace Intallk.Modules;
 
-public class MainModule : IOneBotController
+// 屎山，待整理
+public class MainModule : SimpleOneBotController
 {
     public static IServiceProvider? Services { get; set; }
     public static IntallkConfig? Config { get; set; }
@@ -39,12 +40,20 @@ public class MainModule : IOneBotController
     public static int ExceptionCount = 0;
     public static Dictionary<long, DateTime> replyTime = new Dictionary<long, DateTime>();
     readonly System.Random random = new(Guid.NewGuid().GetHashCode());
-    readonly ILogger<MainModule> _logger;
-    readonly ICommandService _commandService;
     public static Dictionary<long, string> nicks = new Dictionary<long, string>();
+
+    public override ModuleInformation Initialize() =>
+        new ModuleInformation
+        {
+            HelpCmd = "main", ModuleName = "机器人运行相关", ModuleUsage = "与运行状况等相关的功能",
+            RootPermission = "MAIN"
+        };
+
+    public override string? GetStatus() =>
+        $"抛出异常总量：{ExceptionCount}";
+
     public static string GetCacheQQName(object? e, long qqid)
     {
-        //Console.WriteLine("Cache fetching nick: " + qqid);
         string ret = "";
         if(nicks.ContainsKey(qqid)) return nicks[qqid];
         ret = GetQQName(e, qqid);
@@ -53,7 +62,6 @@ public class MainModule : IOneBotController
     }
     public static string GetQQName(object? e, long qqid)
     {
-        Console.WriteLine("Fetching nick: " + qqid);
         string ret = "";
         try
         {
@@ -86,18 +94,8 @@ public class MainModule : IOneBotController
     {
         File.AppendAllText(IntallkConfig.DataPath + "\\Logs\\error_" + DateTime.Now.ToString("yy_MM_dd") + ".txt", DateTime.Now.ToString() + "\n" + exception.Message + "\n" + exception.StackTrace + "\n");
     }
-    public MainModule(ICommandService commandService, ILogger<MainModule> logger)
+    public MainModule(ICommandService commandService, ILogger<MainModule> logger, PermissionService permissionService) : base(commandService, logger, permissionService)
     {
-        _logger = logger;
-        _commandService = commandService;
-        foreach (string file in Directory.GetFiles(IntallkConfig.DataPath + "\\DrawingScript"))
-        {
-            string code = File.ReadAllText(file);
-            JsonSerializer serializer = new();
-            PaintFile paintfile = (PaintFile)serializer.Deserialize(new StringReader(code), typeof(PaintFile))!;
-            Painting.paints.Add(new PaintingProcessing(paintfile));
-        }
-        logger.LogInformation("已读入" + Painting.paints.Count + "个绘图模板。");
         commandService.Event.OnException += (context, exception) =>
         {
             ExceptionCount++;
@@ -119,13 +117,6 @@ public class MainModule : IOneBotController
         commandService.Event.OnGroupMessage += (context) =>
         {
             var e = (GroupMessageEventArgs)context.SoraEventArgs;
-            // Debug
-            /**
-            if (e.Sender.Id != 1361778219 && e.Message.RawText.StartsWith('.'))
-            {
-                e.Reply("非常抱歉，现在黑嘴正在被404调整改造中，暂时无法使用呢qwq");
-                return 1;
-            }**/
             bool needClear = false;
             foreach (var hook in hooks)
             {
@@ -164,7 +155,7 @@ public class MainModule : IOneBotController
             var e = (AddGroupRequestEventArgs)context.SoraEventArgs;
             e.Accept();
             e.SourceGroup.SendGroupMessage("大家好呀，我是机器人黑嘴~发送'.help'可以查看说明书哦~");
-            e.SourceGroup.SendGroupMessage(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+            //e.SourceGroup.SendGroupMessage(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
             return 1;
         };
         commandService.Event.OnPrivateMessage += (context) =>
@@ -281,6 +272,7 @@ public class MainModule : IOneBotController
     }
 
     [Command("help")]
+    [CmdHelp("查看帮助说明书")]
     public void Help(GroupMessageEventArgs e)
     {
         string prefix = Config!.CommandPrefix[0];
@@ -305,6 +297,7 @@ public class MainModule : IOneBotController
         
 
     [Command("help <moduleName>")]
+    [CmdHelp("功能名", "查看指定功能的说明书")]
     public void ModuleHelp(GroupMessageEventArgs e, string moduleName)
     {
         string prefix = Config!.CommandPrefix[0];
@@ -317,9 +310,10 @@ public class MainModule : IOneBotController
                 {
                     if (info.HelpCmd == moduleName)
                     {
-                        StringBuilder sb = new StringBuilder(), pub = new StringBuilder(), pri = new StringBuilder();
+                        StringBuilder sb = new StringBuilder(), pub = new StringBuilder(), pri = new StringBuilder(), pms = new StringBuilder();
                         sb.AppendLine("欢迎使用功能'" + info.ModuleName + "'！\n" + info.ModuleUsage);
-                        foreach(MethodInfo minfo in module.GetType().GetMethods())
+                        #region 包含指令反射
+                        foreach (MethodInfo minfo in module.GetType().GetMethods())
                         {
                             CmdHelpAttribute? help = minfo.GetCustomAttribute<CmdHelpAttribute>();
                             if (help != null)
@@ -367,6 +361,36 @@ public class MainModule : IOneBotController
                                 }
                             }
                         }
+                        #endregion
+                        #region 权限解释
+                        if (info.RegisteredPermission != null)
+                        {
+                            foreach(string permission in info.RegisteredPermission.Keys)
+                            {
+                                string pms_explain;
+                                switch (info.RegisteredPermission[permission].Item2)
+                                {
+                                    case PermissionPolicy.RequireAccepted:
+                                        pms_explain = "（需要授权）";
+                                        break;
+                                    case PermissionPolicy.AcceptedAsDefault:
+                                        pms_explain = "（无需授权）";
+                                        break;
+                                    case PermissionPolicy.AcceptedIfGroupAccepted:
+                                        pms_explain = "（需要授权，但群授权则全群授权）";
+                                        break;
+                                    case PermissionPolicy.AcceptedAdminAsDefault:
+                                        pms_explain = "（需要授权，但群主管理员无需授权）";
+                                        break;
+                                    default:
+                                        pms_explain = "（未知）";
+                                        break;
+                                }
+                                pms.AppendLine(info.RootPermission + "_" + permission + "：" + info.RegisteredPermission[permission].Item1 + pms_explain);
+                            }
+                        }
+                        #endregion
+                        #region 字符串衔接
                         if (pub.Length > 0)
                         {
                             sb.AppendLine("🌈群指令指南：");
@@ -377,7 +401,13 @@ public class MainModule : IOneBotController
                             sb.AppendLine("🌈私聊指令指南：");
                             sb.Append(pri);
                         }
+                        if (pms.Length > 0)
+                        {
+                            sb.AppendLine("✅相关权限：");
+                            sb.Append(pms);
+                        }
                         sb.AppendLine("💡<>内的表示必须填写，[]内的表示可不填写。");
+                        #endregion
                         e.Reply(sb.ToString());
                         return;
                     }
@@ -387,8 +417,23 @@ public class MainModule : IOneBotController
     }
 
     [Command("status")]
+    [CmdHelp("查看运行状况")]
     public void Status(GroupMessageEventArgs e)
     {
-
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("❤️当前运转正常，各功能状态：");
+        foreach (IOneBotController controller in Services!.GetServices<IOneBotController>())
+        {
+            if (controller is SimpleOneBotController module)
+            {
+                string? status = module.GetStatus();
+                if (status != null)
+                {
+                    sb.AppendLine("⚙️" + (module.Info?.ModuleName ?? "(未知功能)") + "：");
+                    sb.AppendLine(status);
+                }
+            }
+        }
+        e.Reply(sb.ToString());
     }
 }

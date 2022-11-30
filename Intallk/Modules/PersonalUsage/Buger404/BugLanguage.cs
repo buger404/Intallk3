@@ -20,12 +20,19 @@ class BugLanguage : SimpleOneBotController
     {
     }
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "Bug语言", RootPermission = "BUGLAN" };
+        new ModuleInformation 
+        { 
+            ModuleName = "Bug语言", RootPermission = "BUGLAN",
+            RegisteredPermission = new ()
+            {
+                ["USE"] = ("Bug语言功能使用权限", PermissionPolicy.RequireAccepted)
+            }
+        };
 
     [Command("bug <content>")]
     public void Bug(string content, GroupMessageEventArgs e)
     {
-        if (!PermissionService.Judge(e, Info, "USE", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, Info, "USE"))
             return;
         e.Reply(Convert(content));
     }

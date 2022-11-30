@@ -20,11 +20,20 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     }
     public override ModuleInformation Initialize()
     {
-        return new ModuleInformation { DataFile = "dictionary", ModuleName = "消息字典", RootPermission = "MSGDICT",
-                                       HelpCmd = "dict", ModuleUsage = "根据字典中记录的键，在合适的时机发送对应的值。\n" +
-                                                                       "例如，当字典存在键值'早上好-早上好'，则当群内发送的消息包含'你好'时，机器人将自动回应'你好'\n" +
-                                                                       "特别地，希望同时匹配多个键时，可以使用符号'|'分割。\n" +
-                                                                       "其中，以<except>开头的表示预期消息中不应含有此项；以<fullmatch>则意为全字匹配。"};
+        return new ModuleInformation
+        {
+            DataFile = "dictionary", ModuleName = "消息字典", RootPermission = "MSGDICT",
+            HelpCmd = "dict", ModuleUsage = "根据字典中记录的键，在合适的时机发送对应的值。\n" +
+                                            "例如，当字典存在键值'早上好-早上好'，则当群内发送的消息包含'你好'时，机器人将自动回应'你好'\n" +
+                                            "特别地，希望同时匹配多个键时，可以使用符号'|'分割。\n" +
+                                            "其中，以<except>开头的表示预期消息中不应含有此项；以<fullmatch>则意为全字匹配。",
+            RegisteredPermission = new()
+            {
+                ["EDIT"] = ("消息字典修改权限", PermissionPolicy.AcceptedIfGroupAccepted),
+                ["DYCONTENT"] = ("设置DY指令字典权限", PermissionPolicy.RequireAccepted),
+                ["REPLY"] = ("群消息字典回复权限（群权限）", PermissionPolicy.AcceptedAsDefault)
+            }
+        };
     }
 
     private int Event_OnGroupMessage(OneBot.CommandRoute.Models.OneBotContext scope)
@@ -69,7 +78,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     [CmdHelp("键 值", "追加新的消息字典项")]
     public void DictionaryAdd(GroupMessageEventArgs e, string key, MessageBody value)
     {
-        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             Data.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
@@ -82,7 +91,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         List<Message> msg = value.ToMessageList();
         if (msg[0].Type == Sora.Enumeration.SegmentType.Text && (msg[0].Content?.ToLower().StartsWith("dy") ?? false))
         {
-            if (!PermissionService.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
+            if (!PermissionService.Judge(e, Info, "DYCONTENT"))
                 return;
         }
         Data.Data[e.SourceGroup.Id].Add(key, (e.Sender.Id, msg));
@@ -94,7 +103,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     [CmdHelp("键 值", "将已有的消息字典项的值覆盖为新的值")]
     public void DictionaryUpdate(GroupMessageEventArgs e, string key, MessageBody value)
     {
-        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             Data.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());
@@ -106,7 +115,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
         List<Message> msg = value.ToMessageList();
         if (msg[0].Type == Sora.Enumeration.SegmentType.Text && (msg[0].Content?.ToLower().StartsWith("dy") ?? false))
         {
-            if (!PermissionService.Judge(e, Info, "DYCONTENT", PermissionPolicy.RequireAccepted))
+            if (!PermissionService.Judge(e, Info, "DYCONTENT"))
                 return;
         }
         (long, List<Message>) val = Data.Data[e.SourceGroup.Id][key];
@@ -152,7 +161,7 @@ public class DictionaryReply : ArchiveOneBotController<MsgDictionary>
     [CmdHelp("内容", "移除指定的消息字典的项")]
     public void DictionaryRemove(GroupMessageEventArgs e, string key)
     {
-        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         if (!Data!.Data.ContainsKey(e.SourceGroup.Id))
             Data.Data.Add(e.SourceGroup.Id, new Dictionary<string, (long, List<Message>)>());

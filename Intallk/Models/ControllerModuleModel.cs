@@ -10,6 +10,7 @@ public class ModuleInformation : Attribute
     public string? ModuleName;
     public string? ModuleUsage;
     public string? HelpCmd;
+    public Dictionary<string, (string, PermissionPolicy)>? RegisteredPermission;
     public GrantPolicy GrantPolicy = GrantPolicy.RequireGrantPermission;
 }
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]

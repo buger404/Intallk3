@@ -41,7 +41,11 @@ public class UrlPreview : SimpleOneBotController
         {
             ModuleName = "网址预览", RootPermission = "URLPREVIEW",
             HelpCmd = "url", ModuleUsage = "当群内发送网址时，机器人将获取其包含内容，并展示在群内。\n" +
-                                           "目前支持：b站视频、知乎问答、Github页面"
+                                           "目前支持：b站视频、知乎问答、Github页面",
+            RegisteredPermission = new()
+            {
+                ["USE"] = ("网址内容预览功能使用权限（群权限）", PermissionPolicy.AcceptedAsDefault)
+            }
         };
 
     private int Event_OnGroupMessage(OneBot.CommandRoute.Models.OneBotContext scope)

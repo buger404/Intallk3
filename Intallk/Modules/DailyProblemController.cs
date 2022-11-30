@@ -13,8 +13,15 @@ public class DailyProblemController : SimpleOneBotController
         DailyProblemService = dailyProblemService;
     }
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { HelpCmd = "leetcode", ModuleName = "力扣每日一问", ModuleUsage = "为群里推送每日力扣问题。（感谢TLMegalovania的贡献！！）",
-                                RootPermission = "LEETCODETODAY"
+        new ModuleInformation 
+        { 
+            HelpCmd = "leetcode", ModuleName = "力扣每日一问", ModuleUsage = "为群里推送每日力扣问题。（感谢TLMegalovania的贡献！！）",
+            RootPermission = "LEETCODETODAY",
+            RegisteredPermission = new()
+            {
+                ["FETCH"] = ("手动取得题目权限", PermissionPolicy.AcceptedIfGroupAccepted),
+                ["PUSH"] = ("群每日自动推送权限（群权限）", PermissionPolicy.RequireAccepted)
+            }
         };
 
     [Command("leetcode today")]

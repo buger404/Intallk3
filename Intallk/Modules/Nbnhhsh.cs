@@ -21,16 +21,22 @@ class Nbnhhsh : SimpleOneBotController
     {
     }
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "能不能好好说话", RootPermission = "NBNHHSH",
-                                HelpCmd = "hhsh", ModuleUsage = "感谢Repo（API来源）：'itorr/nbnhhsh'，可以帮助你搜索一些网络上的简写。\n" +
-                                                                "例如，'yyds'，可以查询得到'永远的神'。"
+        new ModuleInformation 
+        { 
+            ModuleName = "能不能好好说话", RootPermission = "NBNHHSH",
+            HelpCmd = "hhsh", ModuleUsage = "感谢Repo（API来源）：'itorr/nbnhhsh'，可以帮助你搜索一些网络上的简写。\n" +
+                                            "例如，'yyds'，可以查询得到'永远的神'。",
+            RegisteredPermission = new()
+            {
+                ["USE"] = ("查询功能使用权限", PermissionPolicy.AcceptedIfGroupAccepted)
+            }
         };
 
     [Command("hhsh <content>")]
     [CmdHelp("内容", "查找指定简写的可能含义")]
     public async Task NbnhhshSearchAsync(string content, GroupMessageEventArgs e)
     {
-        if (!PermissionService.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "USE"))
             return;
         var client = new RestClient("https://lab.magiconch.com/api/nbnhhsh");
         var request = new RestRequest("/guess", Method.Post).AddJsonBody(new NbnhhshRequest { Text = content }).AddHeader("content-type", "application/json");

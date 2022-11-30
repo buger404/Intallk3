@@ -24,4 +24,7 @@ public class SimpleOneBotController : IOneBotController
     {
         throw new NotImplementedException();
     }
+
+    public virtual string? GetStatus()
+        => null;
 }

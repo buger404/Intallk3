@@ -22,7 +22,12 @@ public class Welcome : ArchiveOneBotController<WelcomeModel>
         new ModuleInformation
         {
             DataFile = "welcome", ModuleName = "入群欢迎", ModuleUsage = "当有新的成员入群时，从设定的发言中随机抽取一条发送。",
-            HelpCmd = "welcome", RootPermission = "WELCOME"
+            HelpCmd = "welcome", RootPermission = "WELCOME",
+            RegisteredPermission = new()
+            {
+                ["USE"] = ("群新成员自动欢迎权限（群权限）", PermissionPolicy.AcceptedAsDefault),
+                ["EDIT"] = ("新成员欢迎消息修改权限", PermissionPolicy.AcceptedAdminAsDefault)
+            }
         };
 
     public override void OnDataNull() =>
@@ -35,7 +40,7 @@ public class Welcome : ArchiveOneBotController<WelcomeModel>
             return 0;
         if (e.SubType == MemberChangeType.Approve || e.SubType == MemberChangeType.Invite)
         {
-            if (PermissionService.JudgeGroup(e.SourceGroup.Id, Info, "USE", PermissionPolicy.RequireAccepted))
+            if (PermissionService.JudgeGroup(e.SourceGroup.Id, Info, "USE"))
             {
                 if (Data!.WelcomeMsg.ContainsKey(e.SourceGroup.Id))
                 {
@@ -51,7 +56,7 @@ public class Welcome : ArchiveOneBotController<WelcomeModel>
     [CmdHelp("查看本群设定的欢迎消息列表")]
     public void WelcomeView(GroupMessageEventArgs e)
     {
-        if (!PermissionService.JudgeGroup(e.SourceGroup.Id, Info, "USE", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e.SourceGroup.Id, Info, "USE"))
         {
             e.Reply("该群缺少权限'WELCOME_USE'或被拒绝，请联系权限授权人。");
             return;
@@ -74,12 +79,12 @@ public class Welcome : ArchiveOneBotController<WelcomeModel>
     [CmdHelp("消息", "追加新的欢迎消息")]
     public void WelcomeAdd(GroupMessageEventArgs e, MessageBody content)
     {
-        if (!PermissionService.JudgeGroup(e.SourceGroup.Id, Info, "USE", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e.SourceGroup.Id, Info, "USE"))
         {
             e.Reply("该群缺少权限'WELCOME_USE'或被拒绝，请联系权限授权人。");
             return;
         }
-        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedAdminAsDefault))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         if (!Data!.WelcomeMsg.ContainsKey(e.SourceGroup.Id))
             Data!.WelcomeMsg.Add(e.SourceGroup.Id, new List<List<DictionaryReplyModel.Message>>());
@@ -92,12 +97,12 @@ public class Welcome : ArchiveOneBotController<WelcomeModel>
     [CmdHelp("编号", "删除指定编号的欢迎消息")]
     public void WelcomeRemove(GroupMessageEventArgs e, int index)
     {
-        if (!PermissionService.JudgeGroup(e.SourceGroup.Id, Info, "USE", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e.SourceGroup.Id, Info, "USE"))
         {
             e.Reply("该群缺少权限'WELCOME_USE'或被拒绝，请联系权限授权人。");
             return;
         }
-        if (!PermissionService.Judge(e, Info, "EDIT", PermissionPolicy.AcceptedAdminAsDefault))
+        if (!PermissionService.Judge(e, Info, "EDIT"))
             return;
         if (!Data!.WelcomeMsg.ContainsKey(e.SourceGroup.Id))
             Data!.WelcomeMsg.Add(e.SourceGroup.Id, new List<List<DictionaryReplyModel.Message>>());

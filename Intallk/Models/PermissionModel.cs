@@ -21,5 +21,5 @@ public enum PermissionPolicy
 }
 public enum GrantPolicy
 {
-    RequireGrantPermission, Admin
+    RequireGrantPermission, AdminOrGrantPermission
 }

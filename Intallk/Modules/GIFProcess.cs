@@ -23,15 +23,21 @@ class GIFProcess : SimpleOneBotController
     }
 
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "GIF图像处理", RootPermission = "GIF",
-                                HelpCmd = "gif", ModuleUsage = "GIF图片处理功能"
+        new ModuleInformation 
+        { 
+            ModuleName = "GIF图像处理", RootPermission = "GIF",
+            HelpCmd = "gif", ModuleUsage = "GIF图片处理功能",
+            RegisteredPermission = new()
+            {
+                ["EXTRACT"] = ("展开GIF图权限", PermissionPolicy.AcceptedIfGroupAccepted)
+            }
         };
 
     [Command("gif extract")]
     [CmdHelp("将一张动态GIF图片逐帧展开，拼合成一张图片")]
     public void GIFExtract(GroupMessageEventArgs e)
     {
-        if (!PermissionService.Judge(e, Info, "EXTRACT", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "EXTRACT"))
             return;
         if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id && m.Group == e.SourceGroup.Id))
         {

@@ -34,8 +34,13 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         {
             DataFile = "collection", ModuleName = "复读语录收集", RootPermission = "REPEATCOLLECTOR",
             HelpCmd = "re", ModuleUsage = "自动参与复读，并收集多人复读的语录。\n" +
-                                                              "例如，当群里不同的人发送相同的消息时，机器人将参与复读，同时记录该消息。\n" +
-                                                              "由于启用了消息记录，因此顺便支持了查看最近10条消息的功能。"
+                                          "例如，当群里不同的人发送相同的消息时，机器人将参与复读，同时记录该消息。\n" +
+                                          "由于启用了消息记录，因此顺便支持了查看最近10条消息的功能。",
+            RegisteredPermission = new ()
+            {
+                ["RECORD"] = ("记录群消息权限（群权限）", PermissionPolicy.RequireAccepted),
+                ["VIEWFORWARDMSG"] = ("查看最近十条消息权限", PermissionPolicy.AcceptedIfGroupAccepted)
+            }
         };
 
     public RepeatCollector(ICommandService commandService, ILogger<ArchiveOneBotController<RepeatCollection>> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
@@ -71,12 +76,15 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         Data = new RepeatCollection();
     }
 
+    public override string? GetStatus() =>
+        $"语录库收集总数：{Data!.messages.Count}\n消息池记录条数：{MsgBuffer.Count}\n上次语录库备份时间：{DumpTime.ToString("yy/MM/dd HH:mm")}";
+
     private int Event_OnGroupMessage(OneBotContext scope)
     {
         if (Data == null)
             return 0;
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
-        if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, Info, "RECORD"))
             return 0;
         List<MessageSegment> seg = MessageSegment.Parse(e.Message.MessageBody);
         if (_filter.Invoke(e.Message.RawText))
@@ -176,12 +184,12 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("查看最近的10条消息")]
     public void ForwardMessages(GroupMessageEventArgs e)
     {
-        if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, Info, "RECORD"))
         {
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
         }
-        if (!PermissionService.Judge(e, Info, "VIEWFORWARDMSG", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "VIEWFORWARDMSG"))
             return;
         int g = MsgBuffer.FindIndex(m => m.GroupID == e.SourceGroup.Id);
         if (g == -1)
@@ -200,7 +208,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("群号码", "移除语录库中所有指定群的语录")]
     public void RepeatRemoveGroup(GroupMessageEventArgs e, int id)
     {
-        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
             return;
         if (Data == null)
             return;
@@ -212,7 +220,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("群号码", "保留语录库中指定群的语录，然后删除其余所有语录")]
     public void RepeatReserveGroup(GroupMessageEventArgs e, int id)
     {
-        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
             return;
         if (Data == null)
             return;
@@ -224,7 +232,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("语录ID", "删除指定语录")]
     public void RepeatRemove(GroupMessageEventArgs e, int id)
     {
-        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
             return;
         if (Data == null)
             return;
@@ -236,7 +244,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("清理语录库中与过滤器匹配的语录")]
     public void RepeatClean(GroupMessageEventArgs e)
     {
-        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.Judge(e, "INTER.NET_" + Info.RootPermission + "_EDIT", PermissionPolicy.RequireAccepted))
             return;
         if (Data == null)
             return;
@@ -276,12 +284,12 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     [CmdHelp("语录ID", "查看指定语录的上下文")]
     public void RepeatContext(GroupMessageEventArgs e, User QQ, int id)
     {
-        if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, Info, "RECORD"))
         {
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
         }
-        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_VIEW", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, "INTER.NET_" + Info.RootPermission + "_VIEW", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (Data == null)
             return;
@@ -335,12 +343,12 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
     public void RepeatI(GroupMessageEventArgs e, User QQ, string key) => GeneralRepeat(e, m => m.QQ == QQ.Id, key, true);
     private void GeneralRepeat(GroupMessageEventArgs e, Predicate<SingleRecordingMsg> p, string key, bool infoOnly)
     {
-        if (!PermissionService.JudgeGroup(e, Info, "RECORD", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, Info, "RECORD"))
         {
             e.Reply("此群无此功能的权限，请联系权限授权人。");
             return;
         }
-        if (!PermissionService.Judge(e, Info, "INTER.NET_" + Info.RootPermission + "_VIEW", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, "INTER.NET_" + Info.RootPermission + "_VIEW", PermissionPolicy.AcceptedIfGroupAccepted))
             return;
         if (Data == null)
             return;

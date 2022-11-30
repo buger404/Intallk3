@@ -19,24 +19,43 @@ using System.Text;
 
 class Painting : SimpleOneBotController
 {
-    public static List<PaintingProcessing> paints = new List<PaintingProcessing>();
+    private List<PaintingProcessing> paints = new List<PaintingProcessing>();
 
     public Painting(ICommandService commandService, ILogger<SimpleOneBotController> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
     {
+        foreach (string file in Directory.GetFiles(IntallkConfig.DataPath + "\\DrawingScript"))
+        {
+            string code = File.ReadAllText(file);
+            JsonSerializer serializer = new();
+            PaintFile paintfile = (PaintFile)serializer.Deserialize(new StringReader(code), typeof(PaintFile))!;
+            paints.Add(new PaintingProcessing(paintfile));
+        }
+        logger.LogInformation("已读入" + paints.Count + "个绘图模板。");
     }
+
     public override ModuleInformation Initialize() =>
-        new ModuleInformation { ModuleName = "表情包制图", RootPermission = "DRAW",
-                                HelpCmd = "draw", ModuleUsage = "表情包生成功能，根据已记录的表情包模板制图。\n" +
-                                                                "您也可以投稿自定义的表情包模板，详见：\n" +
-                                                                "绘图脚本说明：https://github.com/buger404/Intallk3/blob/main/PaintScript.md\n" +
-                                                                "制图辅助工具下载：https://github.com/buger404/Intallk3/releases/tag/tool"
+        new ModuleInformation 
+        { 
+            ModuleName = "表情包制图", RootPermission = "DRAW",
+            HelpCmd = "draw", ModuleUsage = "表情包生成功能，根据已记录的表情包模板制图。\n" +
+                                            "您也可以投稿自定义的表情包模板，详见：\n" +
+                                            "绘图脚本说明：https://github.com/buger404/Intallk3/blob/main/PaintScript.md\n" +
+                                            "制图辅助工具下载：https://github.com/buger404/Intallk3/releases/tag/tool",
+            RegisteredPermission = new()
+            {
+                ["USE"] = ("制图功能使用权限", PermissionPolicy.AcceptedIfGroupAccepted)
+            }
         };
 
     public static string GetSavePath()
     {
         return IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
     }
-    [Command("draw showcode <template>")]
+
+    public override string? GetStatus() =>
+        $"绘图模板总数：{paints.Count}";
+
+[Command("draw showcode <template>")]
     [CmdHelp("模板名称", "查看指定模板的绘图脚本源码")]
     public async void ShowCode(GroupMessageEventArgs e, string template)
     {
@@ -60,7 +79,7 @@ class Painting : SimpleOneBotController
     [Command("draw <template> <qq> [s1] [s2] [s3] [s4] [s5] [s6] [s7] [s8] [s9] [s10] [s11] [s12] [s13] [s14] [s15]")]
     public async void Draw(GroupMessageEventArgs e, string template, User qq, [ParsedArguments] object[] args)
     {
-        if (!PermissionService.Judge(e, Info, "USE", PermissionPolicy.AcceptedIfGroupAccepted))
+        if (!PermissionService.Judge(e, Info, "USE"))
             return;
         int pi = -1;
         if (MainModule.hooks.Exists(m => m.QQ == e.Sender.Id))
