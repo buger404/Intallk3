@@ -27,7 +27,7 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
         HelpCmd = "cd", ModuleUsage = "机器人指令的使用冷却，防止部分指令被滥用于刷屏的情况。",
         RegisteredPermission = new()
         {
-            ["SET"] = ("设置指令CD", PermissionPolicy.AcceptedIfGroupAccepted)
+            ["SET"] = ("设置指令CD", PermissionPolicy.AcceptedAdminAsDefault)
         }
     };
 
@@ -62,7 +62,7 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
                         if (span.TotalSeconds < cd.Duration)
                         {
                             span = TimeSpan.FromSeconds(cd.Duration) - span;
-                            e.Reply(e.Sender.At() + " 指令冷却尚未结束(" + span.ToString(@"mm\:ss") + ")");
+                            e.Reply(e.Sender.At() + " 指令冷却尚未结束(" + Math.Ceiling(span.TotalMinutes).ToString() + ":" + Math.Ceiling(span.TotalSeconds % 60).ToString("00") + ")");
                             return 1;
                         }
                         else

@@ -142,22 +142,22 @@ public class MainModule : SimpleOneBotController
             if (needClear) hooks.RemoveAll(m => m.QQ == 0);
             return 0;
         };
-        commandService.Event.OnFriendRequest += (context) =>
+        /**commandService.Event.OnFriendRequest += (context) =>
         {
             var e = (FriendRequestEventArgs)context.SoraEventArgs;
             e.Accept();
             e.Sender.SendPrivateMessage("您已成功与黑嘴添加好友，感谢您对黑嘴的支持。😘");
             e.Sender.SendPrivateMessage(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
             return 1;
-        };
-        commandService.Event.OnGroupRequest += (context) =>
+        };**/
+        /**commandService.Event.OnGroupRequest += (context) =>
         {
             var e = (AddGroupRequestEventArgs)context.SoraEventArgs;
             e.Accept();
             e.SourceGroup.SendGroupMessage("大家好呀，我是机器人黑嘴~发送'.help'可以查看说明书哦~");
             //e.SourceGroup.SendGroupMessage(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
             return 1;
-        };
+        };**/
         commandService.Event.OnPrivateMessage += (context) =>
         {
             var e = (PrivateMessageEventArgs)context.SoraEventArgs;
@@ -177,8 +177,8 @@ public class MainModule : SimpleOneBotController
             }
             if (sendBio)
             {
-                e.Reply("😊您好呀，我是404的机器人黑嘴，您可以在群里发送'.help'查看我的指令说明书噢~\n" +
-                        "如果您要联系404，也可以：QQ1361778219。\n黑嘴将自动处理消息，因此404很少查看黑嘴的消息，有事请联系404，谢谢ヾ(≧▽≦*)o");
+                Task.Delay(random.Next(3000, 10000));
+                e.Reply("该账号无人值守，如需使用具体功能，请参阅说明书（在群内发送'.help'）。\n如果遇到bug相关等问题，可以为buger404/Intallk3项目提供issue/pr，感谢！");
             }
 
             bool needClear = false;
