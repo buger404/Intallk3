@@ -38,7 +38,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
                                           "由于启用了消息记录，因此顺便支持了查看最近10条消息的功能。",
             RegisteredPermission = new ()
             {
-                ["RECORD"] = ("记录群消息权限（群权限）", PermissionPolicy.RequireAccepted),
+                ["RECORD"] = ("记录群消息权限（群权限）", PermissionPolicy.AcceptedIfGroupAccepted),
                 ["VIEWFORWARDMSG"] = ("查看最近十条消息权限", PermissionPolicy.AcceptedIfGroupAccepted)
             }
         };

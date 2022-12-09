@@ -11,6 +11,7 @@ namespace Intallk.Modules;
 
 public class Welcome : ArchiveOneBotController<WelcomeModel>
 {
+    List<long> sent = new List<long>();
     readonly Random random = new(Guid.NewGuid().GetHashCode());
 
     public Welcome(ICommandService commandService, ILogger<ArchiveOneBotController<WelcomeModel>> logger, PermissionService pmsService) : base(commandService, logger, pmsService)
@@ -38,6 +39,9 @@ public class Welcome : ArchiveOneBotController<WelcomeModel>
         GroupMemberChangeEventArgs? e = scope.SoraEventArgs as GroupMemberChangeEventArgs;
         if (e == null) 
             return 0;
+        if (sent.Contains(e.ChangedUser.Id))
+            return 0;
+        sent.Add(e.ChangedUser.Id);
         if (e.SubType == MemberChangeType.Approve || e.SubType == MemberChangeType.Invite)
         {
             if (PermissionService.JudgeGroup(e.SourceGroup.Id, Info, "USE"))

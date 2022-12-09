@@ -39,9 +39,9 @@ class MsgWordCloud : ArchiveOneBotController<MessageRecordFile>
             RegisteredPermission = new()
             {
                 ["EDIT"] = ("词云数据修改权限", PermissionPolicy.RequireAccepted),
-                ["RECORD"] = ("群消息记录权限（群权限）", PermissionPolicy.RequireAccepted),
+                ["RECORD"] = ("群消息记录权限（群权限）", PermissionPolicy.AcceptedIfGroupAccepted),
                 ["VIEW"] = ("群词云查看权限", PermissionPolicy.AcceptedIfGroupAccepted),
-                ["SUBCRIBE"] = ("群词云自动推送权限（群权限）", PermissionPolicy.RequireAccepted)
+                ["SUBSCRIBE"] = ("群词云自动推送权限（群权限）", PermissionPolicy.RequireAccepted)
             }
         };
 
