@@ -47,11 +47,11 @@ public class RhythmGameSong : SimpleOneBotController
         GroupMessageEventArgs e = (GroupMessageEventArgs)scope.SoraEventArgs;
         if (!PermissionService.JudgeGroup(e, Info, "RESPOND"))
             return 0;
-        if (!PermissionService.Judge(e, Info, "TRIGGER"))
-            return 0;
         string msg = e.Message.RawText.ToLower();
         int index = Song.FindIndex(x => msg.StartsWith(x.ToLower()));
         if (index == -1)
+            return 0;
+        if (!PermissionService.Judge(e, Info, "TRIGGER"))
             return 0;
         e.Reply(SoraSegment.Record(SongPath + "\\" + Song[index] + ".mp3"));
         return 0;

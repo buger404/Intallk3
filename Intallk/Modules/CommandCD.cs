@@ -45,7 +45,9 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
         if (e == null)
             return 0;
-        if (!PermissionService.JudgeGroup(e, "USE", PermissionPolicy.RequireAccepted))
+        if (!PermissionService.JudgeGroup(e, "USE", PermissionPolicy.RequireAccepted) 
+            && !PermissionService.Judge(e, "ANYTHING", PermissionPolicy.RequireAccepted, true)
+            && !e.Message.RawText.StartsWith(".hack"))
             return 1;
         if (Data == null)
             return 0;

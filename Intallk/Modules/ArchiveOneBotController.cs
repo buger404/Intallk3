@@ -61,6 +61,6 @@ public class ArchiveOneBotController<T> : SimpleOneBotController
 
     public virtual void OnDataNull()
     {
-
+        throw new NotImplementedException();
     }
 }

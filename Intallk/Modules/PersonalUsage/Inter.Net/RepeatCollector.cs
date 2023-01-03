@@ -73,6 +73,7 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
 
     public override void OnDataNull()
     {
+        Logger.LogInformation("已初始化语录库。");
         Data = new RepeatCollection();
     }
 

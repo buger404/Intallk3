@@ -67,7 +67,7 @@ class BugLanguage : SimpleOneBotController
             if (p == "de") { p = "' "; c = 16; }
             if (p == "bu") { p = "eys-"; c = 0; }
             if (p == "le") { p = ret[^1] + "eq"; c = 16; }
-            if (p == "ma" || p == "ne" || p == "a" || p == "ya" || p == "ba") p = ";";
+            //if (p == "ma" || p == "ne" || p == "a" || p == "ya" || p == "ba") p = ";";
             if (p == "ni") p = "ms";
             if (p == "wo") p = "i";
             if (p == "men") p = "ss ";
