@@ -76,10 +76,10 @@ public class PermissionService
             ControllerInstance!.Data.Group.Add(group, new PermissionData());
         if (ControllerInstance!.Data.Group[group].Denied.Contains(PermissionName.Anything))
             return false;
-        if (ControllerInstance!.Data.Group[group].Accepted.Contains(PermissionName.Anything))
-            return true;
         if (ControllerInstance!.Data.Group[group].Denied.Contains(permission))
             return false;
+        if (ControllerInstance!.Data.Group[group].Accepted.Contains(PermissionName.Anything))
+            return true;
         return ControllerInstance!.Data.Group[group].Accepted.Contains(permission) || policy == PermissionPolicy.AcceptedAsDefault;
     }
 }

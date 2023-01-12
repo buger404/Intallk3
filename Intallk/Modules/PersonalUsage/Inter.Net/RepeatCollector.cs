@@ -90,95 +90,98 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         List<MessageSegment> seg = MessageSegment.Parse(e.Message.MessageBody);
         if (_filter.Invoke(e.Message.RawText))
             return 0;
-        int f = Data.messages.FindIndex(m => (m.Group == e.SourceGroup.Id && MessageSegment.Compare(m.Message, seg)));
-        int g = MsgBuffer.FindIndex(m => m.GroupID == e.SourceGroup.Id);
-        if (g == -1)
+        lock (MsgBuffer)
         {
-            MsgBuffer.Add(new MessageCollection { GroupID = e.SourceGroup.Id, Collection = new List<SingleRecordingMsg>() });
-            g = MsgBuffer.Count - 1;
-        }
-        MsgBuffer[g].Collection.Add(new SingleRecordingMsg
-        {
-            Message = MessageSegment.Copy(seg),
-            QQ = e.Sender.Id,
-            Group = e.SourceGroup.Id,
-            SendTime = DateTime.Now
-        });
-        if (MsgBuffer[g].Collection.Count > 15) MsgBuffer[g].Collection.RemoveAt(0);
-
-        if (f == -1)
-        {
-            //Console.WriteLine("New message.");
-            SingleRecordingMsg h = new SingleRecordingMsg
+            int f = Data.messages.FindIndex(m => (m.Group == e.SourceGroup.Id && MessageSegment.Compare(m.Message, seg)));
+            int g = MsgBuffer.FindIndex(m => m.GroupID == e.SourceGroup.Id);
+            if (g == -1)
             {
-                Message = seg,
+                MsgBuffer.Add(new MessageCollection { GroupID = e.SourceGroup.Id, Collection = new List<SingleRecordingMsg>() });
+                g = MsgBuffer.Count - 1;
+            }
+            MsgBuffer[g].Collection.Add(new SingleRecordingMsg
+            {
+                Message = MessageSegment.Copy(seg),
                 QQ = e.Sender.Id,
                 Group = e.SourceGroup.Id,
                 SendTime = DateTime.Now
-            };
-            h.Repeaters.Add(e.Sender.Id);
-            Data.messages.Add(h);
-        }
-        else
-        {
-            if (Data.messages[f].Repeaters.Contains(e.Sender.Id))
+            });
+            if (MsgBuffer[g].Collection.Count > 15) MsgBuffer[g].Collection.RemoveAt(0);
+
+            if (f == -1)
             {
-                // 复读自己，这人多半有点无聊
-                Data.messages[f].Heat -= 1f;
-                /**heats[f].RepeatCount++;
-                if (heats[f].Heat <= -2 && heats[f].RepeatCount >= 3)
+                //Console.WriteLine("New message.");
+                SingleRecordingMsg h = new SingleRecordingMsg
                 {
-                    e.Reply(e.Sender.At() + "别刷啦~小心黑嘴把你吃掉哦~");
-                    e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
-                }**/
-                //Console.WriteLine("Cool record " + f + " due to duplicate sending. (" + SingleMsg[f].Heat + "）");
+                    Message = seg,
+                    QQ = e.Sender.Id,
+                    Group = e.SourceGroup.Id,
+                    SendTime = DateTime.Now
+                };
+                h.Repeaters.Add(e.Sender.Id);
+                Data.messages.Add(h);
             }
             else
             {
-                Data.messages[f].Hot();
-                Data.messages[f].Repeaters.Add(e.Sender.Id);
-                //Console.WriteLine("Heat record " + f + " by " + e.Sender.Id + " (" + SingleMsg[f].Heat + ")");
-            }
-        }
-
-        for (int i = 0; i < Data.messages.Count; i++)
-        {
-            if (i >= Data.messages.Count) break;
-            SingleRecordingMsg heat = Data.messages[i];
-            //Console.WriteLine(MBS(e.Message.MessageBody) + " <compared to> " + MBS(heat.Message!));
-            if (heat.Heat >= HeatLimit)
-            {
-                // Record
-                if (!heat.Repeated && e.SourceGroup.Id == heat.Group && PermissionService.JudgeGroup(e, "INTER.NET_" + Info.RootPermission + "_COLLECT", PermissionPolicy.RequireAccepted))
+                if (Data.messages[f].Repeaters.Contains(e.Sender.Id))
                 {
-                    //Console.WriteLine("Start recording...");
-                    List<SingleRecordingMsg> heats = new List<SingleRecordingMsg>();
-                    foreach (SingleRecordingMsg he in MsgBuffer[g].Collection)
+                    // 复读自己，这人多半有点无聊
+                    Data.messages[f].Heat -= 1f;
+                    /**heats[f].RepeatCount++;
+                    if (heats[f].Heat <= -2 && heats[f].RepeatCount >= 3)
                     {
-                        SingleRecordingMsg heat2 = new SingleRecordingMsg { QQ = he.QQ, SendTime = he.SendTime, Message = MessageSegment.Copy(he.Message) };
-                        heats.Add(heat2);
-                        foreach (MessageSegment se in heat2.Message)
+                        e.Reply(e.Sender.At() + "别刷啦~小心黑嘴把你吃掉哦~");
+                        e.Reply(SoraSegment.Image(IntallkConfig.DataPath + "\\Resources\\oh.png"));
+                    }**/
+                    //Console.WriteLine("Cool record " + f + " due to duplicate sending. (" + SingleMsg[f].Heat + "）");
+                }
+                else
+                {
+                    Data.messages[f].Hot();
+                    Data.messages[f].Repeaters.Add(e.Sender.Id);
+                    //Console.WriteLine("Heat record " + f + " by " + e.Sender.Id + " (" + SingleMsg[f].Heat + ")");
+                }
+            }
+
+            for (int i = 0; i < Data.messages.Count; i++)
+            {
+                if (i >= Data.messages.Count) break;
+                SingleRecordingMsg heat = Data.messages[i];
+                //Console.WriteLine(MBS(e.Message.MessageBody) + " <compared to> " + MBS(heat.Message!));
+                if (heat.Heat >= HeatLimit)
+                {
+                    // Record
+                    if (!heat.Repeated && e.SourceGroup.Id == heat.Group && PermissionService.JudgeGroup(e, "INTER.NET_" + Info.RootPermission + "_COLLECT", PermissionPolicy.RequireAccepted))
+                    {
+                        //Console.WriteLine("Start recording...");
+                        List<SingleRecordingMsg> heats = new List<SingleRecordingMsg>();
+                        foreach (SingleRecordingMsg he in MsgBuffer[g].Collection)
+                        {
+                            SingleRecordingMsg heat2 = new SingleRecordingMsg { QQ = he.QQ, SendTime = he.SendTime, Message = MessageSegment.Copy(he.Message) };
+                            heats.Add(heat2);
+                            foreach (MessageSegment se in heat2.Message)
+                            {
+                                if (se.isImage)
+                                    se.DownloadImage();
+                            }
+                        }
+                        heat.ForwardMessages = heats;
+                        foreach (MessageSegment se in heat.Message)
                         {
                             if (se.isImage)
                                 se.DownloadImage();
                         }
+                        heat.Index = Data.messages.Count;
+                        Data.messages.Add(heat);
+                        e.Reply(heat.Message.ToMessageBody());
+                        heat.Repeated = true;
                     }
-                    heat.ForwardMessages = heats;
-                    foreach (MessageSegment se in heat.Message)
-                    {
-                        if (se.isImage)
-                            se.DownloadImage();
-                    }
-                    heat.Index = Data.messages.Count;
-                    Data.messages.Add(heat);
-                    e.Reply(heat.Message.ToMessageBody());
-                    heat.Repeated = true;
                 }
+                if (!heat.Repeated && heat.Group == e.SourceGroup.Id)
+                    heat.Cool();
             }
-            if (!heat.Repeated && heat.Group == e.SourceGroup.Id)
-                heat.Cool();
+            Data.messages.RemoveAll(m => m.Heat <= -2);
         }
-        Data.messages.RemoveAll(m => m.Heat <= -2);
         return 0;
     }
     [Command("t")]
@@ -198,12 +201,15 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
             e.Reply("你群暂无记录。");
             return;
         }
-        MessageBody body = new MessageBody();
-        foreach (SingleRecordingMsg message in MsgBuffer[g].Collection)
+        lock (MsgBuffer)
         {
-            body += MainModule.GetQQName(e, message.QQ) + "：" + message.Message.ToMessageBody() + "\n";
+            MessageBody body = new MessageBody();
+            foreach (SingleRecordingMsg message in MsgBuffer[g].Collection)
+            {
+                body += MainModule.GetQQName(e, message.QQ) + "：" + message.Message.ToMessageBody() + "\n";
+            }
+            e.Reply(body);
         }
-        e.Reply(body);
     }
     [Command("re remove bygroup <id>")]
     [CmdHelp("群号码", "移除语录库中所有指定群的语录")]

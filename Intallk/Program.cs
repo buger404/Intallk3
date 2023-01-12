@@ -41,6 +41,7 @@ builder.ConfigureServices((context, services) =>
             .AddSingleton<IOneBotController, CommandCD>()
             .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>()
             .AddSingleton<PermissionService>()
+            .AddSingleton<IOneBotController, MathExpression>()
             .AddSingleton<DailyProblemService>()
             .AddHostedService<DailyProblemPushService>()
             .AddHttpClient("leetcode", client =>
