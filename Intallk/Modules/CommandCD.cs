@@ -12,6 +12,8 @@ namespace Intallk.Modules;
 
 public class CommandCD : ArchiveOneBotController<CmdCDModel>
 {
+    public static bool Paused = false;
+
     private string prefix;
     private IServiceProvider Services {
         get {
@@ -45,7 +47,7 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
         GroupMessageEventArgs? e = scope.SoraEventArgs as GroupMessageEventArgs;
         if (e == null)
             return 0;
-        if (!PermissionService.JudgeGroup(e, "USE", PermissionPolicy.RequireAccepted) 
+        if ((!PermissionService.JudgeGroup(e, "USE", PermissionPolicy.RequireAccepted) || Paused)
             && !PermissionService.Judge(e, "ANYTHING", PermissionPolicy.RequireAccepted, true)
             && !e.Message.RawText.StartsWith(".hack"))
             return 1;
@@ -61,7 +63,7 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
                     {
                         (long, string) pair = (e.Sender.Id, cd.CmdHead!);
                         if (!useTime.ContainsKey(pair))
-                            useTime.Add(pair, DateTime.MinValue);
+                            useTime.Add(pair, DateTime.Now);
                         TimeSpan span = DateTime.Now - useTime[pair];
                         if (span.TotalSeconds < cd.Duration)
                         {

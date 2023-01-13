@@ -178,7 +178,7 @@ public class MainModule : SimpleOneBotController
             if (sendBio)
             {
                 Task.Delay(random.Next(3000, 10000));
-                e.Reply("该账号无人值守，如需使用具体功能，请参阅说明书（在群内发送'.help'）。\n如果遇到bug相关等问题，可以为buger404/Intallk3项目提供issue/pr，感谢！");
+                e.Reply("该账号无人值守，如需使用具体功能，请参阅说明书（在私聊或群内发送'.help'）。\n如果遇到bug相关等问题，可以为buger404/Intallk3项目提供issue/pr，感谢！");
             }
 
             bool needClear = false;
@@ -271,9 +271,20 @@ public class MainModule : SimpleOneBotController
         e.Reply(eg[random.Next(0, eg.Length)]);
     }
 
+    [Command("help", EventType = OneBot.CommandRoute.Models.Enumeration.EventType.PrivateMessage)]
+    public void HelpPrivate(PrivateMessageEventArgs e)
+    {
+        e.Reply(GetHelpString());
+    }
+
     [Command("help")]
     [CmdHelp("查看帮助说明书")]
     public void Help(GroupMessageEventArgs e)
+    {
+        e.Reply(GetHelpString());
+    }
+        
+    public string GetHelpString()
     {
         string prefix = Config!.CommandPrefix[0];
         StringBuilder sb = new StringBuilder();
@@ -291,10 +302,9 @@ public class MainModule : SimpleOneBotController
                 }
             }
         }
-        e.Reply("🌈欢迎查看黑嘴使用说明！\n" +
-                "目前支持的功能：\n" + sb.ToString());
+        return "🌈欢迎查看黑嘴使用说明！\n" +
+                "目前支持的功能：\n" + sb.ToString();
     }
-        
 
     [Command("help <moduleName>")]
     [CmdHelp("功能名", "查看指定功能的说明书")]
@@ -435,5 +445,21 @@ public class MainModule : SimpleOneBotController
             }
         }
         e.Reply(sb.ToString());
+    }
+
+    [Command("pause")]
+    [CmdHelp("暂停机器人的使用")]
+    public void Pause(GroupMessageEventArgs e)
+    {
+        CommandCD.Paused = true;
+        e.Reply("已暂停。");
+    }
+
+    [Command("resume")]
+    [CmdHelp("继续机器人的使用")]
+    public void Resume(GroupMessageEventArgs e)
+    {
+        CommandCD.Paused = false;
+        e.Reply("已继续。");
     }
 }

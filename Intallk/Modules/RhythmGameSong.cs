@@ -48,7 +48,7 @@ public class RhythmGameSong : SimpleOneBotController
         if (!PermissionService.JudgeGroup(e, Info, "RESPOND"))
             return 0;
         string msg = e.Message.RawText.ToLower();
-        int index = Song.FindIndex(x => msg.StartsWith(x.ToLower()));
+        int index = Song.FindLastIndex(x => msg.StartsWith(x.ToLower()));
         if (index == -1)
             return 0;
         if (!PermissionService.Judge(e, Info, "TRIGGER"))
