@@ -451,6 +451,8 @@ public class MainModule : SimpleOneBotController
     [CmdHelp("暂停机器人的使用")]
     public void Pause(GroupMessageEventArgs e)
     {
+        if (!PermissionService.Judge(e, "ANYTHING", PermissionPolicy.RequireAccepted))
+            return;
         CommandCD.Paused = true;
         e.Reply("已暂停。");
     }
@@ -459,6 +461,8 @@ public class MainModule : SimpleOneBotController
     [CmdHelp("继续机器人的使用")]
     public void Resume(GroupMessageEventArgs e)
     {
+        if (!PermissionService.Judge(e, "ANYTHING", PermissionPolicy.RequireAccepted))
+            return;
         CommandCD.Paused = false;
         e.Reply("已继续。");
     }

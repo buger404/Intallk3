@@ -39,6 +39,7 @@ builder.ConfigureServices((context, services) =>
             .AddSingleton<IOneBotController, DailyProblemController>()
             .AddSingleton<IOneBotController, Welcome>()
             .AddSingleton<IOneBotController, CommandCD>()
+            .AddSingleton<IOneBotController, LanMsg>()
             .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>()
             .AddSingleton<PermissionService>()
             .AddSingleton<IOneBotController, MathExpression>()
