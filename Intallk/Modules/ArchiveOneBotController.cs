@@ -14,7 +14,7 @@ public class ArchiveOneBotController<T> : SimpleOneBotController
         get {
             if (Info == null) 
                 throw new NotImplementedException();
-            return Path.Combine(IntallkConfig.DataPath, this.Info.DataFile + ".json");
+            return Path.Combine(IntallkConfig.DataPath, IntallkConfig.DbData + this.Info.DataFile + ".json");
         }
     }
 

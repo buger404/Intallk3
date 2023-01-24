@@ -55,7 +55,7 @@ class Painting : SimpleOneBotController
     public override string? GetStatus() =>
         $"绘图模板总数：{paints.Count}";
 
-[Command("draw showcode <template>")]
+    [Command("draw showcode <template>")]
     [CmdHelp("模板名称", "查看指定模板的绘图脚本源码")]
     public async void ShowCode(GroupMessageEventArgs e, string template)
     {
@@ -98,7 +98,10 @@ class Painting : SimpleOneBotController
         if ((paints[pi].Source.NeedQQParameter && qq == null) || 
             args.Length < paints[pi].Source.Parameters!.Count + 2 + (paints[pi].Source.NeedQQParameter ? 1 : 0))
         {
-            await e.Reply(e.Sender.At() + "指令有误，您可以发送“.draw help " + template + "”取得帮助。");
+            string outfile2 = IntallkConfig.DataPath + "\\Images\\draw_" + DateTime.Now.ToString("yy_MM_dd_HH_mm_ss") + ".png";
+            await paints[pi].Paint(outfile2, null!, null!, null!);
+            await e.Reply(SoraSegment.Image(outfile2)  + "\n"
+                          + "指令有误：.draw " + (pi + 1).ToString() + "/" + paints[pi].Source.Name + " " + paints[pi].Source.ParameterDescription);
             return;
         }
         for(int i = 0;i < paints[pi].Source.Parameters!.Count; i++)

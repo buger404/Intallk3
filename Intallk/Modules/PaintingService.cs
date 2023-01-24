@@ -131,7 +131,7 @@ public class PaintingCompiler
                     IsFileNameValid(resolve);
                     if (!piclist.Contains(resolve) && resolve != "QQ头像") piclist.Add(resolve);
                     if (resolve == "QQ头像") paintfile.NeedQQParameter = true;
-                    cmd = new PaintCommands(PaintCommandType.DrawImage, x, y, 0f, 0f, resolve, (int)PaintAlign.Left, (int)PaintAlign.Left);
+                    cmd = new PaintCommands(PaintCommandType.DrawImage, x, y, 0f, 0f, resolve, -1, -1, -1, (int)PaintAdjustWriteMode.None, (int)PaintAlign.Left, (int)PaintAlign.Left);
                     if (resolve.StartsWith("img;")){
                         customImg.Add(resolve.Substring(4));
                     }
@@ -290,15 +290,15 @@ public class PaintingCompiler
                 if (sen[i].StartsWith("适应宽度"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义文本绘制尺寸的情况下自动调整大小。");
+                    if (cmd.CommandType != PaintCommandType.Write && cmd.CommandType != PaintCommandType.DrawImage) ThrowException("[Standard.InvalidParameter]该参数只对书写或图片命令有效。");
+                    if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义绘制尺寸的情况下自动调整大小。");
                     cmd.Args[8] = (int)PaintAdjustWriteMode.XFirst;
                 }
                 if (sen[i].StartsWith("适应高度"))
                 {
                     if (!solved) ThrowException("[Standard.ParameterBeforeCommand]在主绘制命令出现之前，不应该提供参数。");
-                    if (cmd.CommandType != PaintCommandType.Write) ThrowException("[Standard.InvalidParameter]该参数只对书写命令有效。");
-                    if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义文本绘制尺寸的情况下自动调整大小。");
+                    if (cmd.CommandType != PaintCommandType.Write && cmd.CommandType != PaintCommandType.DrawImage) ThrowException("[Standard.InvalidParameter]该参数只对书写或图片命令有效。");
+                    if ((float)cmd.Args[2] == 0 && (float)cmd.Args[3] == 0) ThrowException("[Writer.AutoAdjuster]无法在不定义绘制尺寸的情况下自动调整大小。");
                     cmd.Args[8] = (int)PaintAdjustWriteMode.YFirst;
                 }
                 if (sen[i].StartsWith("描边"))
@@ -675,6 +675,26 @@ public class PaintingProcessing
                     }
                     break;
                 case PaintCommandType.DrawImage:
+                    if (cmd[i].Args.Length > 8)
+                    {
+                        PaintAdjustWriteMode adjustimg = (PaintAdjustWriteMode)PfO<int>(cmd[i].Args[8]);
+                        if (adjustimg != PaintAdjustWriteMode.None)
+                        {
+                            int orW = image!.Width, orH = image!.Height;
+                            if (adjustimg == PaintAdjustWriteMode.XFirst)
+                            {
+                                float temp = h;
+                                h = (orH * 1.0f / orW) * w; 
+                                y += (temp / 2 - h / 2);
+                            }
+                            else if (adjustimg == PaintAdjustWriteMode.YFirst)
+                            {
+                                float temp = w;
+                                w = (orW * 1.0f / orH) * h; 
+                                x += (temp / 2 - w / 2);
+                            }
+                        }
+                    }
                     g.DrawImage(image!, new Rectangle((int)x, (int)y, (int)w, (int)h));
                     break;
                 case PaintCommandType.Write:

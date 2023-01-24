@@ -1,4 +1,5 @@
 ﻿using Intallk.Models;
+using Microsoft.Extensions.Logging;
 using OneBot.CommandRoute.Services;
 using Sora.Entities.Base;
 using Sora.EventArgs.SoraEvent;
@@ -69,6 +70,14 @@ public class LanMsg : SimpleOneBotController
             HelpCmd = "", ModuleName = "远程消息", ModuleUsage = "用于接收内网其他机器人的发送消息请求。"
         };
 
+    public string LinkByteStr(byte[] data)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (byte b in data)
+            sb.Append(b.ToString());
+        return sb.ToString();
+    }
+
     public void Listening()
     {
         listener.Start();
@@ -82,14 +91,20 @@ public class LanMsg : SimpleOneBotController
                 client.GetStream().Read(msg, 0, 10240);
                 string data = Encoding.UTF8.GetString(msg);
                 string[] arg = data.Split('\0');
-                if (arg.Length >= 2 && arg[0].Length < 30)
+                if (arg.Length >= 2 && arg[0].Length < 1024)
                 {
-                    if (Encoding.UTF8.GetString(MD5Service.ComputeHash(Encoding.UTF8.GetBytes(arg[1] + Secret))) == arg[0])
+                    Logger.LogInformation("Received: " + arg[0] + " " + arg[1] + " " + arg[2]);
+                    if (LinkByteStr(MD5Service.ComputeHash(Encoding.UTF8.GetBytes(arg[1] + Secret))) == arg[0])
                     {
                         foreach (var api in apiManager.Values)
                         {
-                            api.GetGroup(long.Parse(arg[2])).SendGroupMessage(arg[1]);
+                            Logger.LogInformation("Sent.");
+                            api.GetGroup(long.Parse(arg[2])).SendGroupMessage(arg[1].Replace("\\n","\n"));
                         }
+                    }
+                    else
+                    {
+                        Logger.LogInformation("Hash check failed.");
                     }
                 }
                 client.Close();
