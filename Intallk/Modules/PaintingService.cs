@@ -684,14 +684,36 @@ public class PaintingProcessing
                             if (adjustimg == PaintAdjustWriteMode.XFirst)
                             {
                                 float temp = h;
-                                h = (orH * 1.0f / orW) * w; 
-                                y += (temp / 2 - h / 2);
+                                float th = (orH * 1.0f / orW) * w; 
+                                float ty = y + (temp / 2 - th / 2);
+                                if (th > h)
+                                {
+                                    temp = w;
+                                    w = (orW * 1.0f / orH) * h;
+                                    x = x + (temp / 2 - w / 2);
+                                }
+                                else
+                                {
+                                    h = th;
+                                    y = ty;
+                                }
                             }
                             else if (adjustimg == PaintAdjustWriteMode.YFirst)
                             {
                                 float temp = w;
-                                w = (orW * 1.0f / orH) * h; 
-                                x += (temp / 2 - w / 2);
+                                float tw = (orW * 1.0f / orH) * h; 
+                                float tx = x + (temp / 2 - tw / 2);
+                                if (tw > w)
+                                {
+                                    temp = h;
+                                    h = (orH * 1.0f / orW) * w;
+                                    y += (temp / 2 - h / 2);
+                                }
+                                else
+                                {
+                                    w = tw;
+                                    x = tx;
+                                }
                             }
                         }
                     }
@@ -753,6 +775,8 @@ public class PaintingProcessing
                             s = s.Replace("{QQ登录天数}", info.LoginDays.ToString());
                         }
                     }
+                    s = s.Replace("&#91;", "[");
+                    s = s.Replace("&#93;", "]");
                     s = s.Replace("\\n", "\n");
                     PaintAdjustWriteMode adjust = (PaintAdjustWriteMode)PfO<int>(cmd[i].Args[8]);
                     if (adjust != PaintAdjustWriteMode.None && s != "" && s != null)

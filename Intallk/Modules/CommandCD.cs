@@ -57,7 +57,7 @@ public class CommandCD : ArchiveOneBotController<CmdCDModel>
         {
             foreach (CDInfo cd in Data.CD[e.SourceGroup.Id]!)
             {
-                if (e.Message.RawText.ToLower().StartsWith(prefix + cd.CmdHead!))
+                if (e.Message.RawText.ToLower() == prefix + cd.CmdHead! || e.Message.RawText.ToLower().StartsWith(prefix + cd.CmdHead! + " "))
                 {
                     if (!PermissionService.Judge(e, Info.RootPermission + "_NOCD", PermissionPolicy.AcceptedAdminAsDefault , true))
                     {

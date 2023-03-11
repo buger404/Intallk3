@@ -203,12 +203,13 @@ public class RepeatCollector : ArchiveOneBotController<RepeatCollection>
         }
         lock (MsgBuffer)
         {
-            MessageBody body = new MessageBody();
-            foreach (SingleRecordingMsg message in MsgBuffer[g].Collection)
+            var nodeList = new List<CustomNode>();
+            nodeList.Add(new CustomNode("消息回溯", e.SoraApi.GetLoginUserId(), "以下是最近十条消息的回溯，请查收~"));
+            foreach (var message in MsgBuffer[g].Collection)
             {
-                body += MainModule.GetQQName(e, message.QQ) + "：" + message.Message.ToMessageBody() + "\n";
+                nodeList.Add(new CustomNode("[消息回溯]" + message.QQ, message.QQ, message.Message.ToMessageBody()));
             }
-            e.Reply(body);
+            e.SourceGroup.SendGroupForwardMsg(nodeList);
         }
     }
     [Command("re remove bygroup <id>")]
