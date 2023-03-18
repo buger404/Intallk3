@@ -67,7 +67,7 @@ public class LanMsg : SimpleOneBotController
     public override ModuleInformation Initialize() =>
         new ModuleInformation
         {
-            HelpCmd = "", ModuleName = "远程消息", ModuleUsage = "用于接收内网其他机器人的发送消息请求。"
+            HelpCmd = "lan", ModuleName = "远程消息", ModuleUsage = "用于接收内网其他机器人的发送消息请求。"
         };
 
     public string LinkByteStr(byte[] data)
