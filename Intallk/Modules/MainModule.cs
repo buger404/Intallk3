@@ -177,8 +177,8 @@ public class MainModule : SimpleOneBotController
             }
             if (sendBio)
             {
-                Task.Delay(random.Next(3000, 10000));
-                e.Reply("该账号无人值守，如需使用具体功能，请参阅说明书（在私聊或群内发送'.help'）。\n如果遇到bug相关等问题，可以为buger404/Intallk3项目提供issue/pr，感谢！");
+                //Task.Delay(random.Next(3000, 10000));
+                //e.Reply("该账号无人值守，如需使用具体功能，请参阅说明书（在私聊或群内发送'.help'）。\n如果遇到bug相关等问题，可以为buger404/Intallk3项目提供issue/pr，感谢！");
             }
 
             bool needClear = false;
