@@ -42,6 +42,7 @@ builder.ConfigureServices((context, services) =>
             .AddSingleton<IOneBotController, LanMsg>()
             .AddSingleton<IOneBotController, FakeMsg>()
             .AddSingleton<IOneBotController, ChatGPT>()
+            .AddSingleton<IOneBotController, MilthmSubscription>()
             .AddSingleton<IOneBotCommandRouteConfiguration, IntallkConfig>()
             .AddSingleton<PermissionService>()
             .AddSingleton<IOneBotController, MathExpression>()

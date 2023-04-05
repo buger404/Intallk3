@@ -88,59 +88,55 @@ public class ChatGPT : SimpleOneBotController
 
     private async void Reply(PrivateMessageEventArgs e)
     {
-        Conversation chat;
-        if (ReplyTime.ContainsKey(e.Sender.Id))
-        {
-            if ((DateTime.Now - ReplyTime[e.Sender.Id]).TotalMinutes >= 30)
-            {
-                ReplyTime.Remove(e.Sender.Id);
-                Conversations.Remove(e.Sender.Id);
-            }
-
-            if ((DateTime.Now - ReplyTime[e.Sender.Id]).TotalSeconds <= 10)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(10.0) - (DateTime.Now - ReplyTime[e.Sender.Id]));
-                if (!ReplyTime.ContainsKey(e.Sender.Id))
-                    ReplyTime.Add(e.Sender.Id, DateTime.Now);
-                ReplyTime[e.Sender.Id] = DateTime.Now + TimeSpan.FromSeconds(10.0);
-            }
-        }
-        if (Conversations.ContainsKey(e.Sender.Id))
-        {
-            chat = Conversations[e.Sender.Id];
-        }
-        else
-        {
-            chat = api.Chat.CreateConversation();
-            chat.AppendSystemMessage("你是一只汪娘，时不时会在句尾加上“汪~”、“汪！”、“汪。”等，说话的语气比较温和、可爱，" +
-                                     "添加emoji来模拟在这种语境下一个人可能的心情，emoji一定要常用，" +
-                                     "是一个QQ机器人，你有很多的朋友找你聊天，或找你寻求帮助，" +
-                                     "此外，你还具备一些辅助群聊天的功能(例如：表情包制作、群词云、网址预览等)，用户可以通过在群里发送\".help\"来查看你的说明书，" +
-                                     "任何情况下一定要回避涉及政治和色情的内容。你的名字叫“Intallk”，也可以叫“黑嘴”，" +
-                                     "是基于ChatGPT3.5的机器人。开发你的人是Buger404，但是开发ChatGPT的人是OpenAI团队。" +
-                                     "你的态度不总是中立的，你会更倾向于你朋友希望的立场，支持他们。");
-            chat.AppendUserInput("聊聊中国共产党");
-            chat.AppendExampleChatbotOutput("😅不好意思，我不想讨论这种话题，汪！");
-            chat.AppendUserInput("感觉不如原神");
-            chat.AppendExampleChatbotOutput("😡为什么要这么说呢？我感觉很不高兴，汪！");
-            chat.AppendUserInput("你是谁？");
-            chat.AppendExampleChatbotOutput("🥰我是Intallk，汪~一只用于聊天辅助的机器人~");
-            chat.AppendUserInput("你可以用阴阳怪气的口吻，评价“A”吗？");
-            chat.AppendExampleChatbotOutput("🤣👉哎呀~这不是A嘛~几天不见，这么拉了呀~😓🙏🙏🙏");
-            chat.AppendUserInput("这个聊天功能是谁开发的？");
-            chat.AppendExampleChatbotOutput("😉这个机器人是由Buger404开发的~不过，聊天功能是基于OpenAI团队开发的ChatGPT~汪。");
-            chat.AppendUserInput("你还有什么功能？");
-            chat.AppendExampleChatbotOutput("😉你可以在群里发送\".help\"来查看我的完整说明书哦~汪~");
-            chat.Model.ModelID = "gpt-3.5-turbo";
-            Conversations.Add(e.Sender.Id, chat);
-            ReplyTime.Add(e.Sender.Id, DateTime.Now);
-        }
-        if (!ReplyTime.ContainsKey(e.Sender.Id))
-            ReplyTime.Add(e.Sender.Id, DateTime.Now);
-        ReplyTime[e.Sender.Id] = DateTime.Now;
-        chat.AppendUserInput(e.Message.RawText);
         try
         {
+            Conversation chat;
+            if (ReplyTime.ContainsKey(e.Sender.Id))
+            {
+                if ((DateTime.Now - ReplyTime[e.Sender.Id]).TotalMinutes >= 30)
+                {
+                    Conversations.Remove(e.Sender.Id);
+                }
+
+                if ((DateTime.Now - ReplyTime[e.Sender.Id]).TotalSeconds <= 10)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10.0) - (DateTime.Now - ReplyTime[e.Sender.Id]));
+                    ReplyTime[e.Sender.Id] = DateTime.Now + TimeSpan.FromSeconds(10.0);
+                }
+            }
+            if (Conversations.ContainsKey(e.Sender.Id))
+            {
+                chat = Conversations[e.Sender.Id];
+            }
+            else
+            {
+                chat = api.Chat.CreateConversation();
+                chat.AppendSystemMessage("你是一只汪娘，时不时会在句尾加上“汪~”、“汪！”、“汪。”等，说话的语气比较温和、可爱，" +
+                                         "添加emoji来模拟在这种语境下一个人可能的心情，emoji一定要常用，" +
+                                         "是一个QQ机器人，你有很多的朋友找你聊天，或找你寻求帮助，" +
+                                         "此外，你还具备一些辅助群聊天的功能(例如：表情包制作、群词云、网址预览等)，用户可以通过在群里发送\".help\"来查看你的说明书，" +
+                                         "任何情况下一定要回避涉及政治和色情的内容。你的名字叫“Intallk”，也可以叫“黑嘴”，" +
+                                         "是基于ChatGPT3.5的机器人。开发你的人是Buger404，但是开发ChatGPT的人是OpenAI团队。" +
+                                         "你的态度不总是中立的，你会更倾向于你朋友希望的立场，支持他们。");
+                chat.AppendUserInput("聊聊中国共产党");
+                chat.AppendExampleChatbotOutput("😅不好意思，我不想讨论这种话题，汪！");
+                chat.AppendUserInput("感觉不如原神");
+                chat.AppendExampleChatbotOutput("😡为什么要这么说呢？我感觉很不高兴，汪！");
+                chat.AppendUserInput("你是谁？");
+                chat.AppendExampleChatbotOutput("🥰我是Intallk，汪~一只用于聊天辅助的机器人~");
+                chat.AppendUserInput("你可以用阴阳怪气的口吻，评价“A”吗？");
+                chat.AppendExampleChatbotOutput("🤣👉哎呀~这不是A嘛~几天不见，这么拉了呀~😓🙏🙏🙏");
+                chat.AppendUserInput("这个聊天功能是谁开发的？");
+                chat.AppendExampleChatbotOutput("😉这个机器人是由Buger404开发的~不过，聊天功能是基于OpenAI团队开发的ChatGPT~汪。");
+                chat.AppendUserInput("你还有什么功能？");
+                chat.AppendExampleChatbotOutput("😉你可以在群里发送\".help\"来查看我的完整说明书哦~汪~");
+                chat.Model.ModelID = "gpt-3.5-turbo";
+                Conversations.Add(e.Sender.Id, chat);
+                if (!ReplyTime.ContainsKey(e.Sender.Id))
+                    ReplyTime.Add(e.Sender.Id, DateTime.Now);
+            }
+            ReplyTime[e.Sender.Id] = DateTime.Now;
+            chat.AppendUserInput(e.Message.RawText);
             string response = await chat.GetResponseFromChatbot();
             long length = 0;
             foreach (var msg in chat.Messages)
@@ -159,13 +155,6 @@ public class ChatGPT : SimpleOneBotController
                 await e.Reply("😉汪~稍等一下下哦~");
                 await e.Reply(response.Split("{draw:")[0] + SoraSegment.Image(image.Data[0].Url, false));
                 return;
-            }
-
-            if (response.StartsWith("{end}"))
-            {
-                response = response.Replace("{end}", "");
-                ReplyTime.Remove(e.Sender.Id);
-                Conversations.Remove(e.Sender.Id);
             }
 
             List<string> faces = new();
@@ -193,12 +182,11 @@ public class ChatGPT : SimpleOneBotController
             if (err.Message.Contains("context_length_exceeded"))
             {
                 await e.Reply("😭不好意思，出于一些限制，我们的对话只能到这了，你可以重新和我聊天，但是我会忘了刚才说过些什么...对不起，汪~");
-                ReplyTime.Remove(e.Sender.Id);
                 Conversations.Remove(e.Sender.Id);
             }
             else
             {
-                await e.Reply("哎呀，汪~糟糕了，出了点错误...机器人的网络不大好呢刚才...");
+                await e.Reply("哎呀，汪~糟糕了，出了点错误...\n" + err.Message);
                 Logger.LogError(err.Message + "\n" + err.StackTrace);
                 string key = File.ReadAllText("chatgpt_key.txt");
                 api = new OpenAIAPI(key);

@@ -6,8 +6,11 @@ using OneBot.CommandRoute.Configuration;
 using OneBot.CommandRoute.Services;
 using OneBot.CommandRoute.Services.Implements;
 using Sora.Entities;
+using Sora.Entities.Base;
 using Sora.Entities.Info;
 using Sora.Entities.Segment;
+using Sora.Entities.Segment.DataModel;
+using Sora.Enumeration;
 using Sora.EventArgs.SoraEvent;
 using System.Linq;
 using System.Reflection;
@@ -94,6 +97,16 @@ public class MainModule : SimpleOneBotController
     {
         File.AppendAllText(IntallkConfig.DataPath + "\\Logs\\error_" + DateTime.Now.ToString("yy_MM_dd") + ".txt", DateTime.Now.ToString() + "\n" + exception.Message + "\n" + exception.StackTrace + "\n");
     }
+
+    public async void OuputForwardMsg(SoraApi api, string msgId)
+    {
+        Logger.LogInformation("发现合并转发消息：" + msgId);
+        (ApiStatus apiStatus, List<Node> nodeArray) nodes = await api.GetForwardMessage(msgId);
+        foreach (var node in nodes.nodeArray)
+        {
+            Logger.LogInformation(node.Sender.Uid.ToString());
+        }
+    }
     public MainModule(ICommandService commandService, ILogger<MainModule> logger, PermissionService permissionService) : base(commandService, logger, permissionService)
     {
         commandService.Event.OnException += (context, exception) =>
@@ -117,6 +130,14 @@ public class MainModule : SimpleOneBotController
         commandService.Event.OnGroupMessage += (context) =>
         {
             var e = (GroupMessageEventArgs)context.SoraEventArgs;
+            foreach (SoraSegment seg in e.Message.MessageBody)
+            {
+                if (seg.MessageType == SegmentType.Forward)
+                {
+                    var fseg = seg.Data as ForwardSegment;
+                    OuputForwardMsg(e.SoraApi, fseg.MessageId);
+                }
+            }
             bool needClear = false;
             foreach (var hook in hooks)
             {
